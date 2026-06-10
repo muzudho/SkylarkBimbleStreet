@@ -2,6 +2,10 @@
 
 MonoGame DesktopGL で作る C# ゲームプロジェクト。
 
+![ゲーム画面](SkylarkBimbleStreet/Docs/設計/images/gameplay-prototype.png)
+
+この画像は開発中の画面イメージです。
+
 この README は案内板。詳しい内容は各ドキュメントを見る。
 
 ## このゲームをプレイする人へ
