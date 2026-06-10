@@ -2,42 +2,25 @@
 
 MonoGame DesktopGL で作る C# ゲームプロジェクト。
 
-## 現在のゲーム
+この README は案内板。詳しい内容は各ドキュメントを見る。
 
-1画面アクションパズルの試作版。
+## ゲームをプレイする
 
-- 青いプレイヤーを操作する。
-- 黄色い宝石をすべて集める。
-- 緑の出口に到達するとクリア。
-- 赤い障害物に当たるとスタート位置へ戻る。
-- ゲーム状態はウィンドウタイトルにも表示される。
+- [起動方法と操作説明](SkylarkBimbleStreet/Docs/設計/ゲームをプレイする.md)
+- [現在の試作内容](SkylarkBimbleStreet/Docs/開発/アクションパズル試作.md)
 
-## 操作
+## 開発する
 
-- 移動: `WASD` / 矢印キー / Xbox コントローラー左スティック
-- リトライ: `R` / Xbox コントローラー Start
-- 終了: `Esc` / Xbox コントローラー Back
+- [Docs 目次](SkylarkBimbleStreet/Docs/README.md)
+- [続きはここから](SkylarkBimbleStreet/Docs/続きはここから.md)
+- [初期要件](SkylarkBimbleStreet/Docs/設計/初期要件.md)
+- [ゲーム案メモ](SkylarkBimbleStreet/Docs/企画/ゲーム案メモ.md)
+- [MonoGame テンプレート確認](SkylarkBimbleStreet/Docs/開発/MonoGameテンプレート確認.md)
+- [AIエージェントと素材制作](SkylarkBimbleStreet/Docs/調査/AIエージェントと素材制作.md)
+- [プロジェクト前提](SkylarkBimbleStreet/Docs/運用/プロジェクト前提.md)
+- [メンバー紹介](SkylarkBimbleStreet/Docs/運用/メンバー紹介.md)
+- [リポジトリー分離](SkylarkBimbleStreet/Docs/運用/リポジトリー分離.md)
 
-## 必要なもの
+## ライセンス
 
-- .NET 8 SDK
-- MonoGame のビルド用ツール
-
-初回ビルド時は `SkylarkBimbleStreet.csproj` の `RestoreDotnetTools` ターゲットにより、`dotnet tool restore` が実行される。
-
-## 実行
-
-```powershell
-dotnet run --project .\SkylarkBimbleStreet\SkylarkBimbleStreet.csproj
-```
-
-## 構成
-
-- `SkylarkBimbleStreet/Game1.cs`: MonoGame のメインループと試作ゲーム本体。
-- `SkylarkBimbleStreet/Program.cs`: `Game1` を起動するエントリーポイント。
-- `SkylarkBimbleStreet/Content/Content.mgcb`: 画像、音声、フォントなどのコンテンツ定義。
-- `SkylarkBimbleStreet/Docs`: 開発メモと運用メモ。
-
-## 現在の状態
-
-外部アセットなしで動く、図形描画だけのアクションパズル試作版。内部解像度は `1920x1080` で、実ウィンドウへレターボックス付きで拡大縮小する。
+- [MIT License](LICENSE.txt)
