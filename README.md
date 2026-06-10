@@ -4,15 +4,15 @@ MonoGame DesktopGL で作る C# ゲームプロジェクト。
 
 この README は案内板。詳しい内容は各ドキュメントを見る。
 
-## ゲームをプレイする
+## このゲームをプレイする人へ
 
 - [起動方法と操作説明](SkylarkBimbleStreet/Docs/設計/ゲームをプレイする.md)
-- [現在の試作内容](SkylarkBimbleStreet/Docs/開発/アクションパズル試作.md)
 
-## 開発する
+## このゲームを開発する人へ
 
 - [Docs 目次](SkylarkBimbleStreet/Docs/README.md)
 - [続きはここから](SkylarkBimbleStreet/Docs/続きはここから.md)
+- [現在の試作内容](SkylarkBimbleStreet/Docs/開発/アクションパズル試作.md)
 - [初期要件](SkylarkBimbleStreet/Docs/設計/初期要件.md)
 - [ゲーム案メモ](SkylarkBimbleStreet/Docs/企画/ゲーム案メモ.md)
 - [MonoGame テンプレート確認](SkylarkBimbleStreet/Docs/開発/MonoGameテンプレート確認.md)
