@@ -12,6 +12,7 @@ public class Game1 : Game
     private const int VirtualHeight = 1080;
     private const float PlayerSpeed = 520f;
     private const int PlayerSize = 46;
+    private const float RespawnInvincibleSeconds = 0.8f;
 
     private readonly GraphicsDeviceManager _graphics;
     private readonly List<PlayEvent> _playEvents = [];
@@ -161,6 +162,7 @@ public class Game1 : Game
     private double _clearAnimationTime;
     private double _stageSelectAnimationTime;
     private double _pauseAnimationTime;
+    private float _invincibleTimeRemaining;
     private Color _backgroundColor;
 
     public Game1()
@@ -252,6 +254,7 @@ public class Game1 : Game
             _runElapsedSeconds += elapsed;
             _currentStageElapsedSeconds += elapsed;
             _stageElapsedSeconds[_currentStageIndex] += elapsed;
+            _invincibleTimeRemaining = Math.Max(0f, _invincibleTimeRemaining - elapsed);
             MovePlayer(GetMoveInput(keyboard, gamePad), elapsed);
             UpdateHazards(elapsed);
             CheckGemCollection();
@@ -321,8 +324,7 @@ public class Game1 : Game
             DrawRectangle(Inset(hazard.Bounds, 12), new Color(255, 148, 157));
         }
 
-        DrawRectangle(GetPlayerBounds(), _cleared ? new Color(90, 220, 160) : new Color(81, 161, 255));
-        DrawRectangle(Inset(GetPlayerBounds(), 10), new Color(197, 228, 255));
+        DrawPlayer();
         DrawHud();
     }
 
@@ -753,6 +755,19 @@ public class Game1 : Game
         TryMove(new Vector2(0f, velocity.Y));
     }
 
+    private void DrawPlayer()
+    {
+        if (_invincibleTimeRemaining > 0f && (int)(_invincibleTimeRemaining * 16f) % 2 == 0)
+        {
+            DrawRectangle(GetPlayerBounds(), new Color(255, 239, 151));
+            DrawRectangle(Inset(GetPlayerBounds(), 12), new Color(81, 161, 255));
+            return;
+        }
+
+        DrawRectangle(GetPlayerBounds(), _cleared ? new Color(90, 220, 160) : new Color(81, 161, 255));
+        DrawRectangle(Inset(GetPlayerBounds(), 10), new Color(197, 228, 255));
+    }
+
     private void TryMove(Vector2 delta)
     {
         _playerPosition += delta;
@@ -810,6 +825,11 @@ public class Game1 : Game
 
     private void CheckHazardCollision()
     {
+        if (_invincibleTimeRemaining > 0f)
+        {
+            return;
+        }
+
         var player = GetPlayerBounds();
         foreach (var hazard in _hazards)
         {
@@ -818,7 +838,7 @@ public class Game1 : Game
                 _deaths++;
                 _stageDeathCounts[_currentStageIndex]++;
                 LogPlayEvent(PlayEventKind.Death, _currentStageIndex, player.Center.ToVector2(), _currentStageElapsedSeconds, _deaths);
-                ResetPlayerOnly();
+                ResetPlayerOnly(true);
                 return;
             }
         }
@@ -919,14 +939,15 @@ public class Game1 : Game
         _clearRank = 0;
         _clearAnimationTime = 0d;
         _currentStageElapsedSeconds = 0d;
-        ResetPlayerOnly();
+        ResetPlayerOnly(false);
         LogPlayEvent(PlayEventKind.StageStart, _currentStageIndex, GetPlayerBounds().Center.ToVector2(), 0d, _stageGemCounts[_currentStageIndex]);
         RefreshWindowTitle();
     }
 
-    private void ResetPlayerOnly()
+    private void ResetPlayerOnly(bool grantInvincibility)
     {
         _playerPosition = _playerStart;
+        _invincibleTimeRemaining = grantInvincibility ? RespawnInvincibleSeconds : 0f;
     }
 
     /// <summary>
