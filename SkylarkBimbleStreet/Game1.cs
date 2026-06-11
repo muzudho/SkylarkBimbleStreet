@@ -389,6 +389,10 @@ public class Game1 : Game
         _playerPosition = _playerStart;
     }
 
+    /// <summary>
+    /// ウィンドウ・タイトルを更新します。
+    /// </summary>
+    /// <param name="gameTime">ゲーム時間の情報</param>
     private void UpdateWindowTitle(GameTime gameTime)
     {
         _titleRefreshTimer -= gameTime.ElapsedGameTime.TotalSeconds;
@@ -400,6 +404,9 @@ public class Game1 : Game
         RefreshWindowTitle();
     }
 
+    /// <summary>
+    /// ウィンドウ・タイトルを最新表示します。
+    /// </summary>
     private void RefreshWindowTitle()
     {
         _titleRefreshTimer = 0.2;
@@ -417,6 +424,12 @@ public class Game1 : Game
         Window.Title = $"SkylarkBimbleStreet - {stage.Name} - {state} - Gems {collected}/{_gemBounds.Length} - Hits {_deaths}";
     }
 
+    /// <summary>
+    /// 移動の入力を取得します。
+    /// </summary>
+    /// <param name="keyboard">キーボードの状態</param>
+    /// <param name="gamePad">ゲームパッドの状態</param>
+    /// <returns>移動の入力を表すベクトル</returns>
     private Vector2 GetMoveInput(KeyboardState keyboard, GamePadState gamePad)
     {
         var move = Vector2.Zero;
@@ -447,10 +460,22 @@ public class Game1 : Game
         return move;
     }
 
+    /// <summary>
+    /// プレイヤーの当たり判定を取得します。
+    /// </summary>
+    /// <returns>プレイヤーの当たり判定を表す矩形</returns>
     private Rectangle GetPlayerBounds() => new((int)_playerPosition.X, (int)_playerPosition.Y, PlayerSize, PlayerSize);
 
+    /// <summary>
+    /// 出口の当たり判定を取得します。
+    /// </summary>
+    /// <returns>出口の当たり判定を表す矩形</returns>
     private Rectangle GetExitBounds() => _exitBounds;
 
+    /// <summary>
+    /// 全てのジェムを集めたか。
+    /// </summary>
+    /// <returns>全てのジェムを集めた場合はtrue、それ以外の場合はfalse</returns>
     private bool AreAllGemsCollected()
     {
         foreach (var gemCollected in _gemsCollected)
@@ -464,6 +489,10 @@ public class Game1 : Game
         return true;
     }
 
+    /// <summary>
+    /// 移動先の座標とサイズを指定して、衝突判定に使用する矩形を描画します。
+    /// </summary>
+    /// <returns>衝突判定に使用する矩形</returns>
     private Rectangle GetDestinationRectangle()
     {
         var viewport = GraphicsDevice.Viewport;
@@ -473,18 +502,44 @@ public class Game1 : Game
         return new Rectangle((viewport.Width - width) / 2, (viewport.Height - height) / 2, width, height);
     }
 
+    /// <summary>
+    /// 矩形の描画
+    /// </summary>
+    /// <param name="rectangle"></param>
+    /// <param name="color"></param>
     private void DrawRectangle(Rectangle rectangle, Color color) => _spriteBatch.Draw(_pixel, rectangle, color);
 
+    /// <summary>
+    /// 矩形を内側に縮小した新しい矩形を返す。
+    /// </summary>
+    /// <param name="rectangle">元の矩形</param>
+    /// <param name="inset">縮小する量</param>
+    /// <returns>縮小された矩形</returns>
     private static Rectangle Inset(Rectangle rectangle, int inset) => new(
         rectangle.X + inset,
         rectangle.Y + inset,
         Math.Max(1, rectangle.Width - inset * 2),
         Math.Max(1, rectangle.Height - inset * 2));
 
+    /// <summary>
+    /// ボタンが押されたか。
+    /// </summary>
+    /// <param name="keyboard"></param>
+    /// <param name="key"></param>
+    /// <returns></returns>
     private bool WasPressed(KeyboardState keyboard, Keys key) => keyboard.IsKeyDown(key) && !_previousKeyboard.IsKeyDown(key);
 
+    /// <summary>
+    /// ボタンが押されているか。
+    /// </summary>
+    /// <param name="current"></param>
+    /// <param name="previous"></param>
+    /// <returns></returns>
     private static bool WasPressed(ButtonState current, ButtonState previous) => current == ButtonState.Pressed && previous == ButtonState.Released;
 
+    /// <summary>
+    /// ステージ（＾▽＾）
+    /// </summary>
     private sealed class Stage
     {
         public readonly string Name;
@@ -514,6 +569,9 @@ public class Game1 : Game
         }
     }
 
+    /// <summary>
+    /// 障害物（＾▽＾）
+    /// </summary>
     private struct Hazard
     {
         public Rectangle Bounds;
