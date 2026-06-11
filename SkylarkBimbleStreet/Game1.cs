@@ -139,10 +139,13 @@ public class Game1 : Game
     private KeyboardState _previousKeyboard;
     private GamePadState _previousGamePad;
     private int _currentStageIndex;
+    private int _selectedStageIndex;
     private int _deaths;
     private bool _cleared;
+    private bool _stageSelectOpen;
     private double _titleRefreshTimer;
     private double _clearAnimationTime;
+    private double _stageSelectAnimationTime;
     private Color _backgroundColor;
 
     public Game1()
@@ -160,7 +163,9 @@ public class Game1 : Game
 
     protected override void Initialize()
     {
-        ResetRun();
+        _deaths = 0;
+        LoadStage(0);
+        OpenStageSelect();
         base.Initialize();
     }
 
@@ -183,20 +188,34 @@ public class Game1 : Game
     {
         var keyboard = Keyboard.GetState();
         var gamePad = GamePad.GetState(PlayerIndex.One);
+        var elapsed = (float)gameTime.ElapsedGameTime.TotalSeconds;
 
         if (gamePad.Buttons.Back == ButtonState.Pressed || keyboard.IsKeyDown(Keys.Escape))
         {
             Exit();
         }
 
-        if (WasPressed(keyboard, Keys.R) || WasPressed(gamePad.Buttons.Start, _previousGamePad.Buttons.Start))
+        if (_stageSelectOpen)
+        {
+            _stageSelectAnimationTime += elapsed;
+            UpdateStageSelect(keyboard, gamePad);
+            UpdateWindowTitle(gameTime);
+            _previousKeyboard = keyboard;
+            _previousGamePad = gamePad;
+            base.Update(gameTime);
+            return;
+        }
+
+        if (WasPressed(keyboard, Keys.Tab))
+        {
+            OpenStageSelect();
+        }
+        else if (WasPressed(keyboard, Keys.R) || WasPressed(gamePad.Buttons.Start, _previousGamePad.Buttons.Start))
         {
             ResetRun();
         }
 
-        var elapsed = (float)gameTime.ElapsedGameTime.TotalSeconds;
-
-        if (!_cleared)
+        if (!_stageSelectOpen && !_cleared)
         {
             MovePlayer(GetMoveInput(keyboard, gamePad), elapsed);
             UpdateHazards(elapsed);
@@ -204,7 +223,7 @@ public class Game1 : Game
             CheckHazardCollision();
             CheckExit();
         }
-        else
+        else if (_cleared)
         {
             _clearAnimationTime += elapsed;
         }
@@ -310,6 +329,85 @@ public class Game1 : Game
         {
             DrawClearCelebration();
         }
+
+        if (_stageSelectOpen)
+        {
+            DrawStageSelect();
+        }
+    }
+
+    private void DrawStageSelect()
+    {
+        DrawRectangle(new Rectangle(0, 0, VirtualWidth, VirtualHeight), new Color(5, 7, 12, 210));
+
+        var center = new Vector2(VirtualWidth / 2f, VirtualHeight / 2f);
+        var pulse = (float)((Math.Sin(_stageSelectAnimationTime * 5d) + 1d) * 0.5d);
+        for (var i = 0; i < 18; i++)
+        {
+            var angle = (float)(i * Math.PI * 2d / 18d - _stageSelectAnimationTime * 0.25d);
+            DrawLine(center, center + new Vector2((float)Math.Cos(angle), (float)Math.Sin(angle)) * 560f, 6, new Color(81, 161, 255, 58));
+        }
+
+        DrawArrow(new Rectangle(160, 490, 150, 100), false, new Color(245, 198, 80));
+        DrawArrow(new Rectangle(VirtualWidth - 310, 490, 150, 100), true, new Color(245, 198, 80));
+
+        for (var i = 0; i < _stages.Length; i++)
+        {
+            DrawStageCard(i, i == _selectedStageIndex, pulse);
+        }
+    }
+
+    private void DrawStageCard(int stageIndex, bool selected, float pulse)
+    {
+        var width = selected ? 380 + (int)(pulse * 14f) : 320;
+        var height = selected ? 500 + (int)(pulse * 14f) : 420;
+        var gap = 430;
+        var centerX = VirtualWidth / 2 + (stageIndex - 1) * gap;
+        var y = selected ? 290 - (int)(pulse * 7f) : 335;
+        var card = new Rectangle(centerX - width / 2, y, width, height);
+        var frameColor = selected ? new Color(245, 198, 80) : new Color(69, 75, 90);
+        var bodyColor = selected ? new Color(31, 37, 50, 245) : new Color(20, 26, 34, 230);
+
+        DrawRectangle(card, bodyColor);
+        DrawFrame(card, frameColor, selected ? 16 : 10);
+        DrawFrame(Inset(card, 34), selected ? new Color(74, 205, 116) : new Color(76, 84, 103), selected ? 8 : 6);
+
+        var preview = Inset(card, 70);
+        DrawRectangle(new Rectangle(preview.X, preview.Y, preview.Width, 10), new Color(104, 116, 140));
+        DrawRectangle(new Rectangle(preview.X, preview.Bottom - 10, preview.Width, 10), new Color(104, 116, 140));
+        DrawRectangle(new Rectangle(preview.X, preview.Y, 10, preview.Height), new Color(104, 116, 140));
+        DrawRectangle(new Rectangle(preview.Right - 10, preview.Y, 10, preview.Height), new Color(104, 116, 140));
+
+        for (var i = 0; i <= stageIndex; i++)
+        {
+            DrawGem(new Vector2(card.X + 82 + i * 54, card.Y + 76), 36, new Color(245, 198, 80), new Color(255, 239, 151));
+        }
+
+        for (var i = 0; i < 3 + stageIndex; i++)
+        {
+            var x = preview.X + 48 + i * 42;
+            var barHeight = 78 + (i % 2) * 58;
+            DrawRectangle(new Rectangle(x, preview.Y + 36, 14, barHeight), new Color(76, 84, 103));
+        }
+
+        DrawRectangle(new Rectangle(preview.Right - 70, preview.Y + 34, 40, 40), new Color(74, 205, 116));
+        DrawRectangle(new Rectangle(preview.Right - 58, preview.Y + 46, 16, 16), bodyColor);
+        DrawRectangle(new Rectangle(preview.X + 30, preview.Bottom - 70, 36, 36), new Color(81, 161, 255));
+        DrawRectangle(new Rectangle(preview.X + 40, preview.Bottom - 60, 16, 16), new Color(197, 228, 255));
+
+        if (selected)
+        {
+            DrawFrame(new Rectangle(card.X - 22, card.Y - 22, card.Width + 44, card.Height + 44), new Color(255, 239, 151, 160), 8);
+        }
+    }
+
+    private void DrawArrow(Rectangle bounds, bool right, Color color)
+    {
+        var head = right ? bounds.Right - 42 : bounds.X + 42;
+        var tail = right ? bounds.X + 32 : bounds.Right - 32;
+        DrawLine(new Vector2(tail, bounds.Center.Y), new Vector2(head, bounds.Center.Y), 18, color);
+        DrawLine(new Vector2(head, bounds.Center.Y), new Vector2(right ? head - 36 : head + 36, bounds.Y + 18), 18, color);
+        DrawLine(new Vector2(head, bounds.Center.Y), new Vector2(right ? head - 36 : head + 36, bounds.Bottom - 18), 18, color);
     }
 
     private void DrawClearCelebration()
@@ -413,6 +511,44 @@ public class Game1 : Game
         var edge = end - start;
         var angle = (float)Math.Atan2(edge.Y, edge.X);
         _spriteBatch.Draw(_pixel, start, null, color, angle, new Vector2(0f, 0.5f), new Vector2(edge.Length(), width), SpriteEffects.None, 0f);
+    }
+
+    private void UpdateStageSelect(KeyboardState keyboard, GamePadState gamePad)
+    {
+        if (WasPressed(keyboard, Keys.Left) || WasPressed(keyboard, Keys.A) || WasPressed(gamePad.DPad.Left, _previousGamePad.DPad.Left))
+        {
+            _selectedStageIndex = (_selectedStageIndex + _stages.Length - 1) % _stages.Length;
+        }
+
+        if (WasPressed(keyboard, Keys.Right) || WasPressed(keyboard, Keys.D) || WasPressed(gamePad.DPad.Right, _previousGamePad.DPad.Right))
+        {
+            _selectedStageIndex = (_selectedStageIndex + 1) % _stages.Length;
+        }
+
+        if (WasPressed(keyboard, Keys.Enter)
+            || WasPressed(keyboard, Keys.Space)
+            || WasPressed(gamePad.Buttons.Start, _previousGamePad.Buttons.Start)
+            || WasPressed(gamePad.Buttons.A, _previousGamePad.Buttons.A))
+        {
+            StartSelectedStage();
+        }
+    }
+
+    private void OpenStageSelect()
+    {
+        _stageSelectOpen = true;
+        _selectedStageIndex = _currentStageIndex;
+        _stageSelectAnimationTime = 0d;
+        RefreshWindowTitle();
+    }
+
+    private void StartSelectedStage()
+    {
+        _deaths = 0;
+        LoadStage(_selectedStageIndex);
+        _stageSelectOpen = false;
+        _stageSelectAnimationTime = 0d;
+        RefreshWindowTitle();
     }
 
     private void MovePlayer(Vector2 move, float elapsed)
@@ -528,6 +664,7 @@ public class Game1 : Game
         _playerStart = stage.PlayerStart;
         _exitBounds = stage.ExitBounds;
         _backgroundColor = stage.BackgroundColor;
+        _stageSelectOpen = false;
         _cleared = false;
         _clearAnimationTime = 0d;
         ResetPlayerOnly();
@@ -569,7 +706,7 @@ public class Game1 : Game
             }
         }
 
-        var state = _cleared ? "CLEAR - Press R / Start to retry" : "Collect all gems and reach the green exit";
+        var state = _stageSelectOpen ? "STAGE SELECT - Left/Right choose - Enter/Space/Start play" : _cleared ? "CLEAR - Press R / Start to retry - Tab for stage select" : "Collect all gems and reach the green exit - Tab for stage select";
         var stage = _stages[_currentStageIndex];
         Window.Title = $"SkylarkBimbleStreet - {stage.Name} - {state} - Gems {collected}/{_gemBounds.Length} - Hits {_deaths}";
     }
