@@ -140,12 +140,15 @@ public class Game1 : Game
     private GamePadState _previousGamePad;
     private int _currentStageIndex;
     private int _selectedStageIndex;
+    private int _pauseSelectionIndex;
     private int _deaths;
     private bool _cleared;
     private bool _stageSelectOpen;
+    private bool _paused;
     private double _titleRefreshTimer;
     private double _clearAnimationTime;
     private double _stageSelectAnimationTime;
+    private double _pauseAnimationTime;
     private Color _backgroundColor;
 
     public Game1()
@@ -206,16 +209,31 @@ public class Game1 : Game
             return;
         }
 
-        if (WasPressed(keyboard, Keys.Tab))
+        if (_paused)
+        {
+            _pauseAnimationTime += elapsed;
+            UpdatePauseMenu(keyboard, gamePad);
+            UpdateWindowTitle(gameTime);
+            _previousKeyboard = keyboard;
+            _previousGamePad = gamePad;
+            base.Update(gameTime);
+            return;
+        }
+
+        if (!_cleared && (WasPressed(keyboard, Keys.Enter) || WasPressed(gamePad.Buttons.Start, _previousGamePad.Buttons.Start)))
+        {
+            OpenPauseMenu();
+        }
+        else if (WasPressed(keyboard, Keys.Tab))
         {
             OpenStageSelect();
         }
-        else if (WasPressed(keyboard, Keys.R) || WasPressed(gamePad.Buttons.Start, _previousGamePad.Buttons.Start))
+        else if (WasPressed(keyboard, Keys.R))
         {
             ResetRun();
         }
 
-        if (!_stageSelectOpen && !_cleared)
+        if (!_stageSelectOpen && !_paused && !_cleared)
         {
             MovePlayer(GetMoveInput(keyboard, gamePad), elapsed);
             UpdateHazards(elapsed);
@@ -333,6 +351,65 @@ public class Game1 : Game
         if (_stageSelectOpen)
         {
             DrawStageSelect();
+        }
+
+        if (_paused)
+        {
+            DrawPauseMenu();
+        }
+    }
+
+    private void DrawPauseMenu()
+    {
+        DrawRectangle(new Rectangle(0, 0, VirtualWidth, VirtualHeight), new Color(4, 6, 10, 185));
+
+        var pulse = (float)((Math.Sin(_pauseAnimationTime * 5d) + 1d) * 0.5d);
+        var panel = new Rectangle(500, 320, 920, 420);
+        DrawRectangle(panel, new Color(18, 24, 34, 238));
+        DrawFrame(panel, new Color(245, 198, 80), 16);
+        DrawFrame(Inset(panel, 38), new Color(81, 161, 255, 150), 8);
+
+        for (var i = 0; i < 3; i++)
+        {
+            DrawPauseOption(i, i == _pauseSelectionIndex, pulse);
+        }
+    }
+
+    private void DrawPauseOption(int optionIndex, bool selected, float pulse)
+    {
+        var width = selected ? 210 + (int)(pulse * 12f) : 180;
+        var height = selected ? 210 + (int)(pulse * 12f) : 180;
+        var centerX = 690 + optionIndex * 270;
+        var centerY = selected ? 530 - (int)(pulse * 5f) : 540;
+        var card = new Rectangle(centerX - width / 2, centerY - height / 2, width, height);
+        var body = selected ? new Color(31, 37, 50, 250) : new Color(20, 26, 34, 235);
+        var frame = selected ? new Color(255, 239, 151) : new Color(104, 116, 140);
+
+        DrawRectangle(card, body);
+        DrawFrame(card, frame, selected ? 12 : 8);
+
+        if (optionIndex == 0)
+        {
+            DrawArrow(new Rectangle(card.X + 54, card.Y + 62, card.Width - 108, card.Height - 124), true, new Color(74, 205, 116));
+        }
+        else if (optionIndex == 1)
+        {
+            DrawFrame(new Rectangle(card.X + 54, card.Y + 54, card.Width - 108, card.Height - 108), new Color(221, 72, 92), 14);
+            DrawLine(new Vector2(card.X + 70, card.Bottom - 70), new Vector2(card.Right - 70, card.Y + 70), 16, new Color(255, 148, 157));
+        }
+        else
+        {
+            for (var i = 0; i < 3; i++)
+            {
+                DrawRectangle(new Rectangle(card.X + 48 + i * 42, card.Y + 58, 30, 30), i == _selectedStageIndex ? new Color(245, 198, 80) : new Color(81, 161, 255));
+            }
+
+            DrawFrame(new Rectangle(card.X + 48, card.Y + 112, card.Width - 96, 46), new Color(74, 205, 116), 8);
+        }
+
+        if (selected)
+        {
+            DrawFrame(new Rectangle(card.X - 18, card.Y - 18, card.Width + 36, card.Height + 36), new Color(245, 198, 80, 160), 6);
         }
     }
 
@@ -513,6 +590,65 @@ public class Game1 : Game
         _spriteBatch.Draw(_pixel, start, null, color, angle, new Vector2(0f, 0.5f), new Vector2(edge.Length(), width), SpriteEffects.None, 0f);
     }
 
+    private void UpdatePauseMenu(KeyboardState keyboard, GamePadState gamePad)
+    {
+        if (WasPressed(keyboard, Keys.Left) || WasPressed(keyboard, Keys.A) || WasPressed(gamePad.DPad.Left, _previousGamePad.DPad.Left) || WasThumbstickPressedLeft(gamePad))
+        {
+            _pauseSelectionIndex = (_pauseSelectionIndex + 2) % 3;
+        }
+
+        if (WasPressed(keyboard, Keys.Right) || WasPressed(keyboard, Keys.D) || WasPressed(gamePad.DPad.Right, _previousGamePad.DPad.Right) || WasThumbstickPressedRight(gamePad))
+        {
+            _pauseSelectionIndex = (_pauseSelectionIndex + 1) % 3;
+        }
+
+        if (WasPressed(keyboard, Keys.Enter) || WasPressed(gamePad.Buttons.Start, _previousGamePad.Buttons.Start))
+        {
+            ClosePauseMenu();
+            return;
+        }
+
+        if (WasPressed(keyboard, Keys.Space) || WasPressed(gamePad.Buttons.A, _previousGamePad.Buttons.A))
+        {
+            SelectPauseOption();
+        }
+    }
+
+    private void OpenPauseMenu()
+    {
+        _paused = true;
+        _pauseSelectionIndex = 0;
+        _pauseAnimationTime = 0d;
+        RefreshWindowTitle();
+    }
+
+    private void ClosePauseMenu()
+    {
+        _paused = false;
+        _pauseAnimationTime = 0d;
+        RefreshWindowTitle();
+    }
+
+    private void SelectPauseOption()
+    {
+        if (_pauseSelectionIndex == 0)
+        {
+            ClosePauseMenu();
+            return;
+        }
+
+        if (_pauseSelectionIndex == 1)
+        {
+            _paused = false;
+            _pauseAnimationTime = 0d;
+            LoadStage(_currentStageIndex);
+            return;
+        }
+
+        _paused = false;
+        _pauseAnimationTime = 0d;
+        OpenStageSelect();
+    }
     private void UpdateStageSelect(KeyboardState keyboard, GamePadState gamePad)
     {
         if (WasPressed(keyboard, Keys.Left) || WasPressed(keyboard, Keys.A) || WasPressed(gamePad.DPad.Left, _previousGamePad.DPad.Left) || WasThumbstickPressedLeft(gamePad))
@@ -536,6 +672,7 @@ public class Game1 : Game
 
     private void OpenStageSelect()
     {
+        _paused = false;
         _stageSelectOpen = true;
         _selectedStageIndex = _currentStageIndex;
         _stageSelectAnimationTime = 0d;
@@ -547,6 +684,7 @@ public class Game1 : Game
         _deaths = 0;
         LoadStage(_selectedStageIndex);
         _stageSelectOpen = false;
+        _paused = false;
         _stageSelectAnimationTime = 0d;
         RefreshWindowTitle();
     }
@@ -665,6 +803,7 @@ public class Game1 : Game
         _exitBounds = stage.ExitBounds;
         _backgroundColor = stage.BackgroundColor;
         _stageSelectOpen = false;
+        _paused = false;
         _cleared = false;
         _clearAnimationTime = 0d;
         ResetPlayerOnly();
@@ -706,7 +845,7 @@ public class Game1 : Game
             }
         }
 
-        var state = _stageSelectOpen ? "STAGE SELECT - Left/Right choose - Enter/Space/Start play" : _cleared ? "CLEAR - Press R / Start to retry - Tab for stage select" : "Collect all gems and reach the green exit - Tab for stage select";
+        var state = _stageSelectOpen ? "STAGE SELECT - Left/Right choose - Enter/Space/Start play" : _paused ? "PAUSE - Left/Right choose - Space/A select - Start/Enter resume" : _cleared ? "CLEAR - Press R / Start to retry - Tab for stage select" : "Collect all gems and reach the green exit - Start/Enter pause - Tab for stage select";
         var stage = _stages[_currentStageIndex];
         Window.Title = $"SkylarkBimbleStreet - {stage.Name} - {state} - Gems {collected}/{_gemBounds.Length} - Hits {_deaths}";
     }
