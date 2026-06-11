@@ -142,6 +142,7 @@ public class Game1 : Game
     private int _deaths;
     private bool _cleared;
     private double _titleRefreshTimer;
+    private double _clearAnimationTime;
     private Color _backgroundColor;
 
     public Game1()
@@ -202,6 +203,10 @@ public class Game1 : Game
             CheckGemCollection();
             CheckHazardCollision();
             CheckExit();
+        }
+        else
+        {
+            _clearAnimationTime += elapsed;
         }
 
         UpdateWindowTitle(gameTime);
@@ -303,11 +308,84 @@ public class Game1 : Game
 
         if (_cleared)
         {
-            DrawRectangle(new Rectangle(610, 430, 700, 220), new Color(36, 48, 46));
-            DrawRectangle(new Rectangle(650, 470, 620, 140), new Color(74, 205, 116));
+            DrawClearCelebration();
         }
     }
 
+    private void DrawClearCelebration()
+    {
+        DrawRectangle(new Rectangle(0, 0, VirtualWidth, VirtualHeight), new Color(6, 8, 14, 176));
+
+        var center = new Vector2(VirtualWidth / 2f, VirtualHeight / 2f);
+        var pulse = (float)((Math.Sin(_clearAnimationTime * 5d) + 1d) * 0.5d);
+        var glow = new Color(65 + (int)(pulse * 55), 210, 150 + (int)(pulse * 55), 205);
+
+        for (var i = 0; i < 20; i++)
+        {
+            var angle = (float)(i * Math.PI * 2d / 20d + _clearAnimationTime * 0.35d);
+            var length = 360 + (i % 4) * 70;
+            DrawLine(center, center + new Vector2((float)Math.Cos(angle), (float)Math.Sin(angle)) * length, 10, new Color(74, 205, 116, 95));
+        }
+
+        DrawConfetti();
+        DrawFrame(new Rectangle(540, 300, 840, 480), new Color(245, 198, 80), 18);
+        DrawFrame(new Rectangle(590, 350, 740, 380), glow, 12);
+        DrawRectangle(new Rectangle(630, 390, 660, 300), new Color(20, 26, 28, 230));
+
+        DrawGem(new Vector2(960, 505), 170, new Color(245, 198, 80), new Color(255, 239, 151));
+        DrawGem(new Vector2(760, 545), 86, new Color(81, 161, 255), new Color(197, 228, 255));
+        DrawGem(new Vector2(1160, 545), 86, new Color(221, 72, 92), new Color(255, 148, 157));
+
+        for (var i = 0; i < _stages.Length; i++)
+        {
+            DrawRectangle(new Rectangle(828 + i * 78, 650, 54, 54), new Color(74, 205, 116));
+            DrawRectangle(new Rectangle(842 + i * 78, 664, 26, 26), new Color(255, 239, 151));
+        }
+    }
+
+    private void DrawConfetti()
+    {
+        Color[] colors =
+        [
+            new(245, 198, 80),
+            new(81, 161, 255),
+            new(221, 72, 92),
+            new(74, 205, 116),
+            new(255, 239, 151),
+        ];
+
+        var fall = (int)(_clearAnimationTime * 180d) % VirtualHeight;
+        for (var i = 0; i < 72; i++)
+        {
+            var x = 90 + i * 251 % (VirtualWidth - 180);
+            var y = (i * 97 + fall) % VirtualHeight;
+            var size = 10 + i % 5 * 4;
+            DrawRectangle(new Rectangle(x, y, size, size), colors[i % colors.Length]);
+        }
+    }
+
+    private void DrawGem(Vector2 center, int size, Color body, Color shine)
+    {
+        var half = size / 2;
+        DrawRectangle(new Rectangle((int)center.X - half, (int)center.Y - size / 4, size, size / 2), body);
+        DrawRectangle(new Rectangle((int)center.X - size / 3, (int)center.Y - half, size * 2 / 3, size), body);
+        DrawRectangle(new Rectangle((int)center.X - size / 5, (int)center.Y - size / 5, size * 2 / 5, size * 2 / 5), shine);
+    }
+
+    private void DrawFrame(Rectangle rectangle, Color color, int thickness)
+    {
+        DrawRectangle(new Rectangle(rectangle.X, rectangle.Y, rectangle.Width, thickness), color);
+        DrawRectangle(new Rectangle(rectangle.X, rectangle.Bottom - thickness, rectangle.Width, thickness), color);
+        DrawRectangle(new Rectangle(rectangle.X, rectangle.Y, thickness, rectangle.Height), color);
+        DrawRectangle(new Rectangle(rectangle.Right - thickness, rectangle.Y, thickness, rectangle.Height), color);
+    }
+
+    private void DrawLine(Vector2 start, Vector2 end, int width, Color color)
+    {
+        var edge = end - start;
+        var angle = (float)Math.Atan2(edge.Y, edge.X);
+        _spriteBatch.Draw(_pixel, start, null, color, angle, new Vector2(0f, 0.5f), new Vector2(edge.Length(), width), SpriteEffects.None, 0f);
+    }
     private void MovePlayer(Vector2 move, float elapsed)
     {
         if (move == Vector2.Zero)
@@ -399,6 +477,7 @@ public class Game1 : Game
             }
 
             _cleared = true;
+            _clearAnimationTime = 0d;
         }
     }
 
@@ -421,6 +500,7 @@ public class Game1 : Game
         _exitBounds = stage.ExitBounds;
         _backgroundColor = stage.BackgroundColor;
         _cleared = false;
+        _clearAnimationTime = 0d;
         ResetPlayerOnly();
         RefreshWindowTitle();
     }
