@@ -129,6 +129,46 @@ public class Game1 : Game
                 new(new Rectangle(1370, 430, 64, 64), new Vector2(0f, 280f), 410, 610),
                 new(new Rectangle(1600, 130, 64, 64), new Vector2(320f, 0f), 1540, 1710),
             ]),
+        new(
+            "Stage 4",
+            new Vector2(95, 95),
+            new Rectangle(VirtualWidth - 150, VirtualHeight - 150, 92, 92),
+            new Color(22, 20, 28),
+            [
+                new(0, 0, VirtualWidth, 38),
+                new(0, VirtualHeight - 38, VirtualWidth, 38),
+                new(0, 0, 38, VirtualHeight),
+                new(VirtualWidth - 38, 0, 38, VirtualHeight),
+                new(360, 38, 38, 300),
+                new(360, 520, 38, 522),
+                new(660, 250, 38, 792),
+                new(960, 38, 38, 430),
+                new(960, 690, 38, 352),
+                new(1260, 250, 38, 792),
+                new(1560, 38, 38, 300),
+                new(1560, 520, 38, 522),
+                new(398, 330, 262, 38),
+                new(698, 650, 262, 38),
+                new(998, 210, 262, 38),
+                new(1298, 490, 262, 38),
+            ],
+            [
+                new(470, 440, 34, 34),
+                new(770, 150, 34, 34),
+                new(850, 820, 34, 34),
+                new(1080, 560, 34, 34),
+                new(1370, 360, 34, 34),
+                new(1680, 740, 34, 34),
+                new(1710, 210, 34, 34),
+            ],
+            [
+                new(new Rectangle(230, 410, 64, 64), new Vector2(0f, 310f), 170, 760),
+                new(new Rectangle(510, 500, 64, 64), new Vector2(320f, 0f), 430, 590),
+                new(new Rectangle(800, 140, 64, 64), new Vector2(0f, 300f), 110, 220),
+                new(new Rectangle(1110, 560, 64, 64), new Vector2(330f, 0f), 1040, 1160),
+                new(new Rectangle(1400, 360, 64, 64), new Vector2(0f, 320f), 330, 450),
+                new(new Rectangle(1680, 720, 64, 64), new Vector2(0f, 300f), 650, 850),
+            ]),
     ];
 
     private Rectangle[] _walls = [];
@@ -458,7 +498,8 @@ public class Game1 : Game
         var width = selected ? 380 + (int)(pulse * 14f) : 320;
         var height = selected ? 500 + (int)(pulse * 14f) : 420;
         var gap = 430;
-        var centerX = VirtualWidth / 2 + (stageIndex - 1) * gap;
+        var centerOffset = stageIndex - (_stages.Length - 1) / 2f;
+        var centerX = VirtualWidth / 2 + (int)(centerOffset * gap);
         var y = selected ? 290 - (int)(pulse * 7f) : 335;
         var card = new Rectangle(centerX - width / 2, y, width, height);
         var frameColor = selected ? new Color(245, 198, 80) : new Color(69, 75, 90);
