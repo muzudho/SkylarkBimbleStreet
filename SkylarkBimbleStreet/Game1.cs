@@ -320,10 +320,10 @@ public class Game1 : Game
         var pulse = (float)((Math.Sin(_clearAnimationTime * 5d) + 1d) * 0.5d);
         var glow = new Color(65 + (int)(pulse * 55), 210, 150 + (int)(pulse * 55), 205);
 
-        for (var i = 0; i < 20; i++)
+        for (var i = 0; i < 24; i++)
         {
-            var angle = (float)(i * Math.PI * 2d / 20d + _clearAnimationTime * 0.35d);
-            var length = 360 + (i % 4) * 70;
+            var angle = (float)(i * Math.PI * 2d / 24d + _clearAnimationTime * 0.42d);
+            var length = 340 + (i % 4) * 80 + (int)(pulse * 35f);
             DrawLine(center, center + new Vector2((float)Math.Cos(angle), (float)Math.Sin(angle)) * length, 10, new Color(74, 205, 116, 95));
         }
 
@@ -332,13 +332,18 @@ public class Game1 : Game
         DrawFrame(new Rectangle(590, 350, 740, 380), glow, 12);
         DrawRectangle(new Rectangle(630, 390, 660, 300), new Color(20, 26, 28, 230));
 
-        DrawGem(new Vector2(960, 505), 170, new Color(245, 198, 80), new Color(255, 239, 151));
-        DrawGem(new Vector2(760, 545), 86, new Color(81, 161, 255), new Color(197, 228, 255));
-        DrawGem(new Vector2(1160, 545), 86, new Color(221, 72, 92), new Color(255, 148, 157));
+        DrawOrbitingGems(center);
+
+        var mainBob = (float)Math.Sin(_clearAnimationTime * 3.8d) * 16f;
+        var sideBob = (float)Math.Sin(_clearAnimationTime * 4.6d + Math.PI) * 10f;
+        DrawGem(new Vector2(960, 505 + mainBob), 170 + (int)(pulse * 12f), new Color(245, 198, 80), new Color(255, 239, 151));
+        DrawGem(new Vector2(760, 545 + sideBob), 86, new Color(81, 161, 255), new Color(197, 228, 255));
+        DrawGem(new Vector2(1160, 545 - sideBob), 86, new Color(221, 72, 92), new Color(255, 148, 157));
 
         for (var i = 0; i < _stages.Length; i++)
         {
-            DrawRectangle(new Rectangle(828 + i * 78, 650, 54, 54), new Color(74, 205, 116));
+            var checkPulse = i == _currentStageIndex ? (int)(pulse * 8f) : 0;
+            DrawRectangle(new Rectangle(828 + i * 78 - checkPulse / 2, 650 - checkPulse / 2, 54 + checkPulse, 54 + checkPulse), new Color(74, 205, 116));
             DrawRectangle(new Rectangle(842 + i * 78, 664, 26, 26), new Color(255, 239, 151));
         }
     }
@@ -354,13 +359,36 @@ public class Game1 : Game
             new(255, 239, 151),
         ];
 
-        var fall = (int)(_clearAnimationTime * 180d) % VirtualHeight;
-        for (var i = 0; i < 72; i++)
+        var fall = (int)(_clearAnimationTime * 210d) % VirtualHeight;
+        for (var i = 0; i < 112; i++)
         {
-            var x = 90 + i * 251 % (VirtualWidth - 180);
-            var y = (i * 97 + fall) % VirtualHeight;
-            var size = 10 + i % 5 * 4;
-            DrawRectangle(new Rectangle(x, y, size, size), colors[i % colors.Length]);
+            var layer = i % 2;
+            var xDrift = (int)(Math.Sin(_clearAnimationTime * (1.2d + layer) + i) * (18 + layer * 16));
+            var x = 90 + i * 251 % (VirtualWidth - 180) + xDrift;
+            var y = (i * 97 + fall + layer * 45) % VirtualHeight;
+            var width = 10 + i % 5 * 4;
+            var height = layer == 0 ? width : Math.Max(6, width / 2);
+            DrawRectangle(new Rectangle(x, y, width, height), colors[i % colors.Length]);
+        }
+    }
+
+    private void DrawOrbitingGems(Vector2 center)
+    {
+        Color[] colors =
+        [
+            new(245, 198, 80),
+            new(81, 161, 255),
+            new(221, 72, 92),
+            new(74, 205, 116),
+        ];
+
+        for (var i = 0; i < 12; i++)
+        {
+            var angle = (float)(i * Math.PI * 2d / 12d - _clearAnimationTime * 1.4d);
+            var radius = 235 + (i % 3) * 34;
+            var position = center + new Vector2((float)Math.Cos(angle), (float)Math.Sin(angle)) * radius;
+            var size = 24 + i % 4 * 6;
+            DrawGem(position, size, colors[i % colors.Length], new Color(255, 239, 151));
         }
     }
 
@@ -386,6 +414,7 @@ public class Game1 : Game
         var angle = (float)Math.Atan2(edge.Y, edge.X);
         _spriteBatch.Draw(_pixel, start, null, color, angle, new Vector2(0f, 0.5f), new Vector2(edge.Length(), width), SpriteEffects.None, 0f);
     }
+
     private void MovePlayer(Vector2 move, float elapsed)
     {
         if (move == Vector2.Zero)
