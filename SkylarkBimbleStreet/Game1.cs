@@ -1,6 +1,7 @@
 namespace SkylarkBimbleStreet;
 
 using System;
+using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -13,6 +14,7 @@ public class Game1 : Game
     private const int PlayerSize = 46;
 
     private readonly GraphicsDeviceManager _graphics;
+    private readonly List<PlayEvent> _playEvents = [];
     private SpriteBatch _spriteBatch = null!;
     private Texture2D _pixel = null!;
     private RenderTarget2D _scene = null!;
@@ -132,6 +134,14 @@ public class Game1 : Game
     private Rectangle[] _gemBounds = [];
     private Hazard[] _hazards = [];
     private bool[] _gemsCollected = [];
+    private int[] _stageDeathCounts = [];
+    private int[] _stageGemCounts = [];
+    private double[] _stageElapsedSeconds = [];
+    private double _runElapsedSeconds;
+    private double _currentStageElapsedSeconds;
+    private int _pauseCount;
+    private int _retryCount;
+    private bool _startedFromStageSelect;
 
     private Vector2 _playerPosition;
     private Vector2 _playerStart;
@@ -170,6 +180,7 @@ public class Game1 : Game
     {
         _deaths = 0;
         _runStartStageIndex = 0;
+        StartStatsRun(false);
         LoadStage(0);
         OpenStageSelect();
         base.Initialize();
@@ -238,6 +249,9 @@ public class Game1 : Game
 
         if (!_stageSelectOpen && !_paused && !_cleared)
         {
+            _runElapsedSeconds += elapsed;
+            _currentStageElapsedSeconds += elapsed;
+            _stageElapsedSeconds[_currentStageIndex] += elapsed;
             MovePlayer(GetMoveInput(keyboard, gamePad), elapsed);
             UpdateHazards(elapsed);
             CheckGemCollection();
@@ -645,6 +659,8 @@ public class Game1 : Game
 
     private void OpenPauseMenu()
     {
+        _pauseCount++;
+        LogPlayEvent(PlayEventKind.Pause, _currentStageIndex, GetPlayerBounds().Center.ToVector2(), _currentStageElapsedSeconds, _pauseCount);
         _paused = true;
         _pauseSelectionIndex = 0;
         _pauseAnimationTime = 0d;
@@ -668,6 +684,8 @@ public class Game1 : Game
 
         if (_pauseSelectionIndex == 1)
         {
+            _retryCount++;
+            LogPlayEvent(PlayEventKind.Retry, _currentStageIndex, GetPlayerBounds().Center.ToVector2(), _currentStageElapsedSeconds, _retryCount);
             _paused = false;
             _pauseAnimationTime = 0d;
             LoadStage(_currentStageIndex);
@@ -702,6 +720,7 @@ public class Game1 : Game
 
     private void OpenStageSelect()
     {
+        LogPlayEvent(PlayEventKind.StageSelect, _currentStageIndex, GetPlayerBounds().Center.ToVector2(), _currentStageElapsedSeconds, _selectedStageIndex);
         _paused = false;
         _stageSelectOpen = true;
         _selectedStageIndex = _currentStageIndex;
@@ -713,6 +732,7 @@ public class Game1 : Game
     {
         _deaths = 0;
         _runStartStageIndex = _selectedStageIndex;
+        StartStatsRun(_selectedStageIndex != 0);
         LoadStage(_selectedStageIndex);
         _stageSelectOpen = false;
         _paused = false;
@@ -782,6 +802,8 @@ public class Game1 : Game
             if (!_gemsCollected[i] && player.Intersects(_gemBounds[i]))
             {
                 _gemsCollected[i] = true;
+                _stageGemCounts[_currentStageIndex]++;
+                LogPlayEvent(PlayEventKind.Gem, _currentStageIndex, _gemBounds[i].Center.ToVector2(), _currentStageElapsedSeconds, i);
             }
         }
     }
@@ -794,6 +816,8 @@ public class Game1 : Game
             if (player.Intersects(hazard.Bounds))
             {
                 _deaths++;
+                _stageDeathCounts[_currentStageIndex]++;
+                LogPlayEvent(PlayEventKind.Death, _currentStageIndex, player.Center.ToVector2(), _currentStageElapsedSeconds, _deaths);
                 ResetPlayerOnly();
                 return;
             }
@@ -804,16 +828,53 @@ public class Game1 : Game
     {
         if (AreAllGemsCollected() && GetPlayerBounds().Intersects(GetExitBounds()))
         {
+            LogPlayEvent(PlayEventKind.Clear, _currentStageIndex, GetPlayerBounds().Center.ToVector2(), _currentStageElapsedSeconds, _stageGemCounts[_currentStageIndex]);
+
             if (_currentStageIndex + 1 < _stages.Length)
             {
                 LoadStage(_currentStageIndex + 1);
                 return;
             }
 
+            LogPlayEvent(PlayEventKind.FullClear, _currentStageIndex, GetPlayerBounds().Center.ToVector2(), _runElapsedSeconds, _deaths);
             _clearRank = CalculateClearRank();
             _cleared = true;
             _clearAnimationTime = 0d;
         }
+    }
+
+    private void StartStatsRun(bool startedFromStageSelect)
+    {
+        _playEvents.Clear();
+        _stageDeathCounts = new int[_stages.Length];
+        _stageGemCounts = new int[_stages.Length];
+        _stageElapsedSeconds = new double[_stages.Length];
+        _runElapsedSeconds = 0d;
+        _currentStageElapsedSeconds = 0d;
+        _pauseCount = 0;
+        _retryCount = 0;
+        _startedFromStageSelect = startedFromStageSelect;
+    }
+
+    private void LogPlayEvent(PlayEventKind kind, int stageIndex, Vector2 position, double stageElapsedSeconds, int detail)
+    {
+        if (_stageElapsedSeconds.Length == 0)
+        {
+            return;
+        }
+
+        _playEvents.Add(new PlayEvent(kind, stageIndex, _runElapsedSeconds, stageElapsedSeconds, position, detail));
+    }
+
+    private string GetStatsSummary()
+    {
+        if (_stageDeathCounts.Length == 0)
+        {
+            return "Stats none";
+        }
+
+        var route = _startedFromStageSelect ? "practice" : "run";
+        return $"Stats {route} T{_runElapsedSeconds:0.0}s D[{string.Join('/', _stageDeathCounts)}] G[{string.Join('/', _stageGemCounts)}] P{_pauseCount} R{_retryCount} E{_playEvents.Count}";
     }
 
     private int CalculateClearRank()
@@ -836,6 +897,7 @@ public class Game1 : Game
     {
         _deaths = 0;
         _runStartStageIndex = 0;
+        StartStatsRun(false);
         LoadStage(0);
         RefreshWindowTitle();
     }
@@ -856,7 +918,9 @@ public class Game1 : Game
         _cleared = false;
         _clearRank = 0;
         _clearAnimationTime = 0d;
+        _currentStageElapsedSeconds = 0d;
         ResetPlayerOnly();
+        LogPlayEvent(PlayEventKind.StageStart, _currentStageIndex, GetPlayerBounds().Center.ToVector2(), 0d, _stageGemCounts[_currentStageIndex]);
         RefreshWindowTitle();
     }
 
@@ -897,7 +961,7 @@ public class Game1 : Game
 
         var state = _stageSelectOpen ? "STAGE SELECT - Left/Right choose - Enter/Space/Start play" : _paused ? "PAUSE - Left/Right choose - Enter/Space/Start/A select" : _cleared ? "CLEAR - Press R / Start to retry - Tab for stage select" : "Collect all gems and reach the green exit - Start/Enter pause - Tab for stage select";
         var stage = _stages[_currentStageIndex];
-        Window.Title = $"SkylarkBimbleStreet - {stage.Name} - {state} - Gems {collected}/{_gemBounds.Length} - Hits {_deaths}";
+        Window.Title = $"SkylarkBimbleStreet - {stage.Name} - {state} - Gems {collected}/{_gemBounds.Length} - Hits {_deaths} - {GetStatsSummary()}";
     }
 
     /// <summary>
@@ -1017,6 +1081,25 @@ public class Game1 : Game
 
     private bool WasThumbstickPressedRight(GamePadState gamePad) => gamePad.ThumbSticks.Left.X > 0.55f && _previousGamePad.ThumbSticks.Left.X <= 0.55f;
 
+    private enum PlayEventKind
+    {
+        StageStart,
+        Gem,
+        Death,
+        Clear,
+        FullClear,
+        Pause,
+        Retry,
+        StageSelect,
+    }
+
+    private readonly record struct PlayEvent(
+        PlayEventKind Kind,
+        int StageIndex,
+        double RunElapsedSeconds,
+        double StageElapsedSeconds,
+        Vector2 Position,
+        int Detail);
     /// <summary>
     /// ステージ（＾▽＾）
     /// </summary>
