@@ -602,13 +602,10 @@ public class Game1 : Game
             _pauseSelectionIndex = (_pauseSelectionIndex + 1) % 3;
         }
 
-        if (WasPressed(keyboard, Keys.Enter) || WasPressed(gamePad.Buttons.Start, _previousGamePad.Buttons.Start))
-        {
-            ClosePauseMenu();
-            return;
-        }
-
-        if (WasPressed(keyboard, Keys.Space) || WasPressed(gamePad.Buttons.A, _previousGamePad.Buttons.A))
+        if (WasPressed(keyboard, Keys.Enter)
+            || WasPressed(keyboard, Keys.Space)
+            || WasPressed(gamePad.Buttons.Start, _previousGamePad.Buttons.Start)
+            || WasPressed(gamePad.Buttons.A, _previousGamePad.Buttons.A))
         {
             SelectPauseOption();
         }
@@ -649,6 +646,7 @@ public class Game1 : Game
         _pauseAnimationTime = 0d;
         OpenStageSelect();
     }
+
     private void UpdateStageSelect(KeyboardState keyboard, GamePadState gamePad)
     {
         if (WasPressed(keyboard, Keys.Left) || WasPressed(keyboard, Keys.A) || WasPressed(gamePad.DPad.Left, _previousGamePad.DPad.Left) || WasThumbstickPressedLeft(gamePad))
@@ -845,7 +843,7 @@ public class Game1 : Game
             }
         }
 
-        var state = _stageSelectOpen ? "STAGE SELECT - Left/Right choose - Enter/Space/Start play" : _paused ? "PAUSE - Left/Right choose - Space/A select - Start/Enter resume" : _cleared ? "CLEAR - Press R / Start to retry - Tab for stage select" : "Collect all gems and reach the green exit - Start/Enter pause - Tab for stage select";
+        var state = _stageSelectOpen ? "STAGE SELECT - Left/Right choose - Enter/Space/Start play" : _paused ? "PAUSE - Left/Right choose - Enter/Space/Start/A select" : _cleared ? "CLEAR - Press R / Start to retry - Tab for stage select" : "Collect all gems and reach the green exit - Start/Enter pause - Tab for stage select";
         var stage = _stages[_currentStageIndex];
         Window.Title = $"SkylarkBimbleStreet - {stage.Name} - {state} - Gems {collected}/{_gemBounds.Length} - Hits {_deaths}";
     }
