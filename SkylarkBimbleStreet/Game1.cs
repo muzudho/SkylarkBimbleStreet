@@ -141,6 +141,8 @@ public class Game1 : Game
     private int _currentStageIndex;
     private int _selectedStageIndex;
     private int _pauseSelectionIndex;
+    private int _runStartStageIndex;
+    private int _clearRank;
     private int _deaths;
     private bool _cleared;
     private bool _stageSelectOpen;
@@ -167,6 +169,7 @@ public class Game1 : Game
     protected override void Initialize()
     {
         _deaths = 0;
+        _runStartStageIndex = 0;
         LoadStage(0);
         OpenStageSelect();
         base.Initialize();
@@ -493,7 +496,9 @@ public class Game1 : Game
 
         var center = new Vector2(VirtualWidth / 2f, VirtualHeight / 2f);
         var pulse = (float)((Math.Sin(_clearAnimationTime * 5d) + 1d) * 0.5d);
-        var glow = new Color(65 + (int)(pulse * 55), 210, 150 + (int)(pulse * 55), 205);
+        var rankBody = GetClearRankBodyColor();
+        var rankShine = GetClearRankShineColor();
+        var glow = Color.Lerp(rankBody, rankShine, pulse);
 
         for (var i = 0; i < 24; i++)
         {
@@ -503,7 +508,7 @@ public class Game1 : Game
         }
 
         DrawConfetti();
-        DrawFrame(new Rectangle(540, 300, 840, 480), new Color(245, 198, 80), 18);
+        DrawFrame(new Rectangle(540, 300, 840, 480), rankBody, 18);
         DrawFrame(new Rectangle(590, 350, 740, 380), glow, 12);
         DrawRectangle(new Rectangle(630, 390, 660, 300), new Color(20, 26, 28, 230));
 
@@ -511,7 +516,7 @@ public class Game1 : Game
 
         var mainBob = (float)Math.Sin(_clearAnimationTime * 3.8d) * 16f;
         var sideBob = (float)Math.Sin(_clearAnimationTime * 4.6d + Math.PI) * 10f;
-        DrawGem(new Vector2(960, 505 + mainBob), 170 + (int)(pulse * 12f), new Color(245, 198, 80), new Color(255, 239, 151));
+        DrawGem(new Vector2(960, 505 + mainBob), 170 + (int)(pulse * 12f), rankBody, rankShine);
         DrawGem(new Vector2(760, 545 + sideBob), 86, new Color(81, 161, 255), new Color(197, 228, 255));
         DrawGem(new Vector2(1160, 545 - sideBob), 86, new Color(221, 72, 92), new Color(255, 148, 157));
 
@@ -519,9 +524,36 @@ public class Game1 : Game
         {
             var checkPulse = i == _currentStageIndex ? (int)(pulse * 8f) : 0;
             DrawRectangle(new Rectangle(828 + i * 78 - checkPulse / 2, 650 - checkPulse / 2, 54 + checkPulse, 54 + checkPulse), new Color(74, 205, 116));
-            DrawRectangle(new Rectangle(842 + i * 78, 664, 26, 26), new Color(255, 239, 151));
+            DrawRectangle(new Rectangle(842 + i * 78, 664, 26, 26), rankShine);
+        }
+
+        DrawClearRankMarks(rankBody, rankShine, pulse);
+    }
+
+    private void DrawClearRankMarks(Color body, Color shine, float pulse)
+    {
+        var markCount = _clearRank + 1;
+        var startX = 960 - (markCount - 1) * 48;
+        for (var i = 0; i < markCount; i++)
+        {
+            var size = 48 + (int)(pulse * 8f);
+            DrawGem(new Vector2(startX + i * 96, 345 - pulse * 8f), size, body, shine);
         }
     }
+
+    private Color GetClearRankBodyColor() => _clearRank switch
+    {
+        2 => new Color(245, 198, 80),
+        1 => new Color(184, 205, 224),
+        _ => new Color(182, 116, 66),
+    };
+
+    private Color GetClearRankShineColor() => _clearRank switch
+    {
+        2 => new Color(255, 239, 151),
+        1 => new Color(236, 247, 255),
+        _ => new Color(238, 171, 106),
+    };
 
     private void DrawConfetti()
     {
@@ -680,6 +712,7 @@ public class Game1 : Game
     private void StartSelectedStage()
     {
         _deaths = 0;
+        _runStartStageIndex = _selectedStageIndex;
         LoadStage(_selectedStageIndex);
         _stageSelectOpen = false;
         _paused = false;
@@ -777,14 +810,32 @@ public class Game1 : Game
                 return;
             }
 
+            _clearRank = CalculateClearRank();
             _cleared = true;
             _clearAnimationTime = 0d;
         }
     }
 
+    private int CalculateClearRank()
+    {
+        var startedFromFirstStage = _runStartStageIndex == 0;
+        if (startedFromFirstStage && _deaths == 0)
+        {
+            return 2;
+        }
+
+        if (_deaths <= (startedFromFirstStage ? 3 : 0))
+        {
+            return 1;
+        }
+
+        return 0;
+    }
+
     private void ResetRun()
     {
         _deaths = 0;
+        _runStartStageIndex = 0;
         LoadStage(0);
         RefreshWindowTitle();
     }
@@ -803,6 +854,7 @@ public class Game1 : Game
         _stageSelectOpen = false;
         _paused = false;
         _cleared = false;
+        _clearRank = 0;
         _clearAnimationTime = 0d;
         ResetPlayerOnly();
         RefreshWindowTitle();
