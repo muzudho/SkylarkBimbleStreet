@@ -17,47 +17,91 @@ public class Game1 : Game
     private Texture2D _pixel = null!;
     private RenderTarget2D _scene = null!;
 
-    private readonly Rectangle[] _walls =
+    private readonly Stage[] _stages =
     [
-        new(0, 0, VirtualWidth, 38),
-        new(0, VirtualHeight - 38, VirtualWidth, 38),
-        new(0, 0, 38, VirtualHeight),
-        new(VirtualWidth - 38, 0, 38, VirtualHeight),
-        new(260, 190, 38, 700),
-        new(520, 150, 38, 620),
-        new(780, 310, 38, 700),
-        new(1040, 140, 38, 660),
-        new(1300, 280, 38, 650),
-        new(1560, 150, 38, 560),
-        new(300, 850, 520, 38),
-        new(1080, 820, 520, 38),
+        new(
+            "Stage 1",
+            new Vector2(95, 95),
+            new Rectangle(VirtualWidth - 150, VirtualHeight - 150, 92, 92),
+            new Color(18, 22, 31),
+            [
+                new(0, 0, VirtualWidth, 38),
+                new(0, VirtualHeight - 38, VirtualWidth, 38),
+                new(0, 0, 38, VirtualHeight),
+                new(VirtualWidth - 38, 0, 38, VirtualHeight),
+                new(260, 190, 38, 700),
+                new(520, 150, 38, 620),
+                new(780, 310, 38, 700),
+                new(1040, 140, 38, 660),
+                new(1300, 280, 38, 650),
+                new(1560, 150, 38, 560),
+                new(300, 850, 520, 38),
+                new(1080, 820, 520, 38),
+            ],
+            [
+                new(390, 250, 34, 34),
+                new(660, 820, 34, 34),
+                new(920, 230, 34, 34),
+                new(1190, 760, 34, 34),
+                new(1450, 230, 34, 34),
+            ],
+            [
+                new(new Rectangle(340, 500, 64, 64), new Vector2(0f, 250f), 410, 760),
+                new(new Rectangle(870, 460, 64, 64), new Vector2(0f, -310f), 330, 720),
+                new(new Rectangle(1160, 410, 64, 64), new Vector2(0f, 280f), 330, 720),
+                new(new Rectangle(1400, 720, 64, 64), new Vector2(300f, 0f), 1360, 1510),
+            ]),
+        new(
+            "Stage 2",
+            new Vector2(95, VirtualHeight - 155),
+            new Rectangle(VirtualWidth - 150, 58, 92, 92),
+            new Color(20, 26, 28),
+            [
+                new(0, 0, VirtualWidth, 38),
+                new(0, VirtualHeight - 38, VirtualWidth, 38),
+                new(0, 0, 38, VirtualHeight),
+                new(VirtualWidth - 38, 0, 38, VirtualHeight),
+                new(250, 120, 38, 750),
+                new(430, 870, 600, 38),
+                new(560, 120, 38, 610),
+                new(820, 300, 38, 730),
+                new(1080, 70, 38, 680),
+                new(1320, 250, 38, 760),
+                new(1520, 120, 38, 620),
+                new(1120, 210, 380, 38),
+            ],
+            [
+                new(360, 760, 34, 34),
+                new(690, 170, 34, 34),
+                new(940, 790, 34, 34),
+                new(1210, 140, 34, 34),
+                new(1640, 600, 34, 34),
+                new(1660, 210, 34, 34),
+            ],
+            [
+                new(new Rectangle(350, 220, 64, 64), new Vector2(0f, 330f), 180, 780),
+                new(new Rectangle(650, 740, 64, 64), new Vector2(300f, 0f), 630, 760),
+                new(new Rectangle(930, 360, 64, 64), new Vector2(0f, 270f), 330, 840),
+                new(new Rectangle(1190, 640, 64, 64), new Vector2(340f, 0f), 1160, 1280),
+                new(new Rectangle(1620, 250, 64, 64), new Vector2(0f, 300f), 210, 660),
+            ]),
     ];
 
-    private readonly Rectangle[] _gemBounds =
-    [
-        new(390, 250, 34, 34),
-        new(660, 820, 34, 34),
-        new(920, 230, 34, 34),
-        new(1190, 760, 34, 34),
-        new(1450, 230, 34, 34),
-    ];
-
-    private readonly Hazard[] _hazards =
-    [
-        new(new Rectangle(340, 500, 64, 64), new Vector2(0f, 250f), 410, 760),
-        new(new Rectangle(870, 460, 64, 64), new Vector2(0f, -310f), 330, 720),
-        new(new Rectangle(1160, 410, 64, 64), new Vector2(0f, 280f), 330, 720),
-        new(new Rectangle(1400, 720, 64, 64), new Vector2(300f, 0f), 1360, 1510),
-    ];
-
-    private readonly bool[] _gemsCollected = new bool[5];
+    private Rectangle[] _walls = [];
+    private Rectangle[] _gemBounds = [];
+    private Hazard[] _hazards = [];
+    private bool[] _gemsCollected = [];
 
     private Vector2 _playerPosition;
+    private Vector2 _playerStart;
+    private Rectangle _exitBounds;
     private KeyboardState _previousKeyboard;
     private GamePadState _previousGamePad;
+    private int _currentStageIndex;
     private int _deaths;
     private bool _cleared;
     private double _titleRefreshTimer;
+    private Color _backgroundColor;
 
     public Game1()
     {
@@ -129,7 +173,7 @@ public class Game1 : Game
     protected override void Draw(GameTime gameTime)
     {
         GraphicsDevice.SetRenderTarget(_scene);
-        GraphicsDevice.Clear(new Color(18, 22, 31));
+        GraphicsDevice.Clear(_backgroundColor);
 
         _spriteBatch.Begin(samplerState: SamplerState.PointClamp);
         DrawScene();
@@ -147,7 +191,7 @@ public class Game1 : Game
 
     private void DrawScene()
     {
-        DrawRectangle(new Rectangle(0, 0, VirtualWidth, VirtualHeight), new Color(18, 22, 31));
+        DrawRectangle(new Rectangle(0, 0, VirtualWidth, VirtualHeight), _backgroundColor);
         DrawGrid();
 
         foreach (var wall in _walls)
@@ -158,7 +202,7 @@ public class Game1 : Game
 
         var exitColor = AreAllGemsCollected() ? new Color(74, 205, 116) : new Color(62, 78, 72);
         DrawRectangle(GetExitBounds(), exitColor);
-        DrawRectangle(Inset(GetExitBounds(), 12), new Color(18, 22, 31));
+        DrawRectangle(Inset(GetExitBounds(), 12), _backgroundColor);
 
         for (var i = 0; i < _gemBounds.Length; i++)
         {
@@ -198,7 +242,7 @@ public class Game1 : Game
 
     private void DrawHud()
     {
-        DrawRectangle(new Rectangle(58, 58, 420, 22), new Color(44, 51, 67));
+        DrawRectangle(new Rectangle(58, 58, Math.Max(120, 40 + _gemBounds.Length * 76), 22), new Color(44, 51, 67));
         for (var i = 0; i < _gemBounds.Length; i++)
         {
             var color = _gemsCollected[i] ? new Color(245, 198, 80) : new Color(69, 75, 90);
@@ -208,6 +252,12 @@ public class Game1 : Game
         for (var i = 0; i < Math.Min(_deaths, 8); i++)
         {
             DrawRectangle(new Rectangle(70 + i * 38, 112, 24, 24), new Color(221, 72, 92));
+        }
+
+        for (var i = 0; i < _stages.Length; i++)
+        {
+            var color = i == _currentStageIndex ? new Color(81, 161, 255) : new Color(69, 75, 90);
+            DrawRectangle(new Rectangle(VirtualWidth - 190 + i * 54, 58, 38, 38), color);
         }
 
         if (_cleared)
@@ -301,31 +351,42 @@ public class Game1 : Game
     {
         if (AreAllGemsCollected() && GetPlayerBounds().Intersects(GetExitBounds()))
         {
+            if (_currentStageIndex + 1 < _stages.Length)
+            {
+                LoadStage(_currentStageIndex + 1);
+                return;
+            }
+
             _cleared = true;
         }
     }
 
     private void ResetRun()
     {
-        Array.Fill(_gemsCollected, false);
         _deaths = 0;
+        LoadStage(0);
+        RefreshWindowTitle();
+    }
+
+    private void LoadStage(int stageIndex)
+    {
+        _currentStageIndex = stageIndex;
+        var stage = _stages[_currentStageIndex];
+        _walls = stage.Walls;
+        _gemBounds = stage.Gems;
+        _hazards = (Hazard[])stage.Hazards.Clone();
+        _gemsCollected = new bool[_gemBounds.Length];
+        _playerStart = stage.PlayerStart;
+        _exitBounds = stage.ExitBounds;
+        _backgroundColor = stage.BackgroundColor;
         _cleared = false;
         ResetPlayerOnly();
-        ResetHazards();
         RefreshWindowTitle();
     }
 
     private void ResetPlayerOnly()
     {
-        _playerPosition = new Vector2(95, 95);
-    }
-
-    private void ResetHazards()
-    {
-        _hazards[0] = new Hazard(new Rectangle(340, 500, 64, 64), new Vector2(0f, 250f), 410, 760);
-        _hazards[1] = new Hazard(new Rectangle(870, 460, 64, 64), new Vector2(0f, -310f), 330, 720);
-        _hazards[2] = new Hazard(new Rectangle(1160, 410, 64, 64), new Vector2(0f, 280f), 330, 720);
-        _hazards[3] = new Hazard(new Rectangle(1400, 720, 64, 64), new Vector2(300f, 0f), 1360, 1510);
+        _playerPosition = _playerStart;
     }
 
     private void UpdateWindowTitle(GameTime gameTime)
@@ -352,7 +413,8 @@ public class Game1 : Game
         }
 
         var state = _cleared ? "CLEAR - Press R / Start to retry" : "Collect all gems and reach the green exit";
-        Window.Title = $"SkylarkBimbleStreet - {state} - Gems {collected}/{_gemBounds.Length} - Hits {_deaths}";
+        var stage = _stages[_currentStageIndex];
+        Window.Title = $"SkylarkBimbleStreet - {stage.Name} - {state} - Gems {collected}/{_gemBounds.Length} - Hits {_deaths}";
     }
 
     private Vector2 GetMoveInput(KeyboardState keyboard, GamePadState gamePad)
@@ -387,7 +449,7 @@ public class Game1 : Game
 
     private Rectangle GetPlayerBounds() => new((int)_playerPosition.X, (int)_playerPosition.Y, PlayerSize, PlayerSize);
 
-    private static Rectangle GetExitBounds() => new(VirtualWidth - 150, VirtualHeight - 150, 92, 92);
+    private Rectangle GetExitBounds() => _exitBounds;
 
     private bool AreAllGemsCollected()
     {
@@ -422,6 +484,35 @@ public class Game1 : Game
     private bool WasPressed(KeyboardState keyboard, Keys key) => keyboard.IsKeyDown(key) && !_previousKeyboard.IsKeyDown(key);
 
     private static bool WasPressed(ButtonState current, ButtonState previous) => current == ButtonState.Pressed && previous == ButtonState.Released;
+
+    private sealed class Stage
+    {
+        public readonly string Name;
+        public readonly Vector2 PlayerStart;
+        public readonly Rectangle ExitBounds;
+        public readonly Color BackgroundColor;
+        public readonly Rectangle[] Walls;
+        public readonly Rectangle[] Gems;
+        public readonly Hazard[] Hazards;
+
+        public Stage(
+            string name,
+            Vector2 playerStart,
+            Rectangle exitBounds,
+            Color backgroundColor,
+            Rectangle[] walls,
+            Rectangle[] gems,
+            Hazard[] hazards)
+        {
+            Name = name;
+            PlayerStart = playerStart;
+            ExitBounds = exitBounds;
+            BackgroundColor = backgroundColor;
+            Walls = walls;
+            Gems = gems;
+            Hazards = hazards;
+        }
+    }
 
     private struct Hazard
     {
