@@ -515,12 +515,12 @@ public class Game1 : Game
 
     private void UpdateStageSelect(KeyboardState keyboard, GamePadState gamePad)
     {
-        if (WasPressed(keyboard, Keys.Left) || WasPressed(keyboard, Keys.A) || WasPressed(gamePad.DPad.Left, _previousGamePad.DPad.Left))
+        if (WasPressed(keyboard, Keys.Left) || WasPressed(keyboard, Keys.A) || WasPressed(gamePad.DPad.Left, _previousGamePad.DPad.Left) || WasThumbstickPressedLeft(gamePad))
         {
             _selectedStageIndex = (_selectedStageIndex + _stages.Length - 1) % _stages.Length;
         }
 
-        if (WasPressed(keyboard, Keys.Right) || WasPressed(keyboard, Keys.D) || WasPressed(gamePad.DPad.Right, _previousGamePad.DPad.Right))
+        if (WasPressed(keyboard, Keys.Right) || WasPressed(keyboard, Keys.D) || WasPressed(gamePad.DPad.Right, _previousGamePad.DPad.Right) || WasThumbstickPressedRight(gamePad))
         {
             _selectedStageIndex = (_selectedStageIndex + 1) % _stages.Length;
         }
@@ -721,22 +721,22 @@ public class Game1 : Game
     {
         var move = Vector2.Zero;
 
-        if (keyboard.IsKeyDown(Keys.Left) || keyboard.IsKeyDown(Keys.A))
+        if (keyboard.IsKeyDown(Keys.Left) || keyboard.IsKeyDown(Keys.A) || gamePad.DPad.Left == ButtonState.Pressed)
         {
             move.X -= 1f;
         }
 
-        if (keyboard.IsKeyDown(Keys.Right) || keyboard.IsKeyDown(Keys.D))
+        if (keyboard.IsKeyDown(Keys.Right) || keyboard.IsKeyDown(Keys.D) || gamePad.DPad.Right == ButtonState.Pressed)
         {
             move.X += 1f;
         }
 
-        if (keyboard.IsKeyDown(Keys.Up) || keyboard.IsKeyDown(Keys.W))
+        if (keyboard.IsKeyDown(Keys.Up) || keyboard.IsKeyDown(Keys.W) || gamePad.DPad.Up == ButtonState.Pressed)
         {
             move.Y -= 1f;
         }
 
-        if (keyboard.IsKeyDown(Keys.Down) || keyboard.IsKeyDown(Keys.S))
+        if (keyboard.IsKeyDown(Keys.Down) || keyboard.IsKeyDown(Keys.S) || gamePad.DPad.Down == ButtonState.Pressed)
         {
             move.Y += 1f;
         }
@@ -823,6 +823,10 @@ public class Game1 : Game
     /// <param name="previous"></param>
     /// <returns></returns>
     private static bool WasPressed(ButtonState current, ButtonState previous) => current == ButtonState.Pressed && previous == ButtonState.Released;
+
+    private bool WasThumbstickPressedLeft(GamePadState gamePad) => gamePad.ThumbSticks.Left.X < -0.55f && _previousGamePad.ThumbSticks.Left.X >= -0.55f;
+
+    private bool WasThumbstickPressedRight(GamePadState gamePad) => gamePad.ThumbSticks.Left.X > 0.55f && _previousGamePad.ThumbSticks.Left.X <= 0.55f;
 
     /// <summary>
     /// ステージ（＾▽＾）
