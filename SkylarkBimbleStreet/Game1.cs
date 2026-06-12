@@ -19,6 +19,10 @@ public class Game1 : Game
     private const float StageSelectFocusShrinkRate = 12f;
     private const float StageSelectFocusMoveShrinkRate = StageSelectFocusExpandFastRate * 2f;
     private const float StageSelectQuickMoveSeconds = 0.22f;
+    private const float StageSelectCardGap = 430f;
+    private const float StageSelectChainMoveOffset = StageSelectCardGap * 0.58f;
+    private const float StageSelectSlideReturnRate = 3.0f;
+    private const float StageSelectMoveRepeatSeconds = 0.28f;
 
     private readonly GraphicsDeviceManager _graphics;
     private readonly List<PlayEvent> _playEvents = [];
@@ -74,7 +78,9 @@ public class Game1 : Game
     private float _stageSelectFocusAmount = 1f;
     private int _stageSelectPendingMoveDirection;
     private int _stageSelectQueuedMoveDirection;
+    private int _stageSelectHeldMoveDirection;
     private float _stageSelectQuickMoveTimeRemaining;
+    private float _stageSelectMoveRepeatTimeRemaining;
     private float _invincibleTimeRemaining;
     private Color _backgroundColor;
 
@@ -420,9 +426,8 @@ public class Game1 : Game
         var focusAmount = selected ? _stageSelectFocusAmount : 0f;
         var width = 320 + (int)(60f * focusAmount);
         var height = 420 + (int)(80f * focusAmount);
-        var gap = 430;
         var centerOffset = GetStageCardOffset(stageIndex);
-        var centerX = VirtualWidth / 2 + (int)(centerOffset * gap + _stageSelectSlideOffset);
+        var centerX = VirtualWidth / 2 + (int)(centerOffset * StageSelectCardGap + _stageSelectSlideOffset);
         var y = 335 - (int)(45f * focusAmount);
         var card = new Rectangle(centerX - width / 2, y, width, height);
         var frameColor = selected ? CurrentPalette.Gem : CurrentPalette.HudInactive;
@@ -810,7 +815,7 @@ public class Game1 : Game
         }
 
         var wasSliding = _stageSelectSlideOffset != 0f;
-        _stageSelectSlideOffset = MathHelper.Lerp(_stageSelectSlideOffset, 0f, Math.Min(1f, elapsed * 11f));
+        _stageSelectSlideOffset = MathHelper.Lerp(_stageSelectSlideOffset, 0f, Math.Min(1f, elapsed * StageSelectSlideReturnRate));
         if (Math.Abs(_stageSelectSlideOffset) < 0.5f)
         {
             _stageSelectSlideOffset = 0f;
@@ -824,11 +829,11 @@ public class Game1 : Game
         if (_stageSelectQueuedMoveDirection != 0)
         {
             _stageSelectFocusAmount = 0f;
-            if (Math.Abs(_stageSelectSlideOffset) <= StageSelectFocusStartOffset)
+            if (Math.Abs(_stageSelectSlideOffset) <= StageSelectChainMoveOffset)
             {
                 var direction = _stageSelectQueuedMoveDirection;
                 _stageSelectQueuedMoveDirection = 0;
-                ApplyStageSelectionMove(direction);
+                ApplyStageSelectionMove(direction, true);
             }
 
             return;
@@ -877,7 +882,7 @@ public class Game1 : Game
         _stageSelectPendingMoveDirection = direction;
     }
 
-    private void ApplyStageSelectionMove(int direction)
+    private void ApplyStageSelectionMove(int direction, bool preserveCurrentPosition = false)
     {
         var nextStageIndex = Math.Clamp(_selectedStageIndex + direction, 0, _stages.Length - 1);
         if (nextStageIndex == _selectedStageIndex)
@@ -886,8 +891,10 @@ public class Game1 : Game
         }
 
         _selectedStageIndex = nextStageIndex;
-        _stageSelectSlideOffset = direction * 430f;
-        _stageSelectSlideDelay = 0.08f;
+        _stageSelectSlideOffset = preserveCurrentPosition
+            ? _stageSelectSlideOffset + direction * StageSelectCardGap
+            : direction * StageSelectCardGap;
+        _stageSelectSlideDelay = preserveCurrentPosition ? 0f : 0.08f;
         _stageSelectFocusAmount = 0f;
         _stageSelectQuickMoveTimeRemaining = 0f;
     }
@@ -910,9 +917,26 @@ public class Game1 : Game
         var direction = GetStageSelectMoveDirection(keyboard, gamePad);
         if (direction == 0)
         {
+            _stageSelectHeldMoveDirection = 0;
+            _stageSelectMoveRepeatTimeRemaining = 0f;
             return;
         }
 
+        if (direction != _stageSelectHeldMoveDirection)
+        {
+            _stageSelectHeldMoveDirection = direction;
+            _stageSelectMoveRepeatTimeRemaining = StageSelectMoveRepeatSeconds;
+            MoveStageSelection(direction);
+            return;
+        }
+
+        _stageSelectMoveRepeatTimeRemaining = Math.Max(0f, _stageSelectMoveRepeatTimeRemaining - elapsed);
+        if (_stageSelectMoveRepeatTimeRemaining > 0f)
+        {
+            return;
+        }
+
+        _stageSelectMoveRepeatTimeRemaining = StageSelectMoveRepeatSeconds;
         MoveStageSelection(direction);
     }
 
@@ -944,7 +968,9 @@ public class Game1 : Game
         _stageSelectFocusAmount = 1f;
         _stageSelectPendingMoveDirection = 0;
         _stageSelectQueuedMoveDirection = 0;
+        _stageSelectHeldMoveDirection = 0;
         _stageSelectQuickMoveTimeRemaining = 0f;
+        _stageSelectMoveRepeatTimeRemaining = 0f;
         RefreshWindowTitle();
     }
 
@@ -962,7 +988,9 @@ public class Game1 : Game
         _stageSelectFocusAmount = 1f;
         _stageSelectPendingMoveDirection = 0;
         _stageSelectQueuedMoveDirection = 0;
+        _stageSelectHeldMoveDirection = 0;
         _stageSelectQuickMoveTimeRemaining = 0f;
+        _stageSelectMoveRepeatTimeRemaining = 0f;
         RefreshWindowTitle();
     }
 
