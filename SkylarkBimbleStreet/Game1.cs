@@ -16,6 +16,7 @@ public class Game1 : Game
     private const float RespawnInvincibleSeconds = 0.8f;
     private const float ExitOpenDelaySeconds = 0.32f;
     private const float ExitOpenFlashSeconds = 0.55f;
+    private const float GemCollectEffectSeconds = 0.34f;
     private const float StageSelectFocusStartOffset = 12f;
     private const float StageSelectFocusExpandFastRate = 22f;
     private const float StageSelectFocusExpandSlowRate = 8f;
@@ -34,6 +35,7 @@ public class Game1 : Game
 
     private readonly GraphicsDeviceManager _graphics;
     private readonly List<PlayEvent> _playEvents = [];
+    private readonly List<GemCollectEffect> _gemCollectEffects = [];
     private SpriteBatch _spriteBatch = null!;
     private Texture2D _pixel = null!;
     private RenderTarget2D _scene = null!;
@@ -204,6 +206,7 @@ public class Game1 : Game
             _stageElapsedSeconds[_currentStageIndex] += elapsed;
             _invincibleTimeRemaining = Math.Max(0f, _invincibleTimeRemaining - elapsed);
             _exitOpenFlashRemaining = Math.Max(0f, _exitOpenFlashRemaining - elapsed);
+            UpdateGemCollectEffects(elapsed);
             UpdateExitOpening(elapsed);
             MovePlayer(GetMoveInput(keyboard, gamePad), elapsed);
             UpdateHazards(elapsed);
@@ -264,6 +267,8 @@ public class Game1 : Game
 
             DrawGem(_gemBounds[i].Center.ToVector2(), _gemBounds[i].Width, CurrentPalette.Gem, CurrentPalette.GemShine);
         }
+
+        DrawGemCollectEffects();
 
         foreach (var hazard in _hazards)
         {
@@ -1344,6 +1349,7 @@ public class Game1 : Game
                 _stageGemCounts[_currentStageIndex]++;
                 LogPlayEvent(PlayEventKind.Gem, _currentStageIndex, _gemBounds[i].Center.ToVector2(), _currentStageElapsedSeconds, i);
                 PlaySound(_gemSound);
+                AddGemCollectEffect(_gemBounds[i].Center.ToVector2(), i);
                 StartExitOpenDelayIfReady();
             }
         }
@@ -1375,6 +1381,66 @@ public class Game1 : Game
         _exitOpen = true;
         _exitOpenFlashRemaining = ExitOpenFlashSeconds;
         PlaySound(_exitOpenSound);
+    }
+
+
+    private void UpdateGemCollectEffects(float elapsed)
+    {
+        for (var i = _gemCollectEffects.Count - 1; i >= 0; i--)
+        {
+            var effect = _gemCollectEffects[i];
+            var timeRemaining = effect.TimeRemaining - elapsed;
+            if (timeRemaining <= 0f)
+            {
+                _gemCollectEffects.RemoveAt(i);
+                continue;
+            }
+
+            _gemCollectEffects[i] = effect with { TimeRemaining = timeRemaining };
+        }
+    }
+
+    private void AddGemCollectEffect(Vector2 position, int seed)
+    {
+        _gemCollectEffects.Add(new GemCollectEffect(position, GemCollectEffectSeconds, GemCollectEffectSeconds, seed));
+    }
+
+    private void DrawGemCollectEffects()
+    {
+        foreach (var effect in _gemCollectEffects)
+        {
+            var progress = 1f - effect.TimeRemaining / effect.Duration;
+            var fade = 1f - progress;
+            var blink = ((int)(progress * 18f) + effect.Seed) % 2 == 0;
+            for (var y = -2; y <= 2; y++)
+            {
+                for (var x = -2; x <= 2; x++)
+                {
+                    if (Math.Abs(x) + Math.Abs(y) > 3 || (!blink && (x + y + effect.Seed) % 2 == 0))
+                    {
+                        continue;
+                    }
+
+                    var local = new Vector2(x * 11f, y * 11f);
+                    var drift = Vector2.Normalize(local == Vector2.Zero ? new Vector2(0f, -1f) : local) * progress * (18f + (x * x + y * y) * 2f);
+                    var position = effect.Position + local + drift;
+                    var size = Math.Max(3, (int)(12f * fade));
+                    var color = (x + y + effect.Seed) % 3 == 0 ? CurrentPalette.GemShine : CurrentPalette.Gem;
+                    DrawRectangle(new Rectangle((int)position.X - size / 2, (int)position.Y - size / 2, size, size), WithAlpha(color, (byte)(210f * fade)));
+                }
+            }
+
+            for (var i = 0; i < 10; i++)
+            {
+                var angle = (float)((i * Math.PI * 2d / 10d) + effect.Seed * 0.47d);
+                var direction = new Vector2((float)Math.Cos(angle), (float)Math.Sin(angle));
+                var distance = 18f + progress * (62f + i % 3 * 9f);
+                var position = effect.Position + direction * distance;
+                var size = Math.Max(3, (int)((10f - i % 3 * 2f) * fade));
+                var color = i % 2 == 0 ? CurrentPalette.GemShine : CurrentPalette.Gem;
+                DrawRectangle(new Rectangle((int)position.X - size / 2, (int)position.Y - size / 2, size, size), WithAlpha(color, (byte)(220f * fade)));
+            }
+        }
     }
 
     private void CheckHazardCollision()
@@ -1487,6 +1553,7 @@ public class Game1 : Game
         _gemBounds = stage.Gems;
         _hazards = (Hazard[])stage.Hazards.Clone();
         _gemsCollected = new bool[_gemBounds.Length];
+        _gemCollectEffects.Clear();
         _playerStart = stage.PlayerStart;
         _exitBounds = stage.ExitBounds;
         _backgroundColor = CurrentPalette.Background;
@@ -1792,6 +1859,8 @@ public class Game1 : Game
     private bool WasThumbstickPressedLeft(GamePadState gamePad) => gamePad.ThumbSticks.Left.X < -0.55f && _previousGamePad.ThumbSticks.Left.X >= -0.55f;
 
     private bool WasThumbstickPressedRight(GamePadState gamePad) => gamePad.ThumbSticks.Left.X > 0.55f && _previousGamePad.ThumbSticks.Left.X <= 0.55f;
+
+    private readonly record struct GemCollectEffect(Vector2 Position, float TimeRemaining, float Duration, int Seed);
 
     private enum WaveShape
     {
