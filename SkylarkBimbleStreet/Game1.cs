@@ -433,13 +433,14 @@ public class Game1 : Game
         DrawFrame(Inset(bounds, 20), detail, 8);
         DrawRectangle(Inset(bounds, 34), _backgroundColor);
 
+        var gate = Inset(bounds, 24);
         if (open)
         {
-            DrawArrow(Inset(bounds, 24), true, detail);
+            DrawRectangle(new Rectangle(gate.X + 8, gate.Y + 8, 8, gate.Height - 16), detail);
+            DrawRectangle(new Rectangle(gate.Right - 16, gate.Y + 8, 8, gate.Height - 16), detail);
             return;
         }
 
-        var gate = Inset(bounds, 24);
         DrawRectangle(new Rectangle(gate.X + gate.Width / 3 - 4, gate.Y + 8, 8, gate.Height - 16), detail);
         DrawRectangle(new Rectangle(gate.X + gate.Width * 2 / 3 - 4, gate.Y + 8, 8, gate.Height - 16), detail);
     }
