@@ -1724,7 +1724,7 @@ public class Game1 : Game
 
     private void CreateSoundEffects()
     {
-        _gemSound = CreateTone(880f, 1320f, 0.12f, 0.32f, WaveShape.Sine);
+        _gemSound = CreateGemCollectSound();
         _deathSound = CreateTone(170f, 74f, 0.18f, 0.34f, WaveShape.Square);
         _clearSound = CreateArpeggio([660f, 880f, 1175f, 1568f], 0.07f, 0.28f);
         _exitOpenSound = CreateArpeggio([523f, 659f, 784f, 1047f, 1319f], 0.055f, 0.24f);
@@ -1775,6 +1775,44 @@ public class Game1 : Game
     private void PlayStageMoveSound()
     {
         PlaySound(_stageMoveSound);
+    }
+    private static SoundEffect CreateGemCollectSound()
+    {
+        const int sampleRate = 44100;
+        const float seconds = 0.26f;
+        var sampleCount = (int)(sampleRate * seconds);
+        var samples = new float[sampleCount];
+
+        AddToneBurst(samples, sampleRate, 0.00f, 0.10f, 1080f, 1580f, 0.30f, WaveShape.Sine);
+        AddToneBurst(samples, sampleRate, 0.075f, 0.045f, 920f, 780f, 0.16f, WaveShape.Triangle);
+        AddToneBurst(samples, sampleRate, 0.112f, 0.040f, 760f, 640f, 0.13f, WaveShape.Triangle);
+        AddToneBurst(samples, sampleRate, 0.150f, 0.038f, 610f, 520f, 0.11f, WaveShape.Triangle);
+        AddToneBurst(samples, sampleRate, 0.190f, 0.034f, 490f, 420f, 0.09f, WaveShape.Square);
+
+        var buffer = new byte[sampleCount * 2];
+        for (var i = 0; i < sampleCount; i++)
+        {
+            WriteSample(buffer, i, samples[i]);
+        }
+
+        return new SoundEffect(buffer, sampleRate, AudioChannels.Mono);
+    }
+
+    private static void AddToneBurst(float[] samples, int sampleRate, float startSeconds, float seconds, float startFrequency, float endFrequency, float volume, WaveShape shape)
+    {
+        var startSample = Math.Clamp((int)(startSeconds * sampleRate), 0, samples.Length);
+        var sampleCount = Math.Max(1, (int)(seconds * sampleRate));
+        var endSample = Math.Min(samples.Length, startSample + sampleCount);
+        var phase = 0d;
+
+        for (var i = startSample; i < endSample; i++)
+        {
+            var t = (i - startSample) / (float)Math.Max(1, sampleCount - 1);
+            var frequency = MathHelper.Lerp(startFrequency, endFrequency, t);
+            phase += frequency / sampleRate;
+            phase -= Math.Floor(phase);
+            samples[i] += GetWaveSample(phase, shape) * GetEnvelope(t) * volume;
+        }
     }
     private static SoundEffect CreateTone(float startFrequency, float endFrequency, float seconds, float volume, WaveShape shape)
     {
