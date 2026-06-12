@@ -63,6 +63,7 @@ public class Game1 : Game
     private double _clearAnimationTime;
     private double _stageSelectAnimationTime;
     private double _pauseAnimationTime;
+    private float _stageSelectSlideOffset;
     private float _invincibleTimeRemaining;
     private Color _backgroundColor;
 
@@ -121,6 +122,7 @@ public class Game1 : Game
         if (_stageSelectOpen)
         {
             _stageSelectAnimationTime += elapsed;
+            UpdateStageSelectSlide(elapsed);
             UpdateStageSelect(keyboard, gamePad);
             UpdateWindowTitle(gameTime);
             _previousKeyboard = keyboard;
@@ -400,14 +402,30 @@ public class Game1 : Game
         }
     }
 
+    private float GetStageCardOffset(int stageIndex)
+    {
+        var offset = stageIndex - _selectedStageIndex;
+        var half = _stages.Length / 2;
+        if (offset > half)
+        {
+            offset -= _stages.Length;
+        }
+        else if (offset < -half)
+        {
+            offset += _stages.Length;
+        }
+
+        return offset;
+    }
+
     private void DrawStageCard(int stageIndex, bool selected, float pulse)
     {
-        var width = selected ? 380 + (int)(pulse * 14f) : 320;
-        var height = selected ? 500 + (int)(pulse * 14f) : 420;
+        var width = selected ? 380 : 320;
+        var height = selected ? 500 : 420;
         var gap = 430;
-        var centerOffset = stageIndex - (_stages.Length - 1) / 2f;
-        var centerX = VirtualWidth / 2 + (int)(centerOffset * gap);
-        var y = selected ? 290 - (int)(pulse * 7f) : 335;
+        var centerOffset = GetStageCardOffset(stageIndex);
+        var centerX = VirtualWidth / 2 + (int)(centerOffset * gap + _stageSelectSlideOffset);
+        var y = selected ? 290 : 335;
         var card = new Rectangle(centerX - width / 2, y, width, height);
         var frameColor = selected ? CurrentPalette.Gem : CurrentPalette.HudInactive;
         var bodyColor = selected ? WithAlpha(CurrentPalette.Grid, 245) : WithAlpha(CurrentPalette.HudBackground, 230);
@@ -427,7 +445,9 @@ public class Game1 : Game
 
         if (selected)
         {
-            DrawFrame(new Rectangle(card.X - 22, card.Y - 22, card.Width + 44, card.Height + 44), WithAlpha(CurrentPalette.GemShine, 160), 8);
+            var glowAlpha = (byte)190;
+            DrawFrame(new Rectangle(card.X - 24, card.Y - 24, card.Width + 48, card.Height + 48), WithAlpha(CurrentPalette.GemShine, glowAlpha), 10);
+            DrawFrame(new Rectangle(card.X - 38, card.Y - 38, card.Width + 76, card.Height + 76), WithAlpha(CurrentPalette.ExitOpen, 105), 5);
         }
     }
 
@@ -768,16 +788,31 @@ public class Game1 : Game
         CyclePalette();
     }
 
+    private void UpdateStageSelectSlide(float elapsed)
+    {
+        _stageSelectSlideOffset = MathHelper.Lerp(_stageSelectSlideOffset, 0f, Math.Min(1f, elapsed * 11f));
+        if (Math.Abs(_stageSelectSlideOffset) < 0.5f)
+        {
+            _stageSelectSlideOffset = 0f;
+        }
+    }
+
+    private void MoveStageSelection(int direction)
+    {
+        _selectedStageIndex = (_selectedStageIndex + _stages.Length + direction) % _stages.Length;
+        _stageSelectSlideOffset = direction * 430f;
+    }
+
     private void UpdateStageSelect(KeyboardState keyboard, GamePadState gamePad)
     {
         if (WasPressed(keyboard, Keys.Left) || WasPressed(keyboard, Keys.A) || WasPressed(gamePad.DPad.Left, _previousGamePad.DPad.Left) || WasThumbstickPressedLeft(gamePad))
         {
-            _selectedStageIndex = (_selectedStageIndex + _stages.Length - 1) % _stages.Length;
+            MoveStageSelection(-1);
         }
 
         if (WasPressed(keyboard, Keys.Right) || WasPressed(keyboard, Keys.D) || WasPressed(gamePad.DPad.Right, _previousGamePad.DPad.Right) || WasThumbstickPressedRight(gamePad))
         {
-            _selectedStageIndex = (_selectedStageIndex + 1) % _stages.Length;
+            MoveStageSelection(1);
         }
 
         if (WasPressed(keyboard, Keys.Enter)
@@ -796,6 +831,7 @@ public class Game1 : Game
         _stageSelectOpen = true;
         _selectedStageIndex = _currentStageIndex;
         _stageSelectAnimationTime = 0d;
+        _stageSelectSlideOffset = 0f;
         RefreshWindowTitle();
     }
 
@@ -808,6 +844,7 @@ public class Game1 : Game
         _stageSelectOpen = false;
         _paused = false;
         _stageSelectAnimationTime = 0d;
+        _stageSelectSlideOffset = 0f;
         RefreshWindowTitle();
     }
 
