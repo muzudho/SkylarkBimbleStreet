@@ -447,10 +447,13 @@ public class Game1 : Game
     private void DrawHazard(Rectangle bounds)
     {
         DrawRectangle(bounds, CurrentPalette.Hazard);
+        DrawFrame(bounds, CurrentPalette.PlayerInvincible, 5);
         DrawRectangle(Inset(bounds, 12), CurrentPalette.HazardInner);
-        DrawLine(new Vector2(bounds.X + 10, bounds.Y + 10), new Vector2(bounds.Right - 10, bounds.Bottom - 10), 8, CurrentPalette.PlayerInvincible);
-        DrawLine(new Vector2(bounds.Right - 10, bounds.Y + 10), new Vector2(bounds.X + 10, bounds.Bottom - 10), 8, CurrentPalette.PlayerInvincible);
-        DrawFrame(Inset(bounds, 6), CurrentPalette.PlayerInvincible, 4);
+
+        var stripe = Math.Max(5, bounds.Height / 10);
+        DrawRectangle(new Rectangle(bounds.X + 12, bounds.Y + 14, bounds.Width - 24, stripe), CurrentPalette.PlayerInvincible);
+        DrawRectangle(new Rectangle(bounds.X + 12, bounds.Center.Y - stripe / 2, bounds.Width - 24, stripe), CurrentPalette.PlayerInvincible);
+        DrawRectangle(new Rectangle(bounds.X + 12, bounds.Bottom - 14 - stripe, bounds.Width - 24, stripe), CurrentPalette.PlayerInvincible);
     }
 
     private void DrawMissMark(Rectangle bounds)
