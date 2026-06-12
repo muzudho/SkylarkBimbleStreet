@@ -171,6 +171,52 @@ public class Game1 : Game
                 new(new Rectangle(1400, 360, 64, 64), new Vector2(0f, 320f), 330, 450),
                 new(new Rectangle(1680, 720, 64, 64), new Vector2(0f, 300f), 650, 850),
             ]),
+        new(
+            "Stage 5",
+            new Vector2(95, 95),
+            new Rectangle(VirtualWidth - 150, VirtualHeight - 150, 92, 92),
+            new Color(18, 25, 32),
+            [
+                new(0, 0, VirtualWidth, 38),
+                new(0, VirtualHeight - 38, VirtualWidth, 38),
+                new(0, 0, 38, VirtualHeight),
+                new(VirtualWidth - 38, 0, 38, VirtualHeight),
+                new(300, 38, 38, 240),
+                new(300, 500, 38, 542),
+                new(560, 250, 38, 360),
+                new(560, 820, 38, 222),
+                new(820, 38, 38, 520),
+                new(820, 760, 38, 282),
+                new(1080, 38, 38, 280),
+                new(1080, 500, 38, 542),
+                new(1340, 38, 38, 640),
+                new(1340, 860, 38, 182),
+                new(1600, 38, 38, 350),
+                new(1600, 570, 38, 472),
+                new(338, 500, 222, 38),
+                new(598, 610, 222, 38),
+                new(858, 318, 222, 38),
+                new(1118, 678, 222, 38),
+                new(1378, 388, 222, 38),
+            ],
+            [
+                new(190, 350, 34, 34),
+                new(430, 160, 34, 34),
+                new(690, 660, 34, 34),
+                new(950, 380, 34, 34),
+                new(1210, 760, 34, 34),
+                new(1470, 470, 34, 34),
+                new(1710, 890, 34, 34),
+            ],
+            [
+                new(new Rectangle(180, 320, 64, 64), new Vector2(0f, 300f), 260, 430),
+                new(new Rectangle(420, 250, 64, 64), new Vector2(320f, 0f), 370, 500),
+                new(new Rectangle(690, 620, 64, 64), new Vector2(0f, 300f), 590, 720),
+                new(new Rectangle(950, 370, 64, 64), new Vector2(330f, 0f), 900, 1020),
+                new(new Rectangle(1210, 730, 64, 64), new Vector2(0f, 310f), 700, 810),
+                new(new Rectangle(1470, 460, 64, 64), new Vector2(330f, 0f), 1420, 1540),
+                new(new Rectangle(1700, 800, 64, 64), new Vector2(0f, 280f), 760, 910),
+            ]),
     ];
 
     private Rectangle[] _walls = [];
@@ -398,10 +444,11 @@ public class Game1 : Game
             DrawRectangle(new Rectangle(70 + i * 38, 112, 24, 24), new Color(221, 72, 92));
         }
 
+        var stageIndicatorStartX = VirtualWidth - 58 - (_stages.Length * 54 - 16);
         for (var i = 0; i < _stages.Length; i++)
         {
             var color = i == _currentStageIndex ? new Color(81, 161, 255) : new Color(69, 75, 90);
-            DrawRectangle(new Rectangle(VirtualWidth - 190 + i * 54, 58, 38, 38), color);
+            DrawRectangle(new Rectangle(stageIndicatorStartX + i * 54, 58, 38, 38), color);
         }
 
         if (_cleared)
