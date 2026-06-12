@@ -480,13 +480,13 @@ public class Game1 : Game
 
     private void DrawPauseMenu()
     {
-        DrawRectangle(new Rectangle(0, 0, VirtualWidth, VirtualHeight), new Color(4, 6, 10, 185));
+        DrawRectangle(new Rectangle(0, 0, VirtualWidth, VirtualHeight), WithAlpha(CurrentPalette.Background, 185));
 
         var pulse = (float)((Math.Sin(_pauseAnimationTime * 5d) + 1d) * 0.5d);
         var panel = new Rectangle(360, 320, 1200, 420);
-        DrawRectangle(panel, new Color(18, 24, 34, 238));
-        DrawFrame(panel, new Color(245, 198, 80), 16);
-        DrawFrame(Inset(panel, 38), new Color(81, 161, 255, 150), 8);
+        DrawRectangle(panel, WithAlpha(CurrentPalette.HudBackground, 238));
+        DrawFrame(panel, CurrentPalette.Gem, 16);
+        DrawFrame(Inset(panel, 38), WithAlpha(CurrentPalette.StageCurrent, 150), 8);
 
         for (var i = 0; i < 4; i++)
         {
@@ -501,20 +501,20 @@ public class Game1 : Game
         var centerX = 600 + optionIndex * 240;
         var centerY = selected ? 530 - (int)(pulse * 5f) : 540;
         var card = new Rectangle(centerX - width / 2, centerY - height / 2, width, height);
-        var body = selected ? new Color(31, 37, 50, 250) : new Color(20, 26, 34, 235);
-        var frame = selected ? new Color(255, 239, 151) : new Color(104, 116, 140);
+        var body = selected ? WithAlpha(CurrentPalette.Grid, 250) : WithAlpha(CurrentPalette.HudBackground, 235);
+        var frame = selected ? CurrentPalette.GemShine : CurrentPalette.WallInner;
 
         DrawRectangle(card, body);
         DrawFrame(card, frame, selected ? 12 : 8);
 
         if (optionIndex == 0)
         {
-            DrawArrow(new Rectangle(card.X + 54, card.Y + 62, card.Width - 108, card.Height - 124), true, new Color(74, 205, 116));
+            DrawArrow(new Rectangle(card.X + 54, card.Y + 62, card.Width - 108, card.Height - 124), true, CurrentPalette.ExitOpen);
         }
         else if (optionIndex == 1)
         {
-            DrawFrame(new Rectangle(card.X + 54, card.Y + 54, card.Width - 108, card.Height - 108), new Color(221, 72, 92), 14);
-            DrawLine(new Vector2(card.X + 70, card.Bottom - 70), new Vector2(card.Right - 70, card.Y + 70), 16, new Color(255, 148, 157));
+            DrawFrame(new Rectangle(card.X + 54, card.Y + 54, card.Width - 108, card.Height - 108), CurrentPalette.Hazard, 14);
+            DrawLine(new Vector2(card.X + 70, card.Bottom - 70), new Vector2(card.Right - 70, card.Y + 70), 16, CurrentPalette.HazardInner);
         }
         else if (optionIndex == 2)
         {
@@ -532,24 +532,24 @@ public class Game1 : Game
 
         if (selected)
         {
-            DrawFrame(new Rectangle(card.X - 18, card.Y - 18, card.Width + 36, card.Height + 36), new Color(245, 198, 80, 160), 6);
+            DrawFrame(new Rectangle(card.X - 18, card.Y - 18, card.Width + 36, card.Height + 36), WithAlpha(CurrentPalette.Gem, 160), 6);
         }
     }
 
     private void DrawStageSelect()
     {
-        DrawRectangle(new Rectangle(0, 0, VirtualWidth, VirtualHeight), new Color(5, 7, 12, 210));
+        DrawRectangle(new Rectangle(0, 0, VirtualWidth, VirtualHeight), WithAlpha(CurrentPalette.Background, 210));
 
         var center = new Vector2(VirtualWidth / 2f, VirtualHeight / 2f);
         var pulse = (float)((Math.Sin(_stageSelectAnimationTime * 5d) + 1d) * 0.5d);
         for (var i = 0; i < 18; i++)
         {
             var angle = (float)(i * Math.PI * 2d / 18d - _stageSelectAnimationTime * 0.25d);
-            DrawLine(center, center + new Vector2((float)Math.Cos(angle), (float)Math.Sin(angle)) * 560f, 6, new Color(81, 161, 255, 58));
+            DrawLine(center, center + new Vector2((float)Math.Cos(angle), (float)Math.Sin(angle)) * 560f, 6, WithAlpha(CurrentPalette.StageCurrent, 58));
         }
 
-        DrawArrow(new Rectangle(160, 490, 150, 100), false, new Color(245, 198, 80));
-        DrawArrow(new Rectangle(VirtualWidth - 310, 490, 150, 100), true, new Color(245, 198, 80));
+        DrawArrow(new Rectangle(160, 490, 150, 100), false, CurrentPalette.Gem);
+        DrawArrow(new Rectangle(VirtualWidth - 310, 490, 150, 100), true, CurrentPalette.Gem);
 
         for (var i = 0; i < _stages.Length; i++)
         {
@@ -566,39 +566,39 @@ public class Game1 : Game
         var centerX = VirtualWidth / 2 + (int)(centerOffset * gap);
         var y = selected ? 290 - (int)(pulse * 7f) : 335;
         var card = new Rectangle(centerX - width / 2, y, width, height);
-        var frameColor = selected ? new Color(245, 198, 80) : new Color(69, 75, 90);
-        var bodyColor = selected ? new Color(31, 37, 50, 245) : new Color(20, 26, 34, 230);
+        var frameColor = selected ? CurrentPalette.Gem : CurrentPalette.HudInactive;
+        var bodyColor = selected ? WithAlpha(CurrentPalette.Grid, 245) : WithAlpha(CurrentPalette.HudBackground, 230);
 
         DrawRectangle(card, bodyColor);
         DrawFrame(card, frameColor, selected ? 16 : 10);
-        DrawFrame(Inset(card, 34), selected ? new Color(74, 205, 116) : new Color(76, 84, 103), selected ? 8 : 6);
+        DrawFrame(Inset(card, 34), selected ? CurrentPalette.ExitOpen : CurrentPalette.WallOuter, selected ? 8 : 6);
 
         var preview = Inset(card, 70);
-        DrawRectangle(new Rectangle(preview.X, preview.Y, preview.Width, 10), new Color(104, 116, 140));
-        DrawRectangle(new Rectangle(preview.X, preview.Bottom - 10, preview.Width, 10), new Color(104, 116, 140));
-        DrawRectangle(new Rectangle(preview.X, preview.Y, 10, preview.Height), new Color(104, 116, 140));
-        DrawRectangle(new Rectangle(preview.Right - 10, preview.Y, 10, preview.Height), new Color(104, 116, 140));
+        DrawRectangle(new Rectangle(preview.X, preview.Y, preview.Width, 10), CurrentPalette.WallInner);
+        DrawRectangle(new Rectangle(preview.X, preview.Bottom - 10, preview.Width, 10), CurrentPalette.WallInner);
+        DrawRectangle(new Rectangle(preview.X, preview.Y, 10, preview.Height), CurrentPalette.WallInner);
+        DrawRectangle(new Rectangle(preview.Right - 10, preview.Y, 10, preview.Height), CurrentPalette.WallInner);
 
         for (var i = 0; i <= stageIndex; i++)
         {
-            DrawGem(new Vector2(card.X + 82 + i * 54, card.Y + 76), 36, new Color(245, 198, 80), new Color(255, 239, 151));
+            DrawGem(new Vector2(card.X + 82 + i * 54, card.Y + 76), 36, CurrentPalette.Gem, CurrentPalette.GemShine);
         }
 
         for (var i = 0; i < 3 + stageIndex; i++)
         {
             var x = preview.X + 48 + i * 42;
             var barHeight = 78 + (i % 2) * 58;
-            DrawRectangle(new Rectangle(x, preview.Y + 36, 14, barHeight), new Color(76, 84, 103));
+            DrawRectangle(new Rectangle(x, preview.Y + 36, 14, barHeight), CurrentPalette.WallOuter);
         }
 
-        DrawRectangle(new Rectangle(preview.Right - 70, preview.Y + 34, 40, 40), new Color(74, 205, 116));
+        DrawRectangle(new Rectangle(preview.Right - 70, preview.Y + 34, 40, 40), CurrentPalette.ExitOpen);
         DrawRectangle(new Rectangle(preview.Right - 58, preview.Y + 46, 16, 16), bodyColor);
-        DrawRectangle(new Rectangle(preview.X + 30, preview.Bottom - 70, 36, 36), new Color(81, 161, 255));
-        DrawRectangle(new Rectangle(preview.X + 40, preview.Bottom - 60, 16, 16), new Color(197, 228, 255));
+        DrawRectangle(new Rectangle(preview.X + 30, preview.Bottom - 70, 36, 36), CurrentPalette.Player);
+        DrawRectangle(new Rectangle(preview.X + 40, preview.Bottom - 60, 16, 16), CurrentPalette.PlayerInner);
 
         if (selected)
         {
-            DrawFrame(new Rectangle(card.X - 22, card.Y - 22, card.Width + 44, card.Height + 44), new Color(255, 239, 151, 160), 8);
+            DrawFrame(new Rectangle(card.X - 22, card.Y - 22, card.Width + 44, card.Height + 44), WithAlpha(CurrentPalette.GemShine, 160), 8);
         }
     }
 
@@ -632,7 +632,7 @@ public class Game1 : Game
 
     private void DrawClearCelebration()
     {
-        DrawRectangle(new Rectangle(0, 0, VirtualWidth, VirtualHeight), new Color(6, 8, 14, 176));
+        DrawRectangle(new Rectangle(0, 0, VirtualWidth, VirtualHeight), WithAlpha(CurrentPalette.Background, 176));
 
         var center = new Vector2(VirtualWidth / 2f, VirtualHeight / 2f);
         var pulse = (float)((Math.Sin(_clearAnimationTime * 5d) + 1d) * 0.5d);
@@ -644,26 +644,26 @@ public class Game1 : Game
         {
             var angle = (float)(i * Math.PI * 2d / 24d + _clearAnimationTime * 0.42d);
             var length = 340 + (i % 4) * 80 + (int)(pulse * 35f);
-            DrawLine(center, center + new Vector2((float)Math.Cos(angle), (float)Math.Sin(angle)) * length, 10, new Color(74, 205, 116, 95));
+            DrawLine(center, center + new Vector2((float)Math.Cos(angle), (float)Math.Sin(angle)) * length, 10, WithAlpha(CurrentPalette.ExitOpen, 95));
         }
 
         DrawConfetti();
         DrawFrame(new Rectangle(540, 300, 840, 480), rankBody, 18);
         DrawFrame(new Rectangle(590, 350, 740, 380), glow, 12);
-        DrawRectangle(new Rectangle(630, 390, 660, 300), new Color(20, 26, 28, 230));
+        DrawRectangle(new Rectangle(630, 390, 660, 300), WithAlpha(CurrentPalette.HudBackground, 230));
 
         DrawOrbitingGems(center);
 
         var mainBob = (float)Math.Sin(_clearAnimationTime * 3.8d) * 16f;
         var sideBob = (float)Math.Sin(_clearAnimationTime * 4.6d + Math.PI) * 10f;
         DrawGem(new Vector2(960, 505 + mainBob), 170 + (int)(pulse * 12f), rankBody, rankShine);
-        DrawGem(new Vector2(760, 545 + sideBob), 86, new Color(81, 161, 255), new Color(197, 228, 255));
-        DrawGem(new Vector2(1160, 545 - sideBob), 86, new Color(221, 72, 92), new Color(255, 148, 157));
+        DrawGem(new Vector2(760, 545 + sideBob), 86, CurrentPalette.Player, CurrentPalette.PlayerInner);
+        DrawGem(new Vector2(1160, 545 - sideBob), 86, CurrentPalette.Hazard, CurrentPalette.HazardInner);
 
         for (var i = 0; i < _stages.Length; i++)
         {
             var checkPulse = i == _currentStageIndex ? (int)(pulse * 8f) : 0;
-            DrawRectangle(new Rectangle(828 + i * 78 - checkPulse / 2, 650 - checkPulse / 2, 54 + checkPulse, 54 + checkPulse), new Color(74, 205, 116));
+            DrawRectangle(new Rectangle(828 + i * 78 - checkPulse / 2, 650 - checkPulse / 2, 54 + checkPulse, 54 + checkPulse), CurrentPalette.ExitOpen);
             DrawRectangle(new Rectangle(842 + i * 78, 664, 26, 26), rankShine);
         }
 
@@ -1206,6 +1206,8 @@ public class Game1 : Game
     /// <param name="rectangle">元の矩形</param>
     /// <param name="inset">縮小する量</param>
     /// <returns>縮小された矩形</returns>
+    private static Color WithAlpha(Color color, byte alpha) => new(color.R, color.G, color.B, alpha);
+
     private static Rectangle Inset(Rectangle rectangle, int inset) => new(
         rectangle.X + inset,
         rectangle.Y + inset,
