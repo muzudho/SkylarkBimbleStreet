@@ -64,6 +64,7 @@ public class Game1 : Game
     private double _stageSelectAnimationTime;
     private double _pauseAnimationTime;
     private float _stageSelectSlideOffset;
+    private float _stageSelectSlideDelay;
     private float _invincibleTimeRemaining;
     private Color _backgroundColor;
 
@@ -402,37 +403,24 @@ public class Game1 : Game
         }
     }
 
-    private float GetStageCardOffset(int stageIndex)
-    {
-        var offset = stageIndex - _selectedStageIndex;
-        var half = _stages.Length / 2;
-        if (offset > half)
-        {
-            offset -= _stages.Length;
-        }
-        else if (offset < -half)
-        {
-            offset += _stages.Length;
-        }
-
-        return offset;
-    }
+    private float GetStageCardOffset(int stageIndex) => stageIndex - _selectedStageIndex;
 
     private void DrawStageCard(int stageIndex, bool selected, float pulse)
     {
-        var width = selected ? 380 : 320;
-        var height = selected ? 500 : 420;
+        var focused = selected && _stageSelectSlideOffset == 0f && _stageSelectSlideDelay == 0f;
+        var width = focused ? 380 : 320;
+        var height = focused ? 500 : 420;
         var gap = 430;
         var centerOffset = GetStageCardOffset(stageIndex);
         var centerX = VirtualWidth / 2 + (int)(centerOffset * gap + _stageSelectSlideOffset);
-        var y = selected ? 290 : 335;
+        var y = focused ? 290 : 335;
         var card = new Rectangle(centerX - width / 2, y, width, height);
         var frameColor = selected ? CurrentPalette.Gem : CurrentPalette.HudInactive;
         var bodyColor = selected ? WithAlpha(CurrentPalette.Grid, 245) : WithAlpha(CurrentPalette.HudBackground, 230);
 
         DrawRectangle(card, bodyColor);
-        DrawFrame(card, frameColor, selected ? 16 : 10);
-        DrawFrame(Inset(card, 34), selected ? CurrentPalette.ExitOpen : CurrentPalette.WallOuter, selected ? 8 : 6);
+        DrawFrame(card, frameColor, focused ? 16 : 10);
+        DrawFrame(Inset(card, 34), selected ? CurrentPalette.ExitOpen : CurrentPalette.WallOuter, focused ? 8 : 6);
 
         var preview = new Rectangle(card.X + 54, card.Y + 122, card.Width - 108, card.Height - 220);
         DrawStageMiniMap(preview, _stages[stageIndex], bodyColor);
@@ -443,7 +431,7 @@ public class Game1 : Game
             DrawStageClearedMark(new Rectangle(card.Right - 94, card.Y + 48, 56, 56));
         }
 
-        if (selected)
+        if (focused)
         {
             var glowAlpha = (byte)190;
             DrawFrame(new Rectangle(card.X - 24, card.Y - 24, card.Width + 48, card.Height + 48), WithAlpha(CurrentPalette.GemShine, glowAlpha), 10);
@@ -790,6 +778,12 @@ public class Game1 : Game
 
     private void UpdateStageSelectSlide(float elapsed)
     {
+        if (_stageSelectSlideDelay > 0f)
+        {
+            _stageSelectSlideDelay = Math.Max(0f, _stageSelectSlideDelay - elapsed);
+            return;
+        }
+
         _stageSelectSlideOffset = MathHelper.Lerp(_stageSelectSlideOffset, 0f, Math.Min(1f, elapsed * 11f));
         if (Math.Abs(_stageSelectSlideOffset) < 0.5f)
         {
@@ -799,8 +793,15 @@ public class Game1 : Game
 
     private void MoveStageSelection(int direction)
     {
-        _selectedStageIndex = (_selectedStageIndex + _stages.Length + direction) % _stages.Length;
+        var nextStageIndex = Math.Clamp(_selectedStageIndex + direction, 0, _stages.Length - 1);
+        if (nextStageIndex == _selectedStageIndex)
+        {
+            return;
+        }
+
+        _selectedStageIndex = nextStageIndex;
         _stageSelectSlideOffset = direction * 430f;
+        _stageSelectSlideDelay = 0.08f;
     }
 
     private void UpdateStageSelect(KeyboardState keyboard, GamePadState gamePad)
@@ -832,6 +833,7 @@ public class Game1 : Game
         _selectedStageIndex = _currentStageIndex;
         _stageSelectAnimationTime = 0d;
         _stageSelectSlideOffset = 0f;
+        _stageSelectSlideDelay = 0f;
         RefreshWindowTitle();
     }
 
@@ -845,6 +847,7 @@ public class Game1 : Game
         _paused = false;
         _stageSelectAnimationTime = 0d;
         _stageSelectSlideOffset = 0f;
+        _stageSelectSlideDelay = 0f;
         RefreshWindowTitle();
     }
 
