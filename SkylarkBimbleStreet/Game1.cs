@@ -416,28 +416,8 @@ public class Game1 : Game
         DrawFrame(card, frameColor, selected ? 16 : 10);
         DrawFrame(Inset(card, 34), selected ? CurrentPalette.ExitOpen : CurrentPalette.WallOuter, selected ? 8 : 6);
 
-        var preview = Inset(card, 70);
-        DrawRectangle(new Rectangle(preview.X, preview.Y, preview.Width, 10), CurrentPalette.WallInner);
-        DrawRectangle(new Rectangle(preview.X, preview.Bottom - 10, preview.Width, 10), CurrentPalette.WallInner);
-        DrawRectangle(new Rectangle(preview.X, preview.Y, 10, preview.Height), CurrentPalette.WallInner);
-        DrawRectangle(new Rectangle(preview.Right - 10, preview.Y, 10, preview.Height), CurrentPalette.WallInner);
-
-        for (var i = 0; i <= stageIndex; i++)
-        {
-            DrawGem(new Vector2(card.X + 82 + i * 54, card.Y + 76), 36, CurrentPalette.Gem, CurrentPalette.GemShine);
-        }
-
-        for (var i = 0; i < 3 + stageIndex; i++)
-        {
-            var x = preview.X + 48 + i * 42;
-            var barHeight = 78 + (i % 2) * 58;
-            DrawRectangle(new Rectangle(x, preview.Y + 36, 14, barHeight), CurrentPalette.WallOuter);
-        }
-
-        DrawRectangle(new Rectangle(preview.Right - 70, preview.Y + 34, 40, 40), CurrentPalette.ExitOpen);
-        DrawRectangle(new Rectangle(preview.Right - 58, preview.Y + 46, 16, 16), bodyColor);
-        DrawRectangle(new Rectangle(preview.X + 30, preview.Bottom - 70, 36, 36), CurrentPalette.Player);
-        DrawRectangle(new Rectangle(preview.X + 40, preview.Bottom - 60, 16, 16), CurrentPalette.PlayerInner);
+        var preview = new Rectangle(card.X + 54, card.Y + 122, card.Width - 108, card.Height - 190);
+        DrawStageMiniMap(preview, _stages[stageIndex], bodyColor);
 
         if (_stagesCleared.Length > stageIndex && _stagesCleared[stageIndex])
         {
@@ -455,6 +435,52 @@ public class Game1 : Game
         DrawFrame(bounds, CurrentPalette.ExitOpen, 6);
         DrawLine(new Vector2(bounds.X + 12, bounds.Center.Y + 4), new Vector2(bounds.X + 24, bounds.Bottom - 14), 7, CurrentPalette.GemShine);
         DrawLine(new Vector2(bounds.X + 24, bounds.Bottom - 14), new Vector2(bounds.Right - 10, bounds.Y + 12), 7, CurrentPalette.GemShine);
+    }
+
+    private void DrawStageMiniMap(Rectangle bounds, Stage stage, Color cardBody)
+    {
+        var scale = Math.Min(bounds.Width / (float)VirtualWidth, bounds.Height / (float)VirtualHeight);
+        var mapWidth = Math.Max(1, (int)(VirtualWidth * scale));
+        var mapHeight = Math.Max(1, (int)(VirtualHeight * scale));
+        var map = new Rectangle(bounds.Center.X - mapWidth / 2, bounds.Center.Y - mapHeight / 2, mapWidth, mapHeight);
+
+        DrawRectangle(new Rectangle(map.X - 10, map.Y - 10, map.Width + 20, map.Height + 20), WithAlpha(CurrentPalette.HudBackground, 190));
+        DrawFrame(new Rectangle(map.X - 10, map.Y - 10, map.Width + 20, map.Height + 20), CurrentPalette.WallInner, 5);
+        DrawRectangle(map, WithAlpha(CurrentPalette.Background, 235));
+
+        foreach (var wall in stage.Walls)
+        {
+            var mapped = MapStageRectangle(wall, map);
+            DrawRectangle(mapped, CurrentPalette.WallOuter);
+            DrawRectangle(Inset(mapped, Math.Max(1, mapped.Width > mapped.Height ? mapped.Height / 4 : mapped.Width / 4)), CurrentPalette.WallInner);
+        }
+
+        var exit = MapStageRectangle(stage.ExitBounds, map);
+        DrawRectangle(exit, CurrentPalette.ExitClosed);
+        DrawFrame(exit, CurrentPalette.ExitOpen, Math.Max(2, exit.Width / 5));
+        DrawRectangle(Inset(exit, Math.Max(3, exit.Width / 3)), cardBody);
+
+        foreach (var gem in stage.Gems)
+        {
+            var mapped = MapStageRectangle(gem, map);
+            DrawGem(mapped.Center.ToVector2(), Math.Max(8, mapped.Width + 4), CurrentPalette.Gem, CurrentPalette.GemShine);
+        }
+
+        foreach (var hazard in stage.Hazards)
+        {
+            var mapped = MapStageRectangle(hazard.Bounds, map);
+            DrawRectangle(mapped, CurrentPalette.Hazard);
+            DrawFrame(mapped, CurrentPalette.PlayerInvincible, Math.Max(2, mapped.Width / 6));
+        }
+
+        var playerSize = Math.Max(10, (int)(76 * scale));
+        var player = new Rectangle(
+            map.X + (int)(stage.PlayerStart.X * scale) - playerSize / 2,
+            map.Y + (int)(stage.PlayerStart.Y * scale) - playerSize / 2,
+            playerSize,
+            playerSize);
+        DrawRectangle(player, CurrentPalette.Player);
+        DrawRectangle(Inset(player, Math.Max(2, playerSize / 4)), CurrentPalette.PlayerInner);
     }
 
     private void DrawPaletteSwatches(Rectangle bounds)
@@ -1069,6 +1095,17 @@ public class Game1 : Game
         rectangle.Y + inset,
         Math.Max(1, rectangle.Width - inset * 2),
         Math.Max(1, rectangle.Height - inset * 2));
+
+    private static Rectangle MapStageRectangle(Rectangle source, Rectangle map)
+    {
+        var scaleX = map.Width / (float)VirtualWidth;
+        var scaleY = map.Height / (float)VirtualHeight;
+        return new Rectangle(
+            map.X + (int)(source.X * scaleX),
+            map.Y + (int)(source.Y * scaleY),
+            Math.Max(1, (int)Math.Ceiling(source.Width * scaleX)),
+            Math.Max(1, (int)Math.Ceiling(source.Height * scaleY)));
+    }
 
     /// <summary>
     /// ボタンが押されたか。
