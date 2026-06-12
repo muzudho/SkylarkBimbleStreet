@@ -15,6 +15,7 @@ public class Game1 : Game
     private const int PlayerSize = 46;
     private const float RespawnInvincibleSeconds = 0.8f;
     private const float ExitOpenDelaySeconds = 0.32f;
+    private const float ExitOpenFlashSeconds = 0.55f;
     private const float StageSelectFocusStartOffset = 12f;
     private const float StageSelectFocusExpandFastRate = 22f;
     private const float StageSelectFocusExpandSlowRate = 8f;
@@ -103,6 +104,7 @@ public class Game1 : Game
     private float _stageSelectMoveRepeatTimeRemaining;
     private float _invincibleTimeRemaining;
     private float _exitOpenDelayRemaining;
+    private float _exitOpenFlashRemaining;
     private Color _backgroundColor;
 
     private GamePalette CurrentPalette => _palettes[_paletteIndex];
@@ -201,6 +203,7 @@ public class Game1 : Game
             _currentStageElapsedSeconds += elapsed;
             _stageElapsedSeconds[_currentStageIndex] += elapsed;
             _invincibleTimeRemaining = Math.Max(0f, _invincibleTimeRemaining - elapsed);
+            _exitOpenFlashRemaining = Math.Max(0f, _exitOpenFlashRemaining - elapsed);
             UpdateExitOpening(elapsed);
             MovePlayer(GetMoveInput(keyboard, gamePad), elapsed);
             UpdateHazards(elapsed);
@@ -268,6 +271,7 @@ public class Game1 : Game
         }
 
         DrawPlayer();
+        DrawExitOpenRays(GetExitBounds());
         DrawHud();
     }
 
@@ -286,11 +290,65 @@ public class Game1 : Game
         {
             DrawRectangle(new Rectangle(gate.X + 8, gate.Y + 8, 8, gate.Height - 16), detail);
             DrawRectangle(new Rectangle(gate.Right - 16, gate.Y + 8, 8, gate.Height - 16), detail);
+            DrawExitOpenFlash(bounds);
             return;
         }
 
         DrawRectangle(new Rectangle(gate.X + gate.Width / 3 - 4, gate.Y + 8, 8, gate.Height - 16), detail);
         DrawRectangle(new Rectangle(gate.X + gate.Width * 2 / 3 - 4, gate.Y + 8, 8, gate.Height - 16), detail);
+        DrawExitOpenFlash(bounds);
+    }
+
+
+    private void DrawExitOpenFlash(Rectangle bounds)
+    {
+        if (_exitOpenFlashRemaining <= 0f)
+        {
+            return;
+        }
+
+        var progress = 1f - _exitOpenFlashRemaining / ExitOpenFlashSeconds;
+        var fade = 1f - progress;
+        var pulse = (float)Math.Sin(progress * Math.PI);
+        for (var i = 0; i < 5; i++)
+        {
+            var spread = 10 + i * 14 + (int)(progress * (24f + i * 9f));
+            var alpha = (byte)((115f - i * 16f) * fade * (0.65f + 0.35f * pulse));
+            var color = i % 2 == 0 ? CurrentPalette.GemShine : CurrentPalette.ExitOpen;
+            DrawFrame(new Rectangle(bounds.X - spread, bounds.Y - spread, bounds.Width + spread * 2, bounds.Height + spread * 2), WithAlpha(color, alpha), 3);
+        }
+
+        DrawFrame(new Rectangle(bounds.X - 6, bounds.Y - 6, bounds.Width + 12, bounds.Height + 12), WithAlpha(CurrentPalette.GemShine, (byte)(150f * fade)), 4);
+    }
+
+
+    private void DrawExitOpenRays(Rectangle bounds)
+    {
+        if (_exitOpenFlashRemaining <= 0f)
+        {
+            return;
+        }
+
+        var progress = 1f - _exitOpenFlashRemaining / ExitOpenFlashSeconds;
+        var fade = 1f - progress;
+        var center = bounds.Center.ToVector2();
+        for (var i = 0; i < 16; i++)
+        {
+            var angle = (float)(i * Math.PI * 2d / 16d + progress * 0.28f);
+            var direction = new Vector2((float)Math.Cos(angle), (float)Math.Sin(angle));
+            var start = center + direction * (92f + progress * 38f);
+            var end = center + direction * (220f + progress * 150f);
+            DrawLine(start, end, Math.Max(3, (int)(9f * fade)), WithAlpha(CurrentPalette.GemShine, (byte)(220f * fade)));
+        }
+
+        for (var i = 0; i < 8; i++)
+        {
+            var angle = (float)(i * Math.PI * 2d / 8d - progress * 0.55f);
+            var direction = new Vector2((float)Math.Cos(angle), (float)Math.Sin(angle));
+            var position = center + direction * (150f + progress * 120f);
+            var size = Math.Max(5, (int)(14f * fade));
+            DrawRectangle(new Rectangle((int)position.X - size / 2, (int)position.Y - size / 2, size, size), WithAlpha(CurrentPalette.ExitOpen, (byte)(210f * fade)));
+        }
     }
 
     private void DrawHazard(Rectangle bounds)
@@ -1315,8 +1373,10 @@ public class Game1 : Game
         }
 
         _exitOpen = true;
+        _exitOpenFlashRemaining = ExitOpenFlashSeconds;
         PlaySound(_exitOpenSound);
     }
+
     private void CheckHazardCollision()
     {
         if (_invincibleTimeRemaining > 0f)
@@ -1341,7 +1401,7 @@ public class Game1 : Game
 
     private void CheckExit()
     {
-        if (_exitOpen && GetPlayerBounds().Intersects(GetExitBounds()))
+        if (_exitOpen && _exitOpenFlashRemaining <= 0f && GetPlayerBounds().Intersects(GetExitBounds()))
         {
             LogPlayEvent(PlayEventKind.Clear, _currentStageIndex, GetPlayerBounds().Center.ToVector2(), _currentStageElapsedSeconds, _stageGemCounts[_currentStageIndex]);
             PlaySound(_clearSound);
@@ -1435,6 +1495,7 @@ public class Game1 : Game
         _cleared = false;
         _exitOpen = false;
         _exitOpenDelayRemaining = 0f;
+        _exitOpenFlashRemaining = 0f;
         _clearRank = 0;
         _clearAnimationTime = 0d;
         _currentStageElapsedSeconds = 0d;
