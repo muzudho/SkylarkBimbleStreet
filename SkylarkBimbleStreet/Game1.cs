@@ -402,9 +402,7 @@ public class Game1 : Game
             DrawRectangle(Inset(wall, 5), CurrentPalette.WallInner);
         }
 
-        var exitColor = AreAllGemsCollected() ? CurrentPalette.ExitOpen : CurrentPalette.ExitClosed;
-        DrawRectangle(GetExitBounds(), exitColor);
-        DrawRectangle(Inset(GetExitBounds(), 12), _backgroundColor);
+        DrawExit(GetExitBounds());
 
         for (var i = 0; i < _gemBounds.Length; i++)
         {
@@ -413,18 +411,53 @@ public class Game1 : Game
                 continue;
             }
 
-            DrawRectangle(_gemBounds[i], CurrentPalette.Gem);
-            DrawRectangle(Inset(_gemBounds[i], 8), CurrentPalette.GemShine);
+            DrawGem(_gemBounds[i].Center.ToVector2(), _gemBounds[i].Width, CurrentPalette.Gem, CurrentPalette.GemShine);
         }
 
         foreach (var hazard in _hazards)
         {
-            DrawRectangle(hazard.Bounds, CurrentPalette.Hazard);
-            DrawRectangle(Inset(hazard.Bounds, 12), CurrentPalette.HazardInner);
+            DrawHazard(hazard.Bounds);
         }
 
         DrawPlayer();
         DrawHud();
+    }
+
+    private void DrawExit(Rectangle bounds)
+    {
+        var open = AreAllGemsCollected();
+        var body = open ? CurrentPalette.ExitOpen : CurrentPalette.ExitClosed;
+        var detail = open ? CurrentPalette.GemShine : CurrentPalette.WallInner;
+
+        DrawFrame(bounds, body, 14);
+        DrawFrame(Inset(bounds, 20), detail, 8);
+        DrawRectangle(Inset(bounds, 34), _backgroundColor);
+
+        if (open)
+        {
+            DrawArrow(Inset(bounds, 24), true, detail);
+            return;
+        }
+
+        var gate = Inset(bounds, 24);
+        DrawRectangle(new Rectangle(gate.X + gate.Width / 3 - 4, gate.Y + 8, 8, gate.Height - 16), detail);
+        DrawRectangle(new Rectangle(gate.X + gate.Width * 2 / 3 - 4, gate.Y + 8, 8, gate.Height - 16), detail);
+    }
+
+    private void DrawHazard(Rectangle bounds)
+    {
+        DrawRectangle(bounds, CurrentPalette.Hazard);
+        DrawRectangle(Inset(bounds, 12), CurrentPalette.HazardInner);
+        DrawLine(new Vector2(bounds.X + 10, bounds.Y + 10), new Vector2(bounds.Right - 10, bounds.Bottom - 10), 8, CurrentPalette.PlayerInvincible);
+        DrawLine(new Vector2(bounds.Right - 10, bounds.Y + 10), new Vector2(bounds.X + 10, bounds.Bottom - 10), 8, CurrentPalette.PlayerInvincible);
+        DrawFrame(Inset(bounds, 6), CurrentPalette.PlayerInvincible, 4);
+    }
+
+    private void DrawMissMark(Rectangle bounds)
+    {
+        DrawFrame(bounds, CurrentPalette.Hazard, 4);
+        DrawLine(new Vector2(bounds.X + 4, bounds.Y + 4), new Vector2(bounds.Right - 4, bounds.Bottom - 4), 5, CurrentPalette.HazardInner);
+        DrawLine(new Vector2(bounds.Right - 4, bounds.Y + 4), new Vector2(bounds.X + 4, bounds.Bottom - 4), 5, CurrentPalette.HazardInner);
     }
 
     private void DrawGrid()
@@ -446,13 +479,14 @@ public class Game1 : Game
         DrawRectangle(new Rectangle(58, 58, Math.Max(120, 40 + _gemBounds.Length * 76), 22), CurrentPalette.HudBackground);
         for (var i = 0; i < _gemBounds.Length; i++)
         {
-            var color = _gemsCollected[i] ? CurrentPalette.Gem : CurrentPalette.HudInactive;
-            DrawRectangle(new Rectangle(70 + i * 76, 52, 42, 42), color);
+            var body = _gemsCollected[i] ? CurrentPalette.Gem : CurrentPalette.HudInactive;
+            var shine = _gemsCollected[i] ? CurrentPalette.GemShine : CurrentPalette.WallInner;
+            DrawGem(new Vector2(91 + i * 76, 73), 42, body, shine);
         }
 
         for (var i = 0; i < Math.Min(_deaths, 8); i++)
         {
-            DrawRectangle(new Rectangle(70 + i * 38, 112, 24, 24), CurrentPalette.Hazard);
+            DrawMissMark(new Rectangle(70 + i * 38, 112, 24, 24));
         }
 
         var stageIndicatorStartX = VirtualWidth - 58 - (_stages.Length * 54 - 16);
