@@ -14,6 +14,7 @@ public class Game1 : Game
     private const float PlayerSpeed = 520f;
     private const int PlayerSize = 46;
     private const float RespawnInvincibleSeconds = 0.8f;
+    private const float ExitOpenDelaySeconds = 0.32f;
     private const float StageSelectFocusStartOffset = 12f;
     private const float StageSelectFocusExpandFastRate = 22f;
     private const float StageSelectFocusExpandSlowRate = 8f;
@@ -33,6 +34,7 @@ public class Game1 : Game
     private SoundEffect _gemSound = null!;
     private SoundEffect _deathSound = null!;
     private SoundEffect _clearSound = null!;
+    private SoundEffect _exitOpenSound = null!;
     private SoundEffect _stageMoveSound = null!;
     private SoundEffect _confirmSound = null!;
     private SoundEffect _pauseSound = null!;
@@ -74,6 +76,7 @@ public class Game1 : Game
     private int _clearRank;
     private int _deaths;
     private bool _cleared;
+    private bool _exitOpen;
     private bool _stageSelectOpen;
     private bool _paused;
     private double _titleRefreshTimer;
@@ -89,6 +92,7 @@ public class Game1 : Game
     private float _stageSelectQuickMoveTimeRemaining;
     private float _stageSelectMoveRepeatTimeRemaining;
     private float _invincibleTimeRemaining;
+    private float _exitOpenDelayRemaining;
     private Color _backgroundColor;
 
     private GamePalette CurrentPalette => _palettes[_paletteIndex];
@@ -187,6 +191,7 @@ public class Game1 : Game
             _currentStageElapsedSeconds += elapsed;
             _stageElapsedSeconds[_currentStageIndex] += elapsed;
             _invincibleTimeRemaining = Math.Max(0f, _invincibleTimeRemaining - elapsed);
+            UpdateExitOpening(elapsed);
             MovePlayer(GetMoveInput(keyboard, gamePad), elapsed);
             UpdateHazards(elapsed);
             CheckGemCollection();
@@ -258,7 +263,7 @@ public class Game1 : Game
 
     private void DrawExit(Rectangle bounds)
     {
-        var open = AreAllGemsCollected();
+        var open = _exitOpen;
         var body = open ? CurrentPalette.ExitOpen : CurrentPalette.ExitClosed;
         var detail = open ? CurrentPalette.GemShine : CurrentPalette.WallInner;
 
@@ -1088,10 +1093,37 @@ public class Game1 : Game
                 _stageGemCounts[_currentStageIndex]++;
                 LogPlayEvent(PlayEventKind.Gem, _currentStageIndex, _gemBounds[i].Center.ToVector2(), _currentStageElapsedSeconds, i);
                 PlaySound(_gemSound);
+                StartExitOpenDelayIfReady();
             }
         }
     }
 
+    private void StartExitOpenDelayIfReady()
+    {
+        if (_exitOpen || _exitOpenDelayRemaining > 0f || !AreAllGemsCollected())
+        {
+            return;
+        }
+
+        _exitOpenDelayRemaining = ExitOpenDelaySeconds;
+    }
+
+    private void UpdateExitOpening(float elapsed)
+    {
+        if (_exitOpen || _exitOpenDelayRemaining <= 0f)
+        {
+            return;
+        }
+
+        _exitOpenDelayRemaining = Math.Max(0f, _exitOpenDelayRemaining - elapsed);
+        if (_exitOpenDelayRemaining > 0f)
+        {
+            return;
+        }
+
+        _exitOpen = true;
+        PlaySound(_exitOpenSound);
+    }
     private void CheckHazardCollision()
     {
         if (_invincibleTimeRemaining > 0f)
@@ -1116,7 +1148,7 @@ public class Game1 : Game
 
     private void CheckExit()
     {
-        if (AreAllGemsCollected() && GetPlayerBounds().Intersects(GetExitBounds()))
+        if (_exitOpen && GetPlayerBounds().Intersects(GetExitBounds()))
         {
             LogPlayEvent(PlayEventKind.Clear, _currentStageIndex, GetPlayerBounds().Center.ToVector2(), _currentStageElapsedSeconds, _stageGemCounts[_currentStageIndex]);
             PlaySound(_clearSound);
@@ -1208,6 +1240,8 @@ public class Game1 : Game
         _stageSelectOpen = false;
         _paused = false;
         _cleared = false;
+        _exitOpen = false;
+        _exitOpenDelayRemaining = 0f;
         _clearRank = 0;
         _clearAnimationTime = 0d;
         _currentStageElapsedSeconds = 0d;
@@ -1372,6 +1406,7 @@ public class Game1 : Game
         _gemSound = CreateTone(880f, 1320f, 0.12f, 0.32f, WaveShape.Sine);
         _deathSound = CreateTone(170f, 74f, 0.18f, 0.34f, WaveShape.Square);
         _clearSound = CreateArpeggio([660f, 880f, 1175f, 1568f], 0.07f, 0.28f);
+        _exitOpenSound = CreateArpeggio([523f, 659f, 784f, 1047f, 1319f], 0.055f, 0.24f);
         _stageMoveSound = CreateTone(430f, 360f, 0.045f, 0.18f, WaveShape.Square);
         _confirmSound = CreateTone(540f, 760f, 0.075f, 0.24f, WaveShape.Sine);
         _pauseSound = CreateTone(260f, 410f, 0.08f, 0.22f, WaveShape.Triangle);
