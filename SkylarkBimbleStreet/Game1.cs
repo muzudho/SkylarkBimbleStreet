@@ -31,7 +31,7 @@ public class Game1 : Game
     private const int PauseOptionCount = 5;
     private const int SoundTestEntryOption = 4;
     private const int StageMoveSoundVariantCount = 3;
-    private const int SoundTestStationCount = 11;
+    private const int SoundTestStationCount = 12;
     private const int SoundTestTerminalIndex = SoundTestStationCount;
 
     private readonly GraphicsDeviceManager _graphics;
@@ -53,6 +53,7 @@ public class Game1 : Game
     private SoundEffect _pauseSound = null!;
     private SoundEffect _ambulanceSirenSound = null!;
     private SoundEffect _ambulanceDoorSound = null!;
+    private SoundEffect _ambulanceBrakeSound = null!;
 
     private readonly Stage[] _stages = StageDefinitions.CreateStages();
 
@@ -101,6 +102,8 @@ public class Game1 : Game
     private bool _deathRespawnCompleted;
     private bool _ambulancePickupDoorPlayed;
     private bool _ambulanceDropoffDoorPlayed;
+    private bool _ambulancePickupBrakePlayed;
+    private bool _ambulanceDropoffBrakePlayed;
     private bool _soundTestOpen;
     private double _titleRefreshTimer;
     private double _clearAnimationTime;
@@ -1521,6 +1524,8 @@ public class Game1 : Game
         _deathRespawnCompleted = false;
         _ambulancePickupDoorPlayed = false;
         _ambulanceDropoffDoorPlayed = false;
+        _ambulancePickupBrakePlayed = false;
+        _ambulanceDropoffBrakePlayed = false;
         _deathRespawnTimeRemaining = DeathEffectSeconds;
         _invincibleTimeRemaining = 0f;
         PlaySound(_ambulanceSirenSound, 0.72f);
@@ -1535,6 +1540,12 @@ public class Game1 : Game
 
         _deathRespawnTimeRemaining = Math.Max(0f, _deathRespawnTimeRemaining - elapsed);
         var progress = 1f - _deathRespawnTimeRemaining / DeathEffectSeconds;
+        if (!_ambulancePickupBrakePlayed && progress >= 0.22f)
+        {
+            _ambulancePickupBrakePlayed = true;
+            PlaySound(_ambulanceBrakeSound, 0.58f);
+        }
+
         if (!_ambulancePickupDoorPlayed && progress >= 0.30f)
         {
             _ambulancePickupDoorPlayed = true;
@@ -1544,6 +1555,12 @@ public class Game1 : Game
         if (!_playerInAmbulance && progress >= 0.30f)
         {
             _playerInAmbulance = true;
+        }
+
+        if (!_ambulanceDropoffBrakePlayed && progress >= 0.66f)
+        {
+            _ambulanceDropoffBrakePlayed = true;
+            PlaySound(_ambulanceBrakeSound, 0.52f);
         }
 
         if (!_ambulanceDropoffDoorPlayed && progress >= 0.84f)
@@ -1854,6 +1871,8 @@ public class Game1 : Game
         _deathRespawnCompleted = false;
         _ambulancePickupDoorPlayed = false;
         _ambulanceDropoffDoorPlayed = false;
+        _ambulancePickupBrakePlayed = false;
+        _ambulanceDropoffBrakePlayed = false;
         _playerStart = stage.PlayerStart;
         _exitBounds = stage.ExitBounds;
         _backgroundColor = CurrentPalette.Background;
@@ -2038,7 +2057,8 @@ public class Game1 : Game
         _pauseSound = CreateTone(260f, 410f, 0.08f, 0.22f, WaveShape.Triangle);
         _ambulanceSirenSound = CreateAmbulanceSirenSound();
         _ambulanceDoorSound = CreateAmbulanceDoorSound();
-        _soundTestSounds = [_gemSound, _deathSound, _clearSound, _exitOpenSound, _stageMoveSounds[0], _stageMoveSounds[1], _stageMoveSounds[2], _confirmSound, _pauseSound, _ambulanceSirenSound, _ambulanceDoorSound];
+        _ambulanceBrakeSound = CreateAmbulanceBrakeSound();
+        _soundTestSounds = [_gemSound, _deathSound, _clearSound, _exitOpenSound, _stageMoveSounds[0], _stageMoveSounds[1], _stageMoveSounds[2], _confirmSound, _pauseSound, _ambulanceSirenSound, _ambulanceDoorSound, _ambulanceBrakeSound];
     }
 
     private void DisposeSoundEffects()
@@ -2056,6 +2076,7 @@ public class Game1 : Game
         _pauseSound.Dispose();
         _ambulanceSirenSound.Dispose();
         _ambulanceDoorSound.Dispose();
+        _ambulanceBrakeSound.Dispose();
     }
 
     private static void PlaySound(SoundEffect sound, float volume = 1f)
@@ -2106,13 +2127,36 @@ public class Game1 : Game
     private static SoundEffect CreateAmbulanceDoorSound()
     {
         const int sampleRate = 44100;
-        const float seconds = 0.23f;
+        const float seconds = 0.30f;
         var sampleCount = (int)(sampleRate * seconds);
         var samples = new float[sampleCount];
 
-        AddToneBurst(samples, sampleRate, 0.00f, 0.055f, 180f, 82f, 0.46f, WaveShape.Square);
-        AddToneBurst(samples, sampleRate, 0.038f, 0.105f, 95f, 58f, 0.30f, WaveShape.Triangle);
-        AddNoiseBurst(samples, sampleRate, 0.012f, 0.082f, 0.15f, 41);
+        AddToneBurst(samples, sampleRate, 0.000f, 0.070f, 132f, 58f, 0.55f, WaveShape.Square);
+        AddToneBurst(samples, sampleRate, 0.030f, 0.120f, 78f, 42f, 0.42f, WaveShape.Triangle);
+        AddToneBurst(samples, sampleRate, 0.115f, 0.090f, 62f, 36f, 0.24f, WaveShape.Square);
+        AddNoiseBurst(samples, sampleRate, 0.010f, 0.115f, 0.22f, 41);
+        AddNoiseBurst(samples, sampleRate, 0.105f, 0.065f, 0.12f, 73);
+
+        var buffer = new byte[sampleCount * 2];
+        for (var i = 0; i < sampleCount; i++)
+        {
+            WriteSample(buffer, i, samples[i]);
+        }
+
+        return new SoundEffect(buffer, sampleRate, AudioChannels.Mono);
+    }
+
+    private static SoundEffect CreateAmbulanceBrakeSound()
+    {
+        const int sampleRate = 44100;
+        const float seconds = 0.30f;
+        var sampleCount = (int)(sampleRate * seconds);
+        var samples = new float[sampleCount];
+
+        AddToneBurst(samples, sampleRate, 0.000f, 0.175f, 1760f, 720f, 0.18f, WaveShape.Square);
+        AddToneBurst(samples, sampleRate, 0.055f, 0.150f, 1180f, 520f, 0.12f, WaveShape.Sine);
+        AddNoiseBurst(samples, sampleRate, 0.000f, 0.220f, 0.10f, 97);
+        AddNoiseBurst(samples, sampleRate, 0.170f, 0.085f, 0.07f, 131);
 
         var buffer = new byte[sampleCount * 2];
         for (var i = 0; i < sampleCount; i++)
