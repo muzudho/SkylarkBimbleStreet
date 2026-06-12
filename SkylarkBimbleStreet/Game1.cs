@@ -17,7 +17,7 @@ public class Game1 : Game
     private const float ExitOpenDelaySeconds = 0.32f;
     private const float ExitOpenFlashSeconds = 0.55f;
     private const float GemCollectEffectSeconds = 0.34f;
-    private const float DeathEffectSeconds = 2.8f;
+    private const float DeathEffectSeconds = 3.0f;
     private const float StageSelectFocusStartOffset = 12f;
     private const float StageSelectFocusExpandFastRate = 22f;
     private const float StageSelectFocusExpandSlowRate = 8f;
@@ -1505,12 +1505,12 @@ public class Game1 : Game
 
         _deathRespawnTimeRemaining = Math.Max(0f, _deathRespawnTimeRemaining - elapsed);
         var progress = 1f - _deathRespawnTimeRemaining / DeathEffectSeconds;
-        if (!_playerInAmbulance && progress >= 0.34f)
+        if (!_playerInAmbulance && progress >= 0.30f)
         {
             _playerInAmbulance = true;
         }
 
-        if (!_deathRespawnCompleted && progress >= 0.82f)
+        if (!_deathRespawnCompleted && progress >= 0.84f)
         {
             _deathRespawnCompleted = true;
             _playerInAmbulance = false;
@@ -1583,20 +1583,45 @@ public class Game1 : Game
 
     private void DrawDeathStopLine(Vector2 position, float fade)
     {
-        var alpha = (byte)(210f * fade);
-        var x = (int)position.X - 62;
-        var y = (int)position.Y + 42;
-        DrawRectangle(new Rectangle(x, y, 124, 10), WithAlpha(CurrentPalette.GemShine, alpha));
-        DrawRectangle(new Rectangle(x, y + 22, 124, 10), WithAlpha(CurrentPalette.GemShine, (byte)(170f * fade)));
-        DrawFrame(new Rectangle(x - 12, y - 10, 148, 54), WithAlpha(CurrentPalette.WallInner, (byte)(95f * fade)), 3);
+        var alpha = (byte)(145f * fade);
+        var patch = new Rectangle((int)position.X - 58, (int)position.Y + 26, 116, 42);
+        var fill = WithAlpha(CurrentPalette.HudBackground, alpha);
+        var outline = WithAlpha(CurrentPalette.WallInner, (byte)(185f * fade));
+        var dot = WithAlpha(CurrentPalette.HudInactive, (byte)(150f * fade));
+
+        DrawRoundedRectangleApprox(patch, fill, outline, 5);
+        var pad = new Rectangle(patch.Center.X - 18, patch.Y + 7, 36, patch.Height - 14);
+        DrawRoundedRectangleApprox(pad, WithAlpha(CurrentPalette.Background, (byte)(90f * fade)), WithAlpha(CurrentPalette.WallOuter, (byte)(120f * fade)), 3);
+
+        for (var i = 0; i < 6; i++)
+        {
+            var x = patch.X + 13 + i % 3 * 14;
+            var y = patch.Y + 10 + i / 3 * 18;
+            DrawRectangle(new Rectangle(x, y, 5, 5), dot);
+            DrawRectangle(new Rectangle(patch.Right - 18 - i % 3 * 14, y, 5, 5), dot);
+        }
+    }
+    private void DrawRoundedRectangleApprox(Rectangle bounds, Color fill, Color outline, int radius)
+    {
+        DrawRectangle(new Rectangle(bounds.X + radius, bounds.Y, bounds.Width - radius * 2, bounds.Height), fill);
+        DrawRectangle(new Rectangle(bounds.X, bounds.Y + radius, bounds.Width, bounds.Height - radius * 2), fill);
+
+        DrawRectangle(new Rectangle(bounds.X + radius, bounds.Y, bounds.Width - radius * 2, 3), outline);
+        DrawRectangle(new Rectangle(bounds.X + radius, bounds.Bottom - 3, bounds.Width - radius * 2, 3), outline);
+        DrawRectangle(new Rectangle(bounds.X, bounds.Y + radius, 3, bounds.Height - radius * 2), outline);
+        DrawRectangle(new Rectangle(bounds.Right - 3, bounds.Y + radius, 3, bounds.Height - radius * 2), outline);
+
+        DrawRectangle(new Rectangle(bounds.X + 3, bounds.Y + 3, radius, 3), outline);
+        DrawRectangle(new Rectangle(bounds.Right - radius - 3, bounds.Y + 3, radius, 3), outline);
+        DrawRectangle(new Rectangle(bounds.X + 3, bounds.Bottom - 6, radius, 3), outline);
+        DrawRectangle(new Rectangle(bounds.Right - radius - 3, bounds.Bottom - 6, radius, 3), outline);
     }
 
     private void DrawAmbulance(Vector2 target, float progress, float fade)
     {
         var pickup = new Vector2(target.X, target.Y - 42f);
         var dropoff = new Vector2(_playerStart.X + PlayerSize / 2f, _playerStart.Y - 42f);
-        var exit = new Vector2(VirtualWidth + 170f, dropoff.Y);
-        var ambulance = GetAmbulancePosition(progress, pickup, dropoff, exit);
+        var ambulance = GetAmbulancePosition(progress, pickup, dropoff);
         var y = ambulance.Y + (float)Math.Sin(progress * Math.PI * 14f) * 2f;
         var body = new Rectangle((int)ambulance.X - 56, (int)y - 26, 112, 48);
         var cab = new Rectangle(body.Right - 34, body.Y + 8, 28, 30);
@@ -1617,47 +1642,52 @@ public class Game1 : Game
         DrawAmbulancePassenger(target, pickup, dropoff, progress);
     }
 
-    private static Vector2 GetAmbulancePosition(float progress, Vector2 pickup, Vector2 dropoff, Vector2 exit)
+    private static Vector2 GetAmbulancePosition(float progress, Vector2 pickup, Vector2 dropoff)
     {
-        if (progress < 0.30f)
+        if (progress < 0.24f)
         {
-            return new Vector2(MathHelper.Lerp(-170f, pickup.X, progress / 0.30f), pickup.Y);
+            return new Vector2(MathHelper.Lerp(-170f, pickup.X, progress / 0.24f), pickup.Y);
         }
 
-        if (progress < 0.45f)
+        if (progress < 0.36f)
         {
             return pickup;
         }
 
-        if (progress < 0.75f)
+        if (progress < 0.50f)
         {
-            return Vector2.Lerp(pickup, dropoff, (progress - 0.45f) / 0.30f);
+            return new Vector2(MathHelper.Lerp(pickup.X, VirtualWidth + 170f, (progress - 0.36f) / 0.14f), pickup.Y);
         }
 
-        if (progress < 0.90f)
+        if (progress < 0.68f)
+        {
+            return new Vector2(MathHelper.Lerp(-170f, dropoff.X, (progress - 0.50f) / 0.18f), dropoff.Y);
+        }
+
+        if (progress < 0.84f)
         {
             return dropoff;
         }
 
-        return Vector2.Lerp(dropoff, exit, (progress - 0.90f) / 0.10f);
+        return new Vector2(MathHelper.Lerp(dropoff.X, VirtualWidth + 170f, (progress - 0.84f) / 0.16f), dropoff.Y);
     }
 
     private void DrawAmbulancePassenger(Vector2 missPosition, Vector2 pickup, Vector2 dropoff, float progress)
     {
-        if (progress >= 0.34f && progress < 0.82f)
+        if (progress >= 0.30f && progress < 0.72f)
         {
             return;
         }
 
         Vector2 position;
-        if (progress < 0.34f)
+        if (progress < 0.30f)
         {
-            var lift = MathHelper.Clamp((progress - 0.30f) / 0.04f, 0f, 1f);
+            var lift = MathHelper.Clamp((progress - 0.24f) / 0.06f, 0f, 1f);
             position = Vector2.Lerp(missPosition - new Vector2(PlayerSize / 2f, PlayerSize / 2f), pickup - new Vector2(PlayerSize / 2f, 18f), lift);
         }
         else
         {
-            var drop = MathHelper.Clamp((progress - 0.82f) / 0.08f, 0f, 1f);
+            var drop = MathHelper.Clamp((progress - 0.72f) / 0.12f, 0f, 1f);
             position = Vector2.Lerp(dropoff - new Vector2(PlayerSize / 2f, 18f), _playerStart, drop);
         }
 
