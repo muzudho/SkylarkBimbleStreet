@@ -85,6 +85,7 @@ public class Game1 : Game
     {
         _deaths = 0;
         _runStartStageIndex = 0;
+        _stagesCleared = new bool[_stages.Length];
         StartStatsRun(false);
         LoadStage(0);
         OpenStageSelect();
@@ -854,7 +855,6 @@ public class Game1 : Game
         _stageDeathCounts = new int[_stages.Length];
         _stageGemCounts = new int[_stages.Length];
         _stageElapsedSeconds = new double[_stages.Length];
-        _stagesCleared = new bool[_stages.Length];
         _runElapsedSeconds = 0d;
         _currentStageElapsedSeconds = 0d;
         _pauseCount = 0;
