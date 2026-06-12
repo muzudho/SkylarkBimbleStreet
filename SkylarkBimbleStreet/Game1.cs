@@ -31,7 +31,7 @@ public class Game1 : Game
     private const int PauseOptionCount = 5;
     private const int SoundTestEntryOption = 4;
     private const int StageMoveSoundVariantCount = 3;
-    private const int SoundTestStationCount = 9;
+    private const int SoundTestStationCount = 11;
     private const int SoundTestTerminalIndex = SoundTestStationCount;
 
     private readonly GraphicsDeviceManager _graphics;
@@ -51,6 +51,8 @@ public class Game1 : Game
     private SoundEffect[] _soundTestSounds = [];
     private SoundEffect _confirmSound = null!;
     private SoundEffect _pauseSound = null!;
+    private SoundEffect _ambulanceSirenSound = null!;
+    private SoundEffect _ambulanceDoorSound = null!;
 
     private readonly Stage[] _stages = StageDefinitions.CreateStages();
 
@@ -97,6 +99,8 @@ public class Game1 : Game
     private bool _deathRespawnPending;
     private bool _playerInAmbulance;
     private bool _deathRespawnCompleted;
+    private bool _ambulancePickupDoorPlayed;
+    private bool _ambulanceDropoffDoorPlayed;
     private bool _soundTestOpen;
     private double _titleRefreshTimer;
     private double _clearAnimationTime;
@@ -784,7 +788,28 @@ public class Game1 : Game
             return;
         }
 
-        DrawWaveIcon(bounds, color);
+        if (stationIndex == 8)
+        {
+            DrawWaveIcon(bounds, color);
+            DrawRectangle(new Rectangle(bounds.Center.X - 4, bounds.Bottom - 15, 8, 8), color);
+            return;
+        }
+
+        if (stationIndex == 9)
+        {
+            DrawRectangle(new Rectangle(bounds.X + 6, bounds.Center.Y - 5, bounds.Width - 12, 18), CurrentPalette.PlayerInner);
+            DrawFrame(new Rectangle(bounds.X + 6, bounds.Center.Y - 5, bounds.Width - 12, 18), color, 3);
+            DrawRectangle(new Rectangle(bounds.X + bounds.Width / 2 - 6, bounds.Center.Y - 13, 12, 8), color);
+            DrawRectangle(new Rectangle(bounds.X + 13, bounds.Center.Y + 11, 8, 8), color);
+            DrawRectangle(new Rectangle(bounds.Right - 21, bounds.Center.Y + 11, 8, 8), color);
+            DrawLine(new Vector2(bounds.X + 8, bounds.Y + 11), new Vector2(bounds.X + 25, bounds.Y + 4), 4, color);
+            DrawLine(new Vector2(bounds.Right - 8, bounds.Y + 11), new Vector2(bounds.Right - 25, bounds.Y + 4), 4, color);
+            return;
+        }
+
+        DrawFrame(bounds, color, 4);
+        DrawLine(new Vector2(bounds.Center.X + 3, bounds.Y + 8), new Vector2(bounds.Center.X + 3, bounds.Bottom - 8), 4, color);
+        DrawRectangle(new Rectangle(bounds.Center.X - 13, bounds.Center.Y - 2, 7, 7), color);
     }
 
     private void DrawWaveIcon(Rectangle bounds, Color color)
@@ -1494,8 +1519,11 @@ public class Game1 : Game
         _deathRespawnPending = true;
         _playerInAmbulance = false;
         _deathRespawnCompleted = false;
+        _ambulancePickupDoorPlayed = false;
+        _ambulanceDropoffDoorPlayed = false;
         _deathRespawnTimeRemaining = DeathEffectSeconds;
         _invincibleTimeRemaining = 0f;
+        PlaySound(_ambulanceSirenSound, 0.72f);
     }
 
     private void UpdateDeathRespawn(float elapsed)
@@ -1507,9 +1535,21 @@ public class Game1 : Game
 
         _deathRespawnTimeRemaining = Math.Max(0f, _deathRespawnTimeRemaining - elapsed);
         var progress = 1f - _deathRespawnTimeRemaining / DeathEffectSeconds;
+        if (!_ambulancePickupDoorPlayed && progress >= 0.30f)
+        {
+            _ambulancePickupDoorPlayed = true;
+            PlaySound(_ambulanceDoorSound, 0.68f);
+        }
+
         if (!_playerInAmbulance && progress >= 0.30f)
         {
             _playerInAmbulance = true;
+        }
+
+        if (!_ambulanceDropoffDoorPlayed && progress >= 0.84f)
+        {
+            _ambulanceDropoffDoorPlayed = true;
+            PlaySound(_ambulanceDoorSound, 0.62f);
         }
 
         if (!_deathRespawnCompleted && progress >= 0.84f)
@@ -1812,6 +1852,8 @@ public class Game1 : Game
         _deathRespawnTimeRemaining = 0f;
         _playerInAmbulance = false;
         _deathRespawnCompleted = false;
+        _ambulancePickupDoorPlayed = false;
+        _ambulanceDropoffDoorPlayed = false;
         _playerStart = stage.PlayerStart;
         _exitBounds = stage.ExitBounds;
         _backgroundColor = CurrentPalette.Background;
@@ -1994,7 +2036,9 @@ public class Game1 : Game
         _stageMoveSound = _stageMoveSounds[_stageMoveSoundIndex];
         _confirmSound = CreateTone(540f, 760f, 0.075f, 0.24f, WaveShape.Sine);
         _pauseSound = CreateTone(260f, 410f, 0.08f, 0.22f, WaveShape.Triangle);
-        _soundTestSounds = [_gemSound, _deathSound, _clearSound, _exitOpenSound, _stageMoveSounds[0], _stageMoveSounds[1], _stageMoveSounds[2], _confirmSound, _pauseSound];
+        _ambulanceSirenSound = CreateAmbulanceSirenSound();
+        _ambulanceDoorSound = CreateAmbulanceDoorSound();
+        _soundTestSounds = [_gemSound, _deathSound, _clearSound, _exitOpenSound, _stageMoveSounds[0], _stageMoveSounds[1], _stageMoveSounds[2], _confirmSound, _pauseSound, _ambulanceSirenSound, _ambulanceDoorSound];
     }
 
     private void DisposeSoundEffects()
@@ -2010,6 +2054,8 @@ public class Game1 : Game
 
         _confirmSound.Dispose();
         _pauseSound.Dispose();
+        _ambulanceSirenSound.Dispose();
+        _ambulanceDoorSound.Dispose();
     }
 
     private static void PlaySound(SoundEffect sound, float volume = 1f)
@@ -2033,6 +2079,48 @@ public class Game1 : Game
     private void PlayStageMoveSound()
     {
         PlaySound(_stageMoveSound);
+    }
+    private static SoundEffect CreateAmbulanceSirenSound()
+    {
+        const int sampleRate = 44100;
+        const float seconds = 2.75f;
+        var sampleCount = (int)(sampleRate * seconds);
+        var samples = new float[sampleCount];
+
+        for (var i = 0; i < 5; i++)
+        {
+            var start = i * 0.52f;
+            AddToneBurst(samples, sampleRate, start, 0.22f, 880f, 1160f, 0.20f, WaveShape.Sine);
+            AddToneBurst(samples, sampleRate, start + 0.23f, 0.24f, 650f, 520f, 0.22f, WaveShape.Triangle);
+        }
+
+        var buffer = new byte[sampleCount * 2];
+        for (var i = 0; i < sampleCount; i++)
+        {
+            WriteSample(buffer, i, samples[i]);
+        }
+
+        return new SoundEffect(buffer, sampleRate, AudioChannels.Mono);
+    }
+
+    private static SoundEffect CreateAmbulanceDoorSound()
+    {
+        const int sampleRate = 44100;
+        const float seconds = 0.23f;
+        var sampleCount = (int)(sampleRate * seconds);
+        var samples = new float[sampleCount];
+
+        AddToneBurst(samples, sampleRate, 0.00f, 0.055f, 180f, 82f, 0.46f, WaveShape.Square);
+        AddToneBurst(samples, sampleRate, 0.038f, 0.105f, 95f, 58f, 0.30f, WaveShape.Triangle);
+        AddNoiseBurst(samples, sampleRate, 0.012f, 0.082f, 0.15f, 41);
+
+        var buffer = new byte[sampleCount * 2];
+        for (var i = 0; i < sampleCount; i++)
+        {
+            WriteSample(buffer, i, samples[i]);
+        }
+
+        return new SoundEffect(buffer, sampleRate, AudioChannels.Mono);
     }
     private static SoundEffect CreateGemCollectSound()
     {
@@ -2070,6 +2158,20 @@ public class Game1 : Game
             phase += frequency / sampleRate;
             phase -= Math.Floor(phase);
             samples[i] += GetWaveSample(phase, shape) * GetEnvelope(t) * volume;
+        }
+    }
+    private static void AddNoiseBurst(float[] samples, int sampleRate, float startSeconds, float seconds, float volume, int seed)
+    {
+        var random = new Random(seed);
+        var startSample = Math.Clamp((int)(startSeconds * sampleRate), 0, samples.Length);
+        var sampleCount = Math.Max(1, (int)(seconds * sampleRate));
+        var endSample = Math.Min(samples.Length, startSample + sampleCount);
+
+        for (var i = startSample; i < endSample; i++)
+        {
+            var t = (i - startSample) / (float)Math.Max(1, sampleCount - 1);
+            var scrape = (float)(random.NextDouble() * 2d - 1d);
+            samples[i] += scrape * GetEnvelope(t) * volume;
         }
     }
     private static SoundEffect CreateTone(float startFrequency, float endFrequency, float seconds, float volume, WaveShape shape)
