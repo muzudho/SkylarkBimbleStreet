@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "SkylarkBimbleStreet": {
+      "commandName": "Project",
+      "hotReloadEnabled": false
+    }
+  }
+}
