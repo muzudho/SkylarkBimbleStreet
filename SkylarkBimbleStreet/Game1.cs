@@ -219,6 +219,14 @@ public class Game1 : Game
             ]),
     ];
 
+    private readonly GamePalette[] _palettes =
+    [
+        new("Normal", new Color(18, 22, 31), new Color(31, 37, 50), new Color(76, 84, 103), new Color(104, 116, 140), new Color(81, 161, 255), new Color(197, 228, 255), new Color(255, 239, 151), new Color(245, 198, 80), new Color(255, 239, 151), new Color(221, 72, 92), new Color(255, 148, 157), new Color(74, 205, 116), new Color(62, 78, 72), new Color(44, 51, 67), new Color(69, 75, 90), new Color(81, 161, 255)),
+        new("Accessible", new Color(16, 18, 22), new Color(42, 45, 52), new Color(92, 99, 110), new Color(134, 144, 158), new Color(0, 170, 210), new Color(214, 248, 255), new Color(255, 255, 255), new Color(245, 210, 65), new Color(255, 252, 190), new Color(210, 82, 36), new Color(255, 180, 120), new Color(0, 154, 120), new Color(76, 88, 86), new Color(48, 52, 60), new Color(78, 84, 94), new Color(0, 170, 210)),
+        new("High Contrast", new Color(8, 8, 10), new Color(50, 50, 56), new Color(128, 128, 136), new Color(190, 190, 198), new Color(60, 220, 255), new Color(235, 252, 255), new Color(255, 255, 255), new Color(255, 230, 80), new Color(255, 255, 210), new Color(255, 115, 55), new Color(255, 205, 170), new Color(90, 255, 170), new Color(72, 86, 78), new Color(38, 38, 44), new Color(92, 92, 102), new Color(60, 220, 255)),
+        new("Mono Check", new Color(18, 18, 18), new Color(42, 42, 42), new Color(88, 88, 88), new Color(132, 132, 132), new Color(210, 210, 210), new Color(246, 246, 246), new Color(255, 255, 255), new Color(176, 176, 176), new Color(232, 232, 232), new Color(108, 108, 108), new Color(190, 190, 190), new Color(236, 236, 236), new Color(70, 70, 70), new Color(46, 46, 46), new Color(92, 92, 92), new Color(214, 214, 214)),
+    ];
+
     private Rectangle[] _walls = [];
     private Rectangle[] _gemBounds = [];
     private Hazard[] _hazards = [];
@@ -240,6 +248,7 @@ public class Game1 : Game
     private int _currentStageIndex;
     private int _selectedStageIndex;
     private int _pauseSelectionIndex;
+    private int _paletteIndex;
     private int _runStartStageIndex;
     private int _clearRank;
     private int _deaths;
@@ -252,6 +261,8 @@ public class Game1 : Game
     private double _pauseAnimationTime;
     private float _invincibleTimeRemaining;
     private Color _backgroundColor;
+
+    private GamePalette CurrentPalette => _palettes[_paletteIndex];
 
     public Game1()
     {
@@ -387,11 +398,11 @@ public class Game1 : Game
 
         foreach (var wall in _walls)
         {
-            DrawRectangle(wall, new Color(76, 84, 103));
-            DrawRectangle(Inset(wall, 5), new Color(104, 116, 140));
+            DrawRectangle(wall, CurrentPalette.WallOuter);
+            DrawRectangle(Inset(wall, 5), CurrentPalette.WallInner);
         }
 
-        var exitColor = AreAllGemsCollected() ? new Color(74, 205, 116) : new Color(62, 78, 72);
+        var exitColor = AreAllGemsCollected() ? CurrentPalette.ExitOpen : CurrentPalette.ExitClosed;
         DrawRectangle(GetExitBounds(), exitColor);
         DrawRectangle(Inset(GetExitBounds(), 12), _backgroundColor);
 
@@ -402,14 +413,14 @@ public class Game1 : Game
                 continue;
             }
 
-            DrawRectangle(_gemBounds[i], new Color(245, 198, 80));
-            DrawRectangle(Inset(_gemBounds[i], 8), new Color(255, 239, 151));
+            DrawRectangle(_gemBounds[i], CurrentPalette.Gem);
+            DrawRectangle(Inset(_gemBounds[i], 8), CurrentPalette.GemShine);
         }
 
         foreach (var hazard in _hazards)
         {
-            DrawRectangle(hazard.Bounds, new Color(221, 72, 92));
-            DrawRectangle(Inset(hazard.Bounds, 12), new Color(255, 148, 157));
+            DrawRectangle(hazard.Bounds, CurrentPalette.Hazard);
+            DrawRectangle(Inset(hazard.Bounds, 12), CurrentPalette.HazardInner);
         }
 
         DrawPlayer();
@@ -418,7 +429,7 @@ public class Game1 : Game
 
     private void DrawGrid()
     {
-        var color = new Color(31, 37, 50);
+        var color = CurrentPalette.Grid;
         for (var x = 0; x < VirtualWidth; x += 120)
         {
             DrawRectangle(new Rectangle(x, 0, 2, VirtualHeight), color);
@@ -432,22 +443,22 @@ public class Game1 : Game
 
     private void DrawHud()
     {
-        DrawRectangle(new Rectangle(58, 58, Math.Max(120, 40 + _gemBounds.Length * 76), 22), new Color(44, 51, 67));
+        DrawRectangle(new Rectangle(58, 58, Math.Max(120, 40 + _gemBounds.Length * 76), 22), CurrentPalette.HudBackground);
         for (var i = 0; i < _gemBounds.Length; i++)
         {
-            var color = _gemsCollected[i] ? new Color(245, 198, 80) : new Color(69, 75, 90);
+            var color = _gemsCollected[i] ? CurrentPalette.Gem : CurrentPalette.HudInactive;
             DrawRectangle(new Rectangle(70 + i * 76, 52, 42, 42), color);
         }
 
         for (var i = 0; i < Math.Min(_deaths, 8); i++)
         {
-            DrawRectangle(new Rectangle(70 + i * 38, 112, 24, 24), new Color(221, 72, 92));
+            DrawRectangle(new Rectangle(70 + i * 38, 112, 24, 24), CurrentPalette.Hazard);
         }
 
         var stageIndicatorStartX = VirtualWidth - 58 - (_stages.Length * 54 - 16);
         for (var i = 0; i < _stages.Length; i++)
         {
-            var color = i == _currentStageIndex ? new Color(81, 161, 255) : new Color(69, 75, 90);
+            var color = i == _currentStageIndex ? CurrentPalette.StageCurrent : CurrentPalette.HudInactive;
             DrawRectangle(new Rectangle(stageIndicatorStartX + i * 54, 58, 38, 38), color);
         }
 
@@ -472,12 +483,12 @@ public class Game1 : Game
         DrawRectangle(new Rectangle(0, 0, VirtualWidth, VirtualHeight), new Color(4, 6, 10, 185));
 
         var pulse = (float)((Math.Sin(_pauseAnimationTime * 5d) + 1d) * 0.5d);
-        var panel = new Rectangle(500, 320, 920, 420);
+        var panel = new Rectangle(360, 320, 1200, 420);
         DrawRectangle(panel, new Color(18, 24, 34, 238));
         DrawFrame(panel, new Color(245, 198, 80), 16);
         DrawFrame(Inset(panel, 38), new Color(81, 161, 255, 150), 8);
 
-        for (var i = 0; i < 3; i++)
+        for (var i = 0; i < 4; i++)
         {
             DrawPauseOption(i, i == _pauseSelectionIndex, pulse);
         }
@@ -485,9 +496,9 @@ public class Game1 : Game
 
     private void DrawPauseOption(int optionIndex, bool selected, float pulse)
     {
-        var width = selected ? 210 + (int)(pulse * 12f) : 180;
-        var height = selected ? 210 + (int)(pulse * 12f) : 180;
-        var centerX = 690 + optionIndex * 270;
+        var width = selected ? 190 + (int)(pulse * 12f) : 160;
+        var height = selected ? 190 + (int)(pulse * 12f) : 160;
+        var centerX = 600 + optionIndex * 240;
         var centerY = selected ? 530 - (int)(pulse * 5f) : 540;
         var card = new Rectangle(centerX - width / 2, centerY - height / 2, width, height);
         var body = selected ? new Color(31, 37, 50, 250) : new Color(20, 26, 34, 235);
@@ -505,14 +516,18 @@ public class Game1 : Game
             DrawFrame(new Rectangle(card.X + 54, card.Y + 54, card.Width - 108, card.Height - 108), new Color(221, 72, 92), 14);
             DrawLine(new Vector2(card.X + 70, card.Bottom - 70), new Vector2(card.Right - 70, card.Y + 70), 16, new Color(255, 148, 157));
         }
-        else
+        else if (optionIndex == 2)
         {
             for (var i = 0; i < 3; i++)
             {
-                DrawRectangle(new Rectangle(card.X + 48 + i * 42, card.Y + 58, 30, 30), i == _selectedStageIndex ? new Color(245, 198, 80) : new Color(81, 161, 255));
+                DrawRectangle(new Rectangle(card.X + 40 + i * 38, card.Y + 48, 28, 28), i == _selectedStageIndex ? CurrentPalette.Gem : CurrentPalette.StageCurrent);
             }
 
-            DrawFrame(new Rectangle(card.X + 48, card.Y + 112, card.Width - 96, 46), new Color(74, 205, 116), 8);
+            DrawFrame(new Rectangle(card.X + 40, card.Y + 100, card.Width - 80, 42), CurrentPalette.ExitOpen, 8);
+        }
+        else
+        {
+            DrawPaletteSwatches(new Rectangle(card.X + 35, card.Y + 42, card.Width - 70, card.Height - 84));
         }
 
         if (selected)
@@ -585,6 +600,25 @@ public class Game1 : Game
         {
             DrawFrame(new Rectangle(card.X - 22, card.Y - 22, card.Width + 44, card.Height + 44), new Color(255, 239, 151, 160), 8);
         }
+    }
+
+    private void DrawPaletteSwatches(Rectangle bounds)
+    {
+        var swatchWidth = bounds.Width / 2 - 6;
+        var swatchHeight = bounds.Height / 3 - 6;
+        DrawRectangle(new Rectangle(bounds.X, bounds.Y, swatchWidth, swatchHeight), CurrentPalette.Player);
+        DrawRectangle(new Rectangle(bounds.X + swatchWidth + 12, bounds.Y, swatchWidth, swatchHeight), CurrentPalette.Gem);
+        DrawRectangle(new Rectangle(bounds.X, bounds.Y + swatchHeight + 9, swatchWidth, swatchHeight), CurrentPalette.Hazard);
+        DrawRectangle(new Rectangle(bounds.X + swatchWidth + 12, bounds.Y + swatchHeight + 9, swatchWidth, swatchHeight), CurrentPalette.ExitOpen);
+        DrawRectangle(new Rectangle(bounds.X, bounds.Y + (swatchHeight + 9) * 2, bounds.Width, swatchHeight), CurrentPalette.WallInner);
+        DrawFrame(bounds, CurrentPalette.GemShine, 4);
+    }
+
+    private void CyclePalette()
+    {
+        _paletteIndex = (_paletteIndex + 1) % _palettes.Length;
+        _backgroundColor = CurrentPalette.Background;
+        RefreshWindowTitle();
     }
 
     private void DrawArrow(Rectangle bounds, bool right, Color color)
@@ -732,12 +766,12 @@ public class Game1 : Game
     {
         if (WasPressed(keyboard, Keys.Left) || WasPressed(keyboard, Keys.A) || WasPressed(gamePad.DPad.Left, _previousGamePad.DPad.Left) || WasThumbstickPressedLeft(gamePad))
         {
-            _pauseSelectionIndex = (_pauseSelectionIndex + 2) % 3;
+            _pauseSelectionIndex = (_pauseSelectionIndex + 3) % 4;
         }
 
         if (WasPressed(keyboard, Keys.Right) || WasPressed(keyboard, Keys.D) || WasPressed(gamePad.DPad.Right, _previousGamePad.DPad.Right) || WasThumbstickPressedRight(gamePad))
         {
-            _pauseSelectionIndex = (_pauseSelectionIndex + 1) % 3;
+            _pauseSelectionIndex = (_pauseSelectionIndex + 1) % 4;
         }
 
         if (WasPressed(keyboard, Keys.Enter)
@@ -784,9 +818,15 @@ public class Game1 : Game
             return;
         }
 
-        _paused = false;
-        _pauseAnimationTime = 0d;
-        OpenStageSelect();
+        if (_pauseSelectionIndex == 2)
+        {
+            _paused = false;
+            _pauseAnimationTime = 0d;
+            OpenStageSelect();
+            return;
+        }
+
+        CyclePalette();
     }
 
     private void UpdateStageSelect(KeyboardState keyboard, GamePadState gamePad)
@@ -849,13 +889,13 @@ public class Game1 : Game
     {
         if (_invincibleTimeRemaining > 0f && (int)(_invincibleTimeRemaining * 16f) % 2 == 0)
         {
-            DrawRectangle(GetPlayerBounds(), new Color(255, 239, 151));
-            DrawRectangle(Inset(GetPlayerBounds(), 12), new Color(81, 161, 255));
+            DrawRectangle(GetPlayerBounds(), CurrentPalette.PlayerInvincible);
+            DrawRectangle(Inset(GetPlayerBounds(), 12), CurrentPalette.Player);
             return;
         }
 
-        DrawRectangle(GetPlayerBounds(), _cleared ? new Color(90, 220, 160) : new Color(81, 161, 255));
-        DrawRectangle(Inset(GetPlayerBounds(), 10), new Color(197, 228, 255));
+        DrawRectangle(GetPlayerBounds(), _cleared ? CurrentPalette.ExitOpen : CurrentPalette.Player);
+        DrawRectangle(Inset(GetPlayerBounds(), 10), CurrentPalette.PlayerInner);
     }
 
     private void TryMove(Vector2 delta)
@@ -1022,7 +1062,7 @@ public class Game1 : Game
         _gemsCollected = new bool[_gemBounds.Length];
         _playerStart = stage.PlayerStart;
         _exitBounds = stage.ExitBounds;
-        _backgroundColor = stage.BackgroundColor;
+        _backgroundColor = CurrentPalette.Background;
         _stageSelectOpen = false;
         _paused = false;
         _cleared = false;
@@ -1072,7 +1112,7 @@ public class Game1 : Game
 
         var state = _stageSelectOpen ? "STAGE SELECT - Left/Right choose - Enter/Space/Start play" : _paused ? "PAUSE - Left/Right choose - Enter/Space/Start/A select" : _cleared ? "CLEAR - Press R / Start to retry - Tab for stage select" : "Collect all gems and reach the green exit - Start/Enter pause - Tab for stage select";
         var stage = _stages[_currentStageIndex];
-        Window.Title = $"SkylarkBimbleStreet - {stage.Name} - {state} - Gems {collected}/{_gemBounds.Length} - Hits {_deaths} - {GetStatsSummary()}";
+        Window.Title = $"SkylarkBimbleStreet - {stage.Name} - Palette {CurrentPalette.Name} - {state} - Gems {collected}/{_gemBounds.Length} - Hits {_deaths} - {GetStatsSummary()}";
     }
 
     /// <summary>
@@ -1211,6 +1251,24 @@ public class Game1 : Game
         double StageElapsedSeconds,
         Vector2 Position,
         int Detail);
+    private readonly record struct GamePalette(
+        string Name,
+        Color Background,
+        Color Grid,
+        Color WallOuter,
+        Color WallInner,
+        Color Player,
+        Color PlayerInner,
+        Color PlayerInvincible,
+        Color Gem,
+        Color GemShine,
+        Color Hazard,
+        Color HazardInner,
+        Color ExitOpen,
+        Color ExitClosed,
+        Color HudBackground,
+        Color HudInactive,
+        Color StageCurrent);
     /// <summary>
     /// ステージ（＾▽＾）
     /// </summary>
