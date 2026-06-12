@@ -13,6 +13,11 @@ public class Game1 : Game
     private const float PlayerSpeed = 520f;
     private const int PlayerSize = 46;
     private const float RespawnInvincibleSeconds = 0.8f;
+    private const float StageSelectFocusStartOffset = 12f;
+    private const float StageSelectFocusExpandFastRate = 22f;
+    private const float StageSelectFocusExpandSlowRate = 8f;
+    private const float StageSelectFocusShrinkRate = 12f;
+    private const float StageSelectFocusMoveShrinkRate = StageSelectFocusExpandFastRate * 2f;
 
     private readonly GraphicsDeviceManager _graphics;
     private readonly List<PlayEvent> _playEvents = [];
@@ -65,6 +70,8 @@ public class Game1 : Game
     private double _pauseAnimationTime;
     private float _stageSelectSlideOffset;
     private float _stageSelectSlideDelay;
+    private float _stageSelectFocusAmount = 1f;
+    private int _stageSelectPendingMoveDirection;
     private float _invincibleTimeRemaining;
     private Color _backgroundColor;
 
@@ -407,20 +414,20 @@ public class Game1 : Game
 
     private void DrawStageCard(int stageIndex, bool selected, float pulse)
     {
-        var focused = selected && _stageSelectSlideOffset == 0f && _stageSelectSlideDelay == 0f;
-        var width = focused ? 380 : 320;
-        var height = focused ? 500 : 420;
+        var focusAmount = selected ? _stageSelectFocusAmount : 0f;
+        var width = 320 + (int)(60f * focusAmount);
+        var height = 420 + (int)(80f * focusAmount);
         var gap = 430;
         var centerOffset = GetStageCardOffset(stageIndex);
         var centerX = VirtualWidth / 2 + (int)(centerOffset * gap + _stageSelectSlideOffset);
-        var y = focused ? 290 : 335;
+        var y = 335 - (int)(45f * focusAmount);
         var card = new Rectangle(centerX - width / 2, y, width, height);
         var frameColor = selected ? CurrentPalette.Gem : CurrentPalette.HudInactive;
         var bodyColor = selected ? WithAlpha(CurrentPalette.Grid, 245) : WithAlpha(CurrentPalette.HudBackground, 230);
 
         DrawRectangle(card, bodyColor);
-        DrawFrame(card, frameColor, focused ? 16 : 10);
-        DrawFrame(Inset(card, 34), selected ? CurrentPalette.ExitOpen : CurrentPalette.WallOuter, focused ? 8 : 6);
+        DrawFrame(card, frameColor, 10 + (int)(6f * focusAmount));
+        DrawFrame(Inset(card, 34), selected ? CurrentPalette.ExitOpen : CurrentPalette.WallOuter, 6 + (int)(2f * focusAmount));
 
         var preview = new Rectangle(card.X + 54, card.Y + 122, card.Width - 108, card.Height - 220);
         DrawStageMiniMap(preview, _stages[stageIndex], bodyColor);
@@ -431,11 +438,11 @@ public class Game1 : Game
             DrawStageClearedMark(new Rectangle(card.Right - 94, card.Y + 48, 56, 56));
         }
 
-        if (focused)
+        if (focusAmount > 0.01f)
         {
-            var glowAlpha = (byte)190;
-            DrawFrame(new Rectangle(card.X - 24, card.Y - 24, card.Width + 48, card.Height + 48), WithAlpha(CurrentPalette.GemShine, glowAlpha), 10);
-            DrawFrame(new Rectangle(card.X - 38, card.Y - 38, card.Width + 76, card.Height + 76), WithAlpha(CurrentPalette.ExitOpen, 105), 5);
+            var glowAlpha = (byte)(110f + 80f * focusAmount);
+            DrawFrame(new Rectangle(card.X - 24, card.Y - 24, card.Width + 48, card.Height + 48), WithAlpha(CurrentPalette.GemShine, glowAlpha), 6 + (int)(4f * focusAmount));
+            DrawFrame(new Rectangle(card.X - 38, card.Y - 38, card.Width + 76, card.Height + 76), WithAlpha(CurrentPalette.ExitOpen, (byte)(40f + 65f * focusAmount)), 3 + (int)(2f * focusAmount));
         }
     }
 
@@ -778,9 +785,24 @@ public class Game1 : Game
 
     private void UpdateStageSelectSlide(float elapsed)
     {
+        if (_stageSelectPendingMoveDirection != 0)
+        {
+            _stageSelectFocusAmount = MathHelper.Lerp(_stageSelectFocusAmount, 0f, Math.Min(1f, elapsed * StageSelectFocusMoveShrinkRate));
+            if (_stageSelectFocusAmount <= 0.01f)
+            {
+                var direction = _stageSelectPendingMoveDirection;
+                _stageSelectPendingMoveDirection = 0;
+                _stageSelectFocusAmount = 0f;
+                ApplyStageSelectionMove(direction);
+            }
+
+            return;
+        }
+
         if (_stageSelectSlideDelay > 0f)
         {
             _stageSelectSlideDelay = Math.Max(0f, _stageSelectSlideDelay - elapsed);
+            _stageSelectFocusAmount = 0f;
             return;
         }
 
@@ -789,9 +811,35 @@ public class Game1 : Game
         {
             _stageSelectSlideOffset = 0f;
         }
+
+        var focusTarget = Math.Abs(_stageSelectSlideOffset) <= StageSelectFocusStartOffset && _stageSelectSlideDelay == 0f ? 1f : 0f;
+        var focusRate = focusTarget > _stageSelectFocusAmount
+            ? MathHelper.Lerp(StageSelectFocusExpandFastRate, StageSelectFocusExpandSlowRate, _stageSelectFocusAmount)
+            : StageSelectFocusShrinkRate;
+        _stageSelectFocusAmount = MathHelper.Lerp(_stageSelectFocusAmount, focusTarget, Math.Min(1f, elapsed * focusRate));
+        if (Math.Abs(_stageSelectFocusAmount - focusTarget) < 0.01f)
+        {
+            _stageSelectFocusAmount = focusTarget;
+        }
     }
 
     private void MoveStageSelection(int direction)
+    {
+        if (_stageSelectPendingMoveDirection != 0 || _stageSelectSlideDelay > 0f || _stageSelectSlideOffset != 0f)
+        {
+            return;
+        }
+
+        var nextStageIndex = Math.Clamp(_selectedStageIndex + direction, 0, _stages.Length - 1);
+        if (nextStageIndex == _selectedStageIndex)
+        {
+            return;
+        }
+
+        _stageSelectPendingMoveDirection = direction;
+    }
+
+    private void ApplyStageSelectionMove(int direction)
     {
         var nextStageIndex = Math.Clamp(_selectedStageIndex + direction, 0, _stages.Length - 1);
         if (nextStageIndex == _selectedStageIndex)
@@ -802,6 +850,7 @@ public class Game1 : Game
         _selectedStageIndex = nextStageIndex;
         _stageSelectSlideOffset = direction * 430f;
         _stageSelectSlideDelay = 0.08f;
+        _stageSelectFocusAmount = 0f;
     }
 
     private void UpdateStageSelect(KeyboardState keyboard, GamePadState gamePad)
@@ -834,6 +883,8 @@ public class Game1 : Game
         _stageSelectAnimationTime = 0d;
         _stageSelectSlideOffset = 0f;
         _stageSelectSlideDelay = 0f;
+        _stageSelectFocusAmount = 1f;
+        _stageSelectPendingMoveDirection = 0;
         RefreshWindowTitle();
     }
 
@@ -848,6 +899,8 @@ public class Game1 : Game
         _stageSelectAnimationTime = 0d;
         _stageSelectSlideOffset = 0f;
         _stageSelectSlideDelay = 0f;
+        _stageSelectFocusAmount = 1f;
+        _stageSelectPendingMoveDirection = 0;
         RefreshWindowTitle();
     }
 
