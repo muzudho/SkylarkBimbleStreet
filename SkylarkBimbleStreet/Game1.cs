@@ -3,6 +3,7 @@ namespace SkylarkBimbleStreet;
 using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 
@@ -29,6 +30,12 @@ public class Game1 : Game
     private SpriteBatch _spriteBatch = null!;
     private Texture2D _pixel = null!;
     private RenderTarget2D _scene = null!;
+    private SoundEffect _gemSound = null!;
+    private SoundEffect _deathSound = null!;
+    private SoundEffect _clearSound = null!;
+    private SoundEffect _stageMoveSound = null!;
+    private SoundEffect _confirmSound = null!;
+    private SoundEffect _pauseSound = null!;
 
     private readonly Stage[] _stages = StageDefinitions.CreateStages();
 
@@ -116,10 +123,12 @@ public class Game1 : Game
         _pixel = new Texture2D(GraphicsDevice, 1, 1);
         _pixel.SetData([Color.White]);
         _scene = new RenderTarget2D(GraphicsDevice, VirtualWidth, VirtualHeight);
+        CreateSoundEffects();
     }
 
     protected override void UnloadContent()
     {
+        DisposeSoundEffects();
         _scene.Dispose();
         _pixel.Dispose();
         base.UnloadContent();
@@ -729,11 +738,13 @@ public class Game1 : Game
         if (WasPressed(keyboard, Keys.Left) || WasPressed(keyboard, Keys.A) || WasPressed(gamePad.DPad.Left, _previousGamePad.DPad.Left) || WasThumbstickPressedLeft(gamePad))
         {
             _pauseSelectionIndex = (_pauseSelectionIndex + 3) % 4;
+            PlaySound(_stageMoveSound);
         }
 
         if (WasPressed(keyboard, Keys.Right) || WasPressed(keyboard, Keys.D) || WasPressed(gamePad.DPad.Right, _previousGamePad.DPad.Right) || WasThumbstickPressedRight(gamePad))
         {
             _pauseSelectionIndex = (_pauseSelectionIndex + 1) % 4;
+            PlaySound(_stageMoveSound);
         }
 
         if (WasPressed(keyboard, Keys.Enter)
@@ -750,6 +761,7 @@ public class Game1 : Game
         _pauseCount++;
         LogPlayEvent(PlayEventKind.Pause, _currentStageIndex, GetPlayerBounds().Center.ToVector2(), _currentStageElapsedSeconds, _pauseCount);
         _paused = true;
+        PlaySound(_pauseSound);
         _pauseSelectionIndex = 0;
         _pauseAnimationTime = 0d;
         RefreshWindowTitle();
@@ -758,12 +770,14 @@ public class Game1 : Game
     private void ClosePauseMenu()
     {
         _paused = false;
+        PlaySound(_pauseSound);
         _pauseAnimationTime = 0d;
         RefreshWindowTitle();
     }
 
     private void SelectPauseOption()
     {
+        PlaySound(_confirmSound);
         if (_pauseSelectionIndex == 0)
         {
             ClosePauseMenu();
@@ -897,6 +911,7 @@ public class Game1 : Game
         _stageSelectSlideDelay = preserveCurrentPosition ? 0f : 0.08f;
         _stageSelectFocusAmount = 0f;
         _stageSelectQuickMoveTimeRemaining = 0f;
+        PlaySound(_stageMoveSound);
     }
 
     private void UpdateStageSelect(KeyboardState keyboard, GamePadState gamePad, float elapsed)
@@ -976,6 +991,7 @@ public class Game1 : Game
 
     private void StartSelectedStage()
     {
+        PlaySound(_confirmSound);
         _deaths = 0;
         _runStartStageIndex = _selectedStageIndex;
         StartStatsRun(_selectedStageIndex != 0);
@@ -1071,6 +1087,7 @@ public class Game1 : Game
                 _gemsCollected[i] = true;
                 _stageGemCounts[_currentStageIndex]++;
                 LogPlayEvent(PlayEventKind.Gem, _currentStageIndex, _gemBounds[i].Center.ToVector2(), _currentStageElapsedSeconds, i);
+                PlaySound(_gemSound);
             }
         }
     }
@@ -1090,6 +1107,7 @@ public class Game1 : Game
                 _deaths++;
                 _stageDeathCounts[_currentStageIndex]++;
                 LogPlayEvent(PlayEventKind.Death, _currentStageIndex, player.Center.ToVector2(), _currentStageElapsedSeconds, _deaths);
+                PlaySound(_deathSound);
                 ResetPlayerOnly(true);
                 return;
             }
@@ -1101,6 +1119,7 @@ public class Game1 : Game
         if (AreAllGemsCollected() && GetPlayerBounds().Intersects(GetExitBounds()))
         {
             LogPlayEvent(PlayEventKind.Clear, _currentStageIndex, GetPlayerBounds().Center.ToVector2(), _currentStageElapsedSeconds, _stageGemCounts[_currentStageIndex]);
+            PlaySound(_clearSound);
             _stagesCleared[_currentStageIndex] = true;
 
             if (_currentStageIndex + 1 < _stages.Length)
@@ -1348,6 +1367,95 @@ public class Game1 : Game
             Math.Max(1, (int)Math.Ceiling(source.Height * scaleY)));
     }
 
+    private void CreateSoundEffects()
+    {
+        _gemSound = CreateTone(880f, 1320f, 0.12f, 0.32f, WaveShape.Sine);
+        _deathSound = CreateTone(170f, 74f, 0.18f, 0.34f, WaveShape.Square);
+        _clearSound = CreateArpeggio([660f, 880f, 1175f, 1568f], 0.07f, 0.28f);
+        _stageMoveSound = CreateTone(430f, 360f, 0.045f, 0.18f, WaveShape.Square);
+        _confirmSound = CreateTone(540f, 760f, 0.075f, 0.24f, WaveShape.Sine);
+        _pauseSound = CreateTone(260f, 410f, 0.08f, 0.22f, WaveShape.Triangle);
+    }
+
+    private void DisposeSoundEffects()
+    {
+        _gemSound.Dispose();
+        _deathSound.Dispose();
+        _clearSound.Dispose();
+        _stageMoveSound.Dispose();
+        _confirmSound.Dispose();
+        _pauseSound.Dispose();
+    }
+
+    private static void PlaySound(SoundEffect sound, float volume = 1f)
+    {
+        sound.Play(volume, 0f, 0f);
+    }
+
+    private static SoundEffect CreateTone(float startFrequency, float endFrequency, float seconds, float volume, WaveShape shape)
+    {
+        const int sampleRate = 44100;
+        var sampleCount = Math.Max(1, (int)(sampleRate * seconds));
+        var buffer = new byte[sampleCount * 2];
+        var phase = 0d;
+
+        for (var i = 0; i < sampleCount; i++)
+        {
+            var t = i / (float)Math.Max(1, sampleCount - 1);
+            var frequency = MathHelper.Lerp(startFrequency, endFrequency, t);
+            phase += frequency / sampleRate;
+            phase -= Math.Floor(phase);
+            var envelope = GetEnvelope(t);
+            var sample = GetWaveSample(phase, shape) * envelope * volume;
+            WriteSample(buffer, i, sample);
+        }
+
+        return new SoundEffect(buffer, sampleRate, AudioChannels.Mono);
+    }
+
+    private static SoundEffect CreateArpeggio(float[] frequencies, float noteSeconds, float volume)
+    {
+        const int sampleRate = 44100;
+        var samplesPerNote = Math.Max(1, (int)(sampleRate * noteSeconds));
+        var sampleCount = samplesPerNote * frequencies.Length;
+        var buffer = new byte[sampleCount * 2];
+        var phase = 0d;
+
+        for (var i = 0; i < sampleCount; i++)
+        {
+            var noteIndex = Math.Min(frequencies.Length - 1, i / samplesPerNote);
+            var noteSample = i % samplesPerNote;
+            var t = noteSample / (float)Math.Max(1, samplesPerNote - 1);
+            phase += frequencies[noteIndex] / sampleRate;
+            phase -= Math.Floor(phase);
+            var sample = GetWaveSample(phase, WaveShape.Sine) * GetEnvelope(t) * volume;
+            WriteSample(buffer, i, sample);
+        }
+
+        return new SoundEffect(buffer, sampleRate, AudioChannels.Mono);
+    }
+
+    private static float GetEnvelope(float t)
+    {
+        var attack = MathHelper.Clamp(t / 0.08f, 0f, 1f);
+        var release = MathHelper.Clamp((1f - t) / 0.18f, 0f, 1f);
+        return attack * release;
+    }
+
+    private static float GetWaveSample(double phase, WaveShape shape) => shape switch
+    {
+        WaveShape.Square => phase < 0.5d ? 0.72f : -0.72f,
+        WaveShape.Triangle => (float)(1d - 4d * Math.Abs(phase - 0.5d)),
+        _ => (float)Math.Sin(phase * Math.PI * 2d),
+    };
+
+    private static void WriteSample(byte[] buffer, int sampleIndex, float sample)
+    {
+        var value = (short)(MathHelper.Clamp(sample, -1f, 1f) * short.MaxValue);
+        var offset = sampleIndex * 2;
+        buffer[offset] = (byte)(value & 0xff);
+        buffer[offset + 1] = (byte)((value >> 8) & 0xff);
+    }
     /// <summary>
     /// ボタンが押されたか。
     /// </summary>
@@ -1367,6 +1475,13 @@ public class Game1 : Game
     private bool WasThumbstickPressedLeft(GamePadState gamePad) => gamePad.ThumbSticks.Left.X < -0.55f && _previousGamePad.ThumbSticks.Left.X >= -0.55f;
 
     private bool WasThumbstickPressedRight(GamePadState gamePad) => gamePad.ThumbSticks.Left.X > 0.55f && _previousGamePad.ThumbSticks.Left.X <= 0.55f;
+
+    private enum WaveShape
+    {
+        Sine,
+        Square,
+        Triangle,
+    }
 
     private enum PlayEventKind
     {
