@@ -416,8 +416,9 @@ public class Game1 : Game
         DrawFrame(card, frameColor, selected ? 16 : 10);
         DrawFrame(Inset(card, 34), selected ? CurrentPalette.ExitOpen : CurrentPalette.WallOuter, selected ? 8 : 6);
 
-        var preview = new Rectangle(card.X + 54, card.Y + 122, card.Width - 108, card.Height - 190);
+        var preview = new Rectangle(card.X + 54, card.Y + 122, card.Width - 108, card.Height - 220);
         DrawStageMiniMap(preview, _stages[stageIndex], bodyColor);
+        DrawStageCardStats(new Rectangle(card.X + 54, card.Bottom - 88, card.Width - 108, 36), _stages[stageIndex], _stagesCleared.Length > stageIndex && _stagesCleared[stageIndex]);
 
         if (_stagesCleared.Length > stageIndex && _stagesCleared[stageIndex])
         {
@@ -481,6 +482,63 @@ public class Game1 : Game
             playerSize);
         DrawRectangle(player, CurrentPalette.Player);
         DrawRectangle(Inset(player, Math.Max(2, playerSize / 4)), CurrentPalette.PlayerInner);
+    }
+
+    private void DrawStageCardStats(Rectangle bounds, Stage stage, bool cleared)
+    {
+        var segmentWidth = bounds.Width / 3;
+        var gemSegment = new Rectangle(bounds.X, bounds.Y, segmentWidth, bounds.Height);
+        var hazardSegment = new Rectangle(bounds.X + segmentWidth, bounds.Y, segmentWidth, bounds.Height);
+        var clearSegment = new Rectangle(bounds.X + segmentWidth * 2, bounds.Y, bounds.Width - segmentWidth * 2, bounds.Height);
+
+        DrawStageCountStat(gemSegment, stage.Gems.Length, true);
+        DrawStageCountStat(hazardSegment, stage.Hazards.Length, false);
+        DrawStageClearStat(clearSegment, cleared);
+    }
+
+    private void DrawStageCountStat(Rectangle bounds, int count, bool gem)
+    {
+        DrawFrame(bounds, gem ? CurrentPalette.Gem : CurrentPalette.Hazard, 3);
+
+        if (gem)
+        {
+            DrawGem(new Vector2(bounds.X + 20, bounds.Center.Y), 18, CurrentPalette.Gem, CurrentPalette.GemShine);
+        }
+        else
+        {
+            var hazardIcon = new Rectangle(bounds.X + 10, bounds.Center.Y - 10, 20, 20);
+            DrawRectangle(hazardIcon, CurrentPalette.Hazard);
+            DrawFrame(hazardIcon, CurrentPalette.PlayerInvincible, 3);
+        }
+
+        var pipSize = 5;
+        var columns = 4;
+        var startX = bounds.X + 36;
+        for (var i = 0; i < count; i++)
+        {
+            var x = startX + i % columns * (pipSize + 3);
+            var y = bounds.Center.Y - 8 + i / columns * (pipSize + 3);
+            DrawRectangle(new Rectangle(x, y, pipSize, pipSize), gem ? CurrentPalette.GemShine : CurrentPalette.PlayerInvincible);
+        }
+    }
+
+    private void DrawStageClearStat(Rectangle bounds, bool cleared)
+    {
+        var color = cleared ? CurrentPalette.ExitOpen : CurrentPalette.HudInactive;
+        DrawFrame(bounds, color, 3);
+        var mark = new Rectangle(bounds.X + 12, bounds.Y + 5, bounds.Height - 10, bounds.Height - 10);
+
+        if (cleared)
+        {
+            DrawLine(new Vector2(mark.X + 5, mark.Center.Y + 2), new Vector2(mark.X + 12, mark.Bottom - 5), 5, CurrentPalette.GemShine);
+            DrawLine(new Vector2(mark.X + 12, mark.Bottom - 5), new Vector2(mark.Right - 4, mark.Y + 5), 5, CurrentPalette.GemShine);
+            return;
+        }
+
+        DrawLine(new Vector2(mark.Center.X, mark.Y + 4), new Vector2(mark.Right - 4, mark.Center.Y), 4, color);
+        DrawLine(new Vector2(mark.Right - 4, mark.Center.Y), new Vector2(mark.Center.X, mark.Bottom - 4), 4, color);
+        DrawLine(new Vector2(mark.Center.X, mark.Bottom - 4), new Vector2(mark.X + 4, mark.Center.Y), 4, color);
+        DrawLine(new Vector2(mark.X + 4, mark.Center.Y), new Vector2(mark.Center.X, mark.Y + 4), 4, color);
     }
 
     private void DrawPaletteSwatches(Rectangle bounds)
