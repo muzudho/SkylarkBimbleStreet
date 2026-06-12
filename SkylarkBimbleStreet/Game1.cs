@@ -18,6 +18,7 @@ public class Game1 : Game
     private const float StageSelectFocusExpandSlowRate = 8f;
     private const float StageSelectFocusShrinkRate = 12f;
     private const float StageSelectFocusMoveShrinkRate = StageSelectFocusExpandFastRate * 2f;
+    private const float StageSelectQuickMoveSeconds = 0.22f;
 
     private readonly GraphicsDeviceManager _graphics;
     private readonly List<PlayEvent> _playEvents = [];
@@ -72,6 +73,8 @@ public class Game1 : Game
     private float _stageSelectSlideDelay;
     private float _stageSelectFocusAmount = 1f;
     private int _stageSelectPendingMoveDirection;
+    private int _stageSelectQueuedMoveDirection;
+    private float _stageSelectQuickMoveTimeRemaining;
     private float _invincibleTimeRemaining;
     private Color _backgroundColor;
 
@@ -130,8 +133,8 @@ public class Game1 : Game
         if (_stageSelectOpen)
         {
             _stageSelectAnimationTime += elapsed;
+            UpdateStageSelect(keyboard, gamePad, elapsed);
             UpdateStageSelectSlide(elapsed);
-            UpdateStageSelect(keyboard, gamePad);
             UpdateWindowTitle(gameTime);
             _previousKeyboard = keyboard;
             _previousGamePad = gamePad;
@@ -806,11 +809,32 @@ public class Game1 : Game
             return;
         }
 
+        var wasSliding = _stageSelectSlideOffset != 0f;
         _stageSelectSlideOffset = MathHelper.Lerp(_stageSelectSlideOffset, 0f, Math.Min(1f, elapsed * 11f));
         if (Math.Abs(_stageSelectSlideOffset) < 0.5f)
         {
             _stageSelectSlideOffset = 0f;
         }
+
+        if (wasSliding && _stageSelectSlideOffset == 0f)
+        {
+            _stageSelectQuickMoveTimeRemaining = StageSelectQuickMoveSeconds;
+        }
+
+        if (_stageSelectQueuedMoveDirection != 0)
+        {
+            _stageSelectFocusAmount = 0f;
+            if (Math.Abs(_stageSelectSlideOffset) <= StageSelectFocusStartOffset)
+            {
+                var direction = _stageSelectQueuedMoveDirection;
+                _stageSelectQueuedMoveDirection = 0;
+                ApplyStageSelectionMove(direction);
+            }
+
+            return;
+        }
+
+        _stageSelectQuickMoveTimeRemaining = Math.Max(0f, _stageSelectQuickMoveTimeRemaining - elapsed);
 
         var focusTarget = Math.Abs(_stageSelectSlideOffset) <= StageSelectFocusStartOffset && _stageSelectSlideDelay == 0f ? 1f : 0f;
         var focusRate = focusTarget > _stageSelectFocusAmount
@@ -825,14 +849,28 @@ public class Game1 : Game
 
     private void MoveStageSelection(int direction)
     {
-        if (_stageSelectPendingMoveDirection != 0 || _stageSelectSlideDelay > 0f || _stageSelectSlideOffset != 0f)
+        if (_stageSelectPendingMoveDirection != 0)
         {
+            return;
+        }
+
+        if (_stageSelectSlideDelay > 0f || _stageSelectSlideOffset != 0f)
+        {
+            _stageSelectQueuedMoveDirection = direction;
             return;
         }
 
         var nextStageIndex = Math.Clamp(_selectedStageIndex + direction, 0, _stages.Length - 1);
         if (nextStageIndex == _selectedStageIndex)
         {
+            return;
+        }
+
+        if (_stageSelectFocusAmount < 1f || _stageSelectQuickMoveTimeRemaining > 0f)
+        {
+            _stageSelectFocusAmount = 0f;
+            _stageSelectQuickMoveTimeRemaining = 0f;
+            ApplyStageSelectionMove(direction);
             return;
         }
 
@@ -851,19 +889,12 @@ public class Game1 : Game
         _stageSelectSlideOffset = direction * 430f;
         _stageSelectSlideDelay = 0.08f;
         _stageSelectFocusAmount = 0f;
+        _stageSelectQuickMoveTimeRemaining = 0f;
     }
 
-    private void UpdateStageSelect(KeyboardState keyboard, GamePadState gamePad)
+    private void UpdateStageSelect(KeyboardState keyboard, GamePadState gamePad, float elapsed)
     {
-        if (WasPressed(keyboard, Keys.Left) || WasPressed(keyboard, Keys.A) || WasPressed(gamePad.DPad.Left, _previousGamePad.DPad.Left) || WasThumbstickPressedLeft(gamePad))
-        {
-            MoveStageSelection(-1);
-        }
-
-        if (WasPressed(keyboard, Keys.Right) || WasPressed(keyboard, Keys.D) || WasPressed(gamePad.DPad.Right, _previousGamePad.DPad.Right) || WasThumbstickPressedRight(gamePad))
-        {
-            MoveStageSelection(1);
-        }
+        UpdateStageSelectMovementInput(keyboard, gamePad, elapsed);
 
         if (WasPressed(keyboard, Keys.Enter)
             || WasPressed(keyboard, Keys.Space)
@@ -872,6 +903,33 @@ public class Game1 : Game
         {
             StartSelectedStage();
         }
+    }
+
+    private void UpdateStageSelectMovementInput(KeyboardState keyboard, GamePadState gamePad, float elapsed)
+    {
+        var direction = GetStageSelectMoveDirection(keyboard, gamePad);
+        if (direction == 0)
+        {
+            return;
+        }
+
+        MoveStageSelection(direction);
+    }
+
+    private static int GetStageSelectMoveDirection(KeyboardState keyboard, GamePadState gamePad)
+    {
+        var thumbstickX = gamePad.ThumbSticks.Left.X;
+        if (keyboard.IsKeyDown(Keys.Left) || keyboard.IsKeyDown(Keys.A) || gamePad.DPad.Left == ButtonState.Pressed || thumbstickX < -0.55f)
+        {
+            return -1;
+        }
+
+        if (keyboard.IsKeyDown(Keys.Right) || keyboard.IsKeyDown(Keys.D) || gamePad.DPad.Right == ButtonState.Pressed || thumbstickX > 0.55f)
+        {
+            return 1;
+        }
+
+        return 0;
     }
 
     private void OpenStageSelect()
@@ -885,6 +943,8 @@ public class Game1 : Game
         _stageSelectSlideDelay = 0f;
         _stageSelectFocusAmount = 1f;
         _stageSelectPendingMoveDirection = 0;
+        _stageSelectQueuedMoveDirection = 0;
+        _stageSelectQuickMoveTimeRemaining = 0f;
         RefreshWindowTitle();
     }
 
@@ -901,6 +961,8 @@ public class Game1 : Game
         _stageSelectSlideDelay = 0f;
         _stageSelectFocusAmount = 1f;
         _stageSelectPendingMoveDirection = 0;
+        _stageSelectQueuedMoveDirection = 0;
+        _stageSelectQuickMoveTimeRemaining = 0f;
         RefreshWindowTitle();
     }
 
