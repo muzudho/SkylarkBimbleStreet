@@ -34,6 +34,7 @@ public class Game1 : Game
     private Rectangle[] _gemBounds = [];
     private Hazard[] _hazards = [];
     private bool[] _gemsCollected = [];
+    private bool[] _stagesCleared = [];
     private int[] _stageDeathCounts = [];
     private int[] _stageGemCounts = [];
     private double[] _stageElapsedSeconds = [];
@@ -437,10 +438,22 @@ public class Game1 : Game
         DrawRectangle(new Rectangle(preview.X + 30, preview.Bottom - 70, 36, 36), CurrentPalette.Player);
         DrawRectangle(new Rectangle(preview.X + 40, preview.Bottom - 60, 16, 16), CurrentPalette.PlayerInner);
 
+        if (_stagesCleared.Length > stageIndex && _stagesCleared[stageIndex])
+        {
+            DrawStageClearedMark(new Rectangle(card.Right - 94, card.Y + 48, 56, 56));
+        }
+
         if (selected)
         {
             DrawFrame(new Rectangle(card.X - 22, card.Y - 22, card.Width + 44, card.Height + 44), WithAlpha(CurrentPalette.GemShine, 160), 8);
         }
+    }
+
+    private void DrawStageClearedMark(Rectangle bounds)
+    {
+        DrawFrame(bounds, CurrentPalette.ExitOpen, 6);
+        DrawLine(new Vector2(bounds.X + 12, bounds.Center.Y + 4), new Vector2(bounds.X + 24, bounds.Bottom - 14), 7, CurrentPalette.GemShine);
+        DrawLine(new Vector2(bounds.X + 24, bounds.Bottom - 14), new Vector2(bounds.Right - 10, bounds.Y + 12), 7, CurrentPalette.GemShine);
     }
 
     private void DrawPaletteSwatches(Rectangle bounds)
@@ -820,6 +833,7 @@ public class Game1 : Game
         if (AreAllGemsCollected() && GetPlayerBounds().Intersects(GetExitBounds()))
         {
             LogPlayEvent(PlayEventKind.Clear, _currentStageIndex, GetPlayerBounds().Center.ToVector2(), _currentStageElapsedSeconds, _stageGemCounts[_currentStageIndex]);
+            _stagesCleared[_currentStageIndex] = true;
 
             if (_currentStageIndex + 1 < _stages.Length)
             {
@@ -840,6 +854,7 @@ public class Game1 : Game
         _stageDeathCounts = new int[_stages.Length];
         _stageGemCounts = new int[_stages.Length];
         _stageElapsedSeconds = new double[_stages.Length];
+        _stagesCleared = new bool[_stages.Length];
         _runElapsedSeconds = 0d;
         _currentStageElapsedSeconds = 0d;
         _pauseCount = 0;
