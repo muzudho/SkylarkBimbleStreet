@@ -17,6 +17,7 @@ public class Game1 : Game
     private const float ExitOpenDelaySeconds = 0.32f;
     private const float ExitOpenFlashSeconds = 0.55f;
     private const float GemCollectEffectSeconds = 0.34f;
+    private const float DeathEffectSeconds = 2.8f;
     private const float StageSelectFocusStartOffset = 12f;
     private const float StageSelectFocusExpandFastRate = 22f;
     private const float StageSelectFocusExpandSlowRate = 8f;
@@ -36,6 +37,8 @@ public class Game1 : Game
     private readonly GraphicsDeviceManager _graphics;
     private readonly List<PlayEvent> _playEvents = [];
     private readonly List<GemCollectEffect> _gemCollectEffects = [];
+    private readonly List<DeathEffect> _deathEffects = [];
+    private readonly List<Vector2> _deathStopLines = [];
     private SpriteBatch _spriteBatch = null!;
     private Texture2D _pixel = null!;
     private RenderTarget2D _scene = null!;
@@ -91,6 +94,9 @@ public class Game1 : Game
     private bool _exitOpen;
     private bool _stageSelectOpen;
     private bool _paused;
+    private bool _deathRespawnPending;
+    private bool _playerInAmbulance;
+    private bool _deathRespawnCompleted;
     private bool _soundTestOpen;
     private double _titleRefreshTimer;
     private double _clearAnimationTime;
@@ -105,6 +111,7 @@ public class Game1 : Game
     private float _stageSelectQuickMoveTimeRemaining;
     private float _stageSelectMoveRepeatTimeRemaining;
     private float _invincibleTimeRemaining;
+    private float _deathRespawnTimeRemaining;
     private float _exitOpenDelayRemaining;
     private float _exitOpenFlashRemaining;
     private Color _backgroundColor;
@@ -207,12 +214,18 @@ public class Game1 : Game
             _invincibleTimeRemaining = Math.Max(0f, _invincibleTimeRemaining - elapsed);
             _exitOpenFlashRemaining = Math.Max(0f, _exitOpenFlashRemaining - elapsed);
             UpdateGemCollectEffects(elapsed);
+            UpdateDeathEffects(elapsed);
+            UpdateDeathRespawn(elapsed);
             UpdateExitOpening(elapsed);
-            MovePlayer(GetMoveInput(keyboard, gamePad), elapsed);
             UpdateHazards(elapsed);
-            CheckGemCollection();
-            CheckHazardCollision();
-            CheckExit();
+
+            if (!_deathRespawnPending)
+            {
+                MovePlayer(GetMoveInput(keyboard, gamePad), elapsed);
+                CheckGemCollection();
+                CheckHazardCollision();
+                CheckExit();
+            }
         }
         else if (_cleared)
         {
@@ -269,6 +282,7 @@ public class Game1 : Game
         }
 
         DrawGemCollectEffects();
+        DrawDeathStopLines();
 
         foreach (var hazard in _hazards)
         {
@@ -276,6 +290,7 @@ public class Game1 : Game
         }
 
         DrawPlayer();
+        DrawDeathEffects();
         DrawExitOpenRays(GetExitBounds());
         DrawHud();
     }
@@ -1286,6 +1301,11 @@ public class Game1 : Game
 
     private void DrawPlayer()
     {
+        if (_playerInAmbulance)
+        {
+            return;
+        }
+
         if (_invincibleTimeRemaining > 0f && (int)(_invincibleTimeRemaining * 16f) % 2 == 0)
         {
             DrawRectangle(GetPlayerBounds(), CurrentPalette.PlayerInvincible);
@@ -1459,10 +1479,191 @@ public class Game1 : Game
                 _stageDeathCounts[_currentStageIndex]++;
                 LogPlayEvent(PlayEventKind.Death, _currentStageIndex, player.Center.ToVector2(), _currentStageElapsedSeconds, _deaths);
                 PlaySound(_deathSound);
-                ResetPlayerOnly(true);
+                AddDeathEffect(player.Center.ToVector2(), _deaths);
+                AddDeathStopLine(player.Center.ToVector2());
+                StartDeathRespawnDelay();
                 return;
             }
         }
+    }
+
+    private void StartDeathRespawnDelay()
+    {
+        _deathRespawnPending = true;
+        _playerInAmbulance = false;
+        _deathRespawnCompleted = false;
+        _deathRespawnTimeRemaining = DeathEffectSeconds;
+        _invincibleTimeRemaining = 0f;
+    }
+
+    private void UpdateDeathRespawn(float elapsed)
+    {
+        if (!_deathRespawnPending)
+        {
+            return;
+        }
+
+        _deathRespawnTimeRemaining = Math.Max(0f, _deathRespawnTimeRemaining - elapsed);
+        var progress = 1f - _deathRespawnTimeRemaining / DeathEffectSeconds;
+        if (!_playerInAmbulance && progress >= 0.34f)
+        {
+            _playerInAmbulance = true;
+        }
+
+        if (!_deathRespawnCompleted && progress >= 0.82f)
+        {
+            _deathRespawnCompleted = true;
+            _playerInAmbulance = false;
+            ResetPlayerOnly(true);
+        }
+
+        if (_deathRespawnTimeRemaining > 0f)
+        {
+            return;
+        }
+
+        _deathRespawnPending = false;
+        _playerInAmbulance = false;
+    }
+
+    private void UpdateDeathEffects(float elapsed)
+    {
+        for (var i = _deathEffects.Count - 1; i >= 0; i--)
+        {
+            var effect = _deathEffects[i];
+            var timeRemaining = effect.TimeRemaining - elapsed;
+            if (timeRemaining <= 0f)
+            {
+                _deathEffects.RemoveAt(i);
+                continue;
+            }
+
+            _deathEffects[i] = effect with { TimeRemaining = timeRemaining };
+        }
+    }
+
+    private void AddDeathEffect(Vector2 position, int seed)
+    {
+        _deathEffects.Add(new DeathEffect(position, DeathEffectSeconds, DeathEffectSeconds, seed));
+    }
+
+    private void DrawDeathEffects()
+    {
+        foreach (var effect in _deathEffects)
+        {
+            var progress = 1f - effect.TimeRemaining / effect.Duration;
+            var fade = 1f - progress;
+            DrawAmbulance(effect.Position, progress, fade);
+
+            for (var i = 0; i < 8; i++)
+            {
+                var angle = (float)(i * Math.PI * 2d / 8d + effect.Seed * 0.31d);
+                var direction = new Vector2((float)Math.Cos(angle), (float)Math.Sin(angle));
+                var distance = 18f + progress * (46f + i % 3 * 8f);
+                var position = effect.Position + direction * distance;
+                var width = Math.Max(3, (int)((10f - i % 3 * 2f) * fade));
+                var height = Math.Max(2, width / 2);
+                DrawRectangle(new Rectangle((int)position.X - width / 2, (int)position.Y - height / 2, width, height), WithAlpha(CurrentPalette.GemShine, (byte)(120f * fade)));
+            }
+        }
+    }
+
+    private void AddDeathStopLine(Vector2 position)
+    {
+        _deathStopLines.Add(position);
+    }
+
+    private void DrawDeathStopLines()
+    {
+        foreach (var position in _deathStopLines)
+        {
+            DrawDeathStopLine(position, 1f);
+        }
+    }
+
+    private void DrawDeathStopLine(Vector2 position, float fade)
+    {
+        var alpha = (byte)(210f * fade);
+        var x = (int)position.X - 62;
+        var y = (int)position.Y + 42;
+        DrawRectangle(new Rectangle(x, y, 124, 10), WithAlpha(CurrentPalette.GemShine, alpha));
+        DrawRectangle(new Rectangle(x, y + 22, 124, 10), WithAlpha(CurrentPalette.GemShine, (byte)(170f * fade)));
+        DrawFrame(new Rectangle(x - 12, y - 10, 148, 54), WithAlpha(CurrentPalette.WallInner, (byte)(95f * fade)), 3);
+    }
+
+    private void DrawAmbulance(Vector2 target, float progress, float fade)
+    {
+        var pickup = new Vector2(target.X, target.Y - 42f);
+        var dropoff = new Vector2(_playerStart.X + PlayerSize / 2f, _playerStart.Y - 42f);
+        var exit = new Vector2(VirtualWidth + 170f, dropoff.Y);
+        var ambulance = GetAmbulancePosition(progress, pickup, dropoff, exit);
+        var y = ambulance.Y + (float)Math.Sin(progress * Math.PI * 14f) * 2f;
+        var body = new Rectangle((int)ambulance.X - 56, (int)y - 26, 112, 48);
+        var cab = new Rectangle(body.Right - 34, body.Y + 8, 28, 30);
+        var alpha = (byte)235;
+
+        DrawRectangle(body, WithAlpha(CurrentPalette.GemShine, alpha));
+        DrawFrame(body, WithAlpha(CurrentPalette.WallInner, alpha), 4);
+        DrawRectangle(cab, WithAlpha(CurrentPalette.PlayerInner, alpha));
+        DrawRectangle(new Rectangle(body.X + 38, body.Y + 12, 12, 24), WithAlpha(CurrentPalette.Hazard, alpha));
+        DrawRectangle(new Rectangle(body.X + 28, body.Y + 18, 32, 12), WithAlpha(CurrentPalette.Hazard, alpha));
+        DrawRectangle(new Rectangle(body.X + 18, body.Bottom - 8, 20, 10), WithAlpha(CurrentPalette.WallInner, alpha));
+        DrawRectangle(new Rectangle(body.Right - 34, body.Bottom - 8, 20, 10), WithAlpha(CurrentPalette.WallInner, alpha));
+
+        var lightOn = (int)(progress * 34f) % 2 == 0;
+        var lightColor = lightOn ? CurrentPalette.Hazard : CurrentPalette.Gem;
+        DrawRectangle(new Rectangle(body.X + 14, body.Y - 8, 22, 8), WithAlpha(lightColor, alpha));
+
+        DrawAmbulancePassenger(target, pickup, dropoff, progress);
+    }
+
+    private static Vector2 GetAmbulancePosition(float progress, Vector2 pickup, Vector2 dropoff, Vector2 exit)
+    {
+        if (progress < 0.30f)
+        {
+            return new Vector2(MathHelper.Lerp(-170f, pickup.X, progress / 0.30f), pickup.Y);
+        }
+
+        if (progress < 0.45f)
+        {
+            return pickup;
+        }
+
+        if (progress < 0.75f)
+        {
+            return Vector2.Lerp(pickup, dropoff, (progress - 0.45f) / 0.30f);
+        }
+
+        if (progress < 0.90f)
+        {
+            return dropoff;
+        }
+
+        return Vector2.Lerp(dropoff, exit, (progress - 0.90f) / 0.10f);
+    }
+
+    private void DrawAmbulancePassenger(Vector2 missPosition, Vector2 pickup, Vector2 dropoff, float progress)
+    {
+        if (progress >= 0.34f && progress < 0.82f)
+        {
+            return;
+        }
+
+        Vector2 position;
+        if (progress < 0.34f)
+        {
+            var lift = MathHelper.Clamp((progress - 0.30f) / 0.04f, 0f, 1f);
+            position = Vector2.Lerp(missPosition - new Vector2(PlayerSize / 2f, PlayerSize / 2f), pickup - new Vector2(PlayerSize / 2f, 18f), lift);
+        }
+        else
+        {
+            var drop = MathHelper.Clamp((progress - 0.82f) / 0.08f, 0f, 1f);
+            position = Vector2.Lerp(dropoff - new Vector2(PlayerSize / 2f, 18f), _playerStart, drop);
+        }
+
+        var player = new Rectangle((int)position.X, (int)position.Y, PlayerSize, PlayerSize);
+        DrawRectangle(player, CurrentPalette.PlayerInvincible);
+        DrawRectangle(Inset(player, 10), CurrentPalette.PlayerInner);
     }
 
     private void CheckExit()
@@ -1554,6 +1755,12 @@ public class Game1 : Game
         _hazards = (Hazard[])stage.Hazards.Clone();
         _gemsCollected = new bool[_gemBounds.Length];
         _gemCollectEffects.Clear();
+        _deathEffects.Clear();
+        _deathStopLines.Clear();
+        _deathRespawnPending = false;
+        _deathRespawnTimeRemaining = 0f;
+        _playerInAmbulance = false;
+        _deathRespawnCompleted = false;
         _playerStart = stage.PlayerStart;
         _exitBounds = stage.ExitBounds;
         _backgroundColor = CurrentPalette.Background;
@@ -1899,6 +2106,7 @@ public class Game1 : Game
     private bool WasThumbstickPressedRight(GamePadState gamePad) => gamePad.ThumbSticks.Left.X > 0.55f && _previousGamePad.ThumbSticks.Left.X <= 0.55f;
 
     private readonly record struct GemCollectEffect(Vector2 Position, float TimeRemaining, float Duration, int Seed);
+    private readonly record struct DeathEffect(Vector2 Position, float TimeRemaining, float Duration, int Seed);
 
     private enum WaveShape
     {
