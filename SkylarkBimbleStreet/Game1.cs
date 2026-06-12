@@ -25,6 +25,9 @@ public class Game1 : Game
     private const float StageSelectChainMoveOffset = StageSelectCardGap * 0.58f;
     private const float StageSelectSlideReturnRate = 3.0f;
     private const float StageSelectMoveRepeatSeconds = 0.28f;
+    private const int PauseOptionCount = 7;
+    private const int SoundTestOptionStart = 4;
+    private const int StageMoveSoundVariantCount = 3;
 
     private readonly GraphicsDeviceManager _graphics;
     private readonly List<PlayEvent> _playEvents = [];
@@ -36,6 +39,7 @@ public class Game1 : Game
     private SoundEffect _clearSound = null!;
     private SoundEffect _exitOpenSound = null!;
     private SoundEffect _stageMoveSound = null!;
+    private SoundEffect[] _stageMoveSounds = [];
     private SoundEffect _confirmSound = null!;
     private SoundEffect _pauseSound = null!;
 
@@ -72,6 +76,7 @@ public class Game1 : Game
     private int _selectedStageIndex;
     private int _pauseSelectionIndex;
     private int _paletteIndex;
+    private int _stageMoveSoundIndex = 2;
     private int _runStartStageIndex;
     private int _clearRank;
     private int _deaths;
@@ -359,12 +364,12 @@ public class Game1 : Game
         DrawRectangle(new Rectangle(0, 0, VirtualWidth, VirtualHeight), WithAlpha(CurrentPalette.Background, 185));
 
         var pulse = (float)((Math.Sin(_pauseAnimationTime * 5d) + 1d) * 0.5d);
-        var panel = new Rectangle(360, 320, 1200, 420);
+        var panel = new Rectangle(260, 320, 1400, 420);
         DrawRectangle(panel, WithAlpha(CurrentPalette.HudBackground, 238));
         DrawFrame(panel, CurrentPalette.Gem, 16);
         DrawFrame(Inset(panel, 38), WithAlpha(CurrentPalette.StageCurrent, 150), 8);
 
-        for (var i = 0; i < 4; i++)
+        for (var i = 0; i < PauseOptionCount; i++)
         {
             DrawPauseOption(i, i == _pauseSelectionIndex, pulse);
         }
@@ -372,9 +377,9 @@ public class Game1 : Game
 
     private void DrawPauseOption(int optionIndex, bool selected, float pulse)
     {
-        var width = selected ? 190 + (int)(pulse * 12f) : 160;
-        var height = selected ? 190 + (int)(pulse * 12f) : 160;
-        var centerX = 600 + optionIndex * 240;
+        var width = selected ? 150 + (int)(pulse * 10f) : 130;
+        var height = selected ? 170 + (int)(pulse * 10f) : 150;
+        var centerX = 420 + optionIndex * 180;
         var centerY = selected ? 530 - (int)(pulse * 5f) : 540;
         var card = new Rectangle(centerX - width / 2, centerY - height / 2, width, height);
         var body = selected ? WithAlpha(CurrentPalette.Grid, 250) : WithAlpha(CurrentPalette.HudBackground, 235);
@@ -385,25 +390,29 @@ public class Game1 : Game
 
         if (optionIndex == 0)
         {
-            DrawArrow(new Rectangle(card.X + 54, card.Y + 62, card.Width - 108, card.Height - 124), true, CurrentPalette.ExitOpen);
+            DrawArrow(new Rectangle(card.X + 30, card.Y + 50, card.Width - 60, card.Height - 100), true, CurrentPalette.ExitOpen);
         }
         else if (optionIndex == 1)
         {
-            DrawFrame(new Rectangle(card.X + 54, card.Y + 54, card.Width - 108, card.Height - 108), CurrentPalette.Hazard, 14);
-            DrawLine(new Vector2(card.X + 70, card.Bottom - 70), new Vector2(card.Right - 70, card.Y + 70), 16, CurrentPalette.HazardInner);
+            DrawFrame(new Rectangle(card.X + 36, card.Y + 42, card.Width - 72, card.Height - 84), CurrentPalette.Hazard, 10);
+            DrawLine(new Vector2(card.X + 42, card.Bottom - 46), new Vector2(card.Right - 42, card.Y + 46), 12, CurrentPalette.HazardInner);
         }
         else if (optionIndex == 2)
         {
             for (var i = 0; i < 3; i++)
             {
-                DrawRectangle(new Rectangle(card.X + 40 + i * 38, card.Y + 48, 28, 28), i == _selectedStageIndex ? CurrentPalette.Gem : CurrentPalette.StageCurrent);
+                DrawRectangle(new Rectangle(card.X + 28 + i * 28, card.Y + 44, 20, 20), i == _selectedStageIndex ? CurrentPalette.Gem : CurrentPalette.StageCurrent);
             }
 
-            DrawFrame(new Rectangle(card.X + 40, card.Y + 100, card.Width - 80, 42), CurrentPalette.ExitOpen, 8);
+            DrawFrame(new Rectangle(card.X + 28, card.Y + 92, card.Width - 56, 34), CurrentPalette.ExitOpen, 6);
+        }
+        else if (optionIndex == 3)
+        {
+            DrawPaletteSwatches(new Rectangle(card.X + 30, card.Y + 38, card.Width - 60, card.Height - 76));
         }
         else
         {
-            DrawPaletteSwatches(new Rectangle(card.X + 35, card.Y + 42, card.Width - 70, card.Height - 84));
+            DrawSoundTestOption(new Rectangle(card.X + 28, card.Y + 34, card.Width - 56, card.Height - 68), optionIndex - SoundTestOptionStart, selected);
         }
 
         if (selected)
@@ -590,6 +599,28 @@ public class Game1 : Game
         DrawFrame(bounds, CurrentPalette.GemShine, 4);
     }
 
+
+    private void DrawSoundTestOption(Rectangle bounds, int variantIndex, bool selected)
+    {
+        var active = variantIndex == _stageMoveSoundIndex;
+        DrawFrame(bounds, active ? CurrentPalette.ExitOpen : CurrentPalette.WallInner, active ? 6 : 4);
+
+        var centerY = bounds.Y + bounds.Height / 2 - 8;
+        var color = active ? CurrentPalette.GemShine : CurrentPalette.StageCurrent;
+        for (var i = 0; i < 3; i++)
+        {
+            var x = bounds.X + 12 + i * 20;
+            var height = 16 + ((variantIndex + i) % 3) * 10;
+            DrawRectangle(new Rectangle(x, centerY - height / 2, 10, height), color);
+        }
+
+        var pipCount = variantIndex + 1;
+        var pipStartX = bounds.Center.X - (pipCount * 14 - 6) / 2;
+        for (var i = 0; i < pipCount; i++)
+        {
+            DrawRectangle(new Rectangle(pipStartX + i * 14, bounds.Bottom - 24, 8, 8), selected ? CurrentPalette.Gem : color);
+        }
+    }
     private void CyclePalette()
     {
         _paletteIndex = (_paletteIndex + 1) % _palettes.Length;
@@ -742,14 +773,14 @@ public class Game1 : Game
     {
         if (WasPressed(keyboard, Keys.Left) || WasPressed(keyboard, Keys.A) || WasPressed(gamePad.DPad.Left, _previousGamePad.DPad.Left) || WasThumbstickPressedLeft(gamePad))
         {
-            _pauseSelectionIndex = (_pauseSelectionIndex + 3) % 4;
-            PlaySound(_stageMoveSound);
+            _pauseSelectionIndex = (_pauseSelectionIndex + PauseOptionCount - 1) % PauseOptionCount;
+            PlayStageMoveSound();
         }
 
         if (WasPressed(keyboard, Keys.Right) || WasPressed(keyboard, Keys.D) || WasPressed(gamePad.DPad.Right, _previousGamePad.DPad.Right) || WasThumbstickPressedRight(gamePad))
         {
-            _pauseSelectionIndex = (_pauseSelectionIndex + 1) % 4;
-            PlaySound(_stageMoveSound);
+            _pauseSelectionIndex = (_pauseSelectionIndex + 1) % PauseOptionCount;
+            PlayStageMoveSound();
         }
 
         if (WasPressed(keyboard, Keys.Enter)
@@ -782,6 +813,12 @@ public class Game1 : Game
 
     private void SelectPauseOption()
     {
+        if (_pauseSelectionIndex >= SoundTestOptionStart)
+        {
+            SelectStageMoveSound(_pauseSelectionIndex - SoundTestOptionStart);
+            return;
+        }
+
         PlaySound(_confirmSound);
         if (_pauseSelectionIndex == 0)
         {
@@ -916,7 +953,7 @@ public class Game1 : Game
         _stageSelectSlideDelay = preserveCurrentPosition ? 0f : 0.08f;
         _stageSelectFocusAmount = 0f;
         _stageSelectQuickMoveTimeRemaining = 0f;
-        PlaySound(_stageMoveSound);
+        PlayStageMoveSound();
     }
 
     private void UpdateStageSelect(KeyboardState keyboard, GamePadState gamePad, float elapsed)
@@ -1407,7 +1444,12 @@ public class Game1 : Game
         _deathSound = CreateTone(170f, 74f, 0.18f, 0.34f, WaveShape.Square);
         _clearSound = CreateArpeggio([660f, 880f, 1175f, 1568f], 0.07f, 0.28f);
         _exitOpenSound = CreateArpeggio([523f, 659f, 784f, 1047f, 1319f], 0.055f, 0.24f);
-        _stageMoveSound = CreateTone(430f, 360f, 0.045f, 0.18f, WaveShape.Square);
+        _stageMoveSounds = [
+            CreateTone(430f, 360f, 0.045f, 0.18f, WaveShape.Square),
+            CreateTone(620f, 510f, 0.052f, 0.16f, WaveShape.Triangle),
+            CreateArpeggio([520f, 695f], 0.032f, 0.16f),
+        ];
+        _stageMoveSound = _stageMoveSounds[_stageMoveSoundIndex];
         _confirmSound = CreateTone(540f, 760f, 0.075f, 0.24f, WaveShape.Sine);
         _pauseSound = CreateTone(260f, 410f, 0.08f, 0.22f, WaveShape.Triangle);
     }
@@ -1417,7 +1459,12 @@ public class Game1 : Game
         _gemSound.Dispose();
         _deathSound.Dispose();
         _clearSound.Dispose();
-        _stageMoveSound.Dispose();
+        _exitOpenSound.Dispose();
+        foreach (var stageMoveSound in _stageMoveSounds)
+        {
+            stageMoveSound.Dispose();
+        }
+
         _confirmSound.Dispose();
         _pauseSound.Dispose();
     }
@@ -1427,6 +1474,23 @@ public class Game1 : Game
         sound.Play(volume, 0f, 0f);
     }
 
+
+    private void SelectStageMoveSound(int variantIndex)
+    {
+        if (_stageMoveSounds.Length == 0)
+        {
+            return;
+        }
+
+        _stageMoveSoundIndex = Math.Clamp(variantIndex, 0, Math.Min(StageMoveSoundVariantCount, _stageMoveSounds.Length) - 1);
+        _stageMoveSound = _stageMoveSounds[_stageMoveSoundIndex];
+        PlayStageMoveSound();
+    }
+
+    private void PlayStageMoveSound()
+    {
+        PlaySound(_stageMoveSound);
+    }
     private static SoundEffect CreateTone(float startFrequency, float endFrequency, float seconds, float volume, WaveShape shape)
     {
         const int sampleRate = 44100;
