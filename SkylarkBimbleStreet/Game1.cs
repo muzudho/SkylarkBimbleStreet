@@ -38,7 +38,7 @@ public class Game1 : Game
     private readonly List<PlayEvent> _playEvents = [];
     private readonly List<GemCollectEffect> _gemCollectEffects = [];
     private readonly List<DeathEffect> _deathEffects = [];
-    private readonly List<Vector2> _deathStopLines = [];
+    private readonly List<DeathStopMark> _deathStopLines = [];
     private SpriteBatch _spriteBatch = null!;
     private Texture2D _pixel = null!;
     private RenderTarget2D _scene = null!;
@@ -114,6 +114,7 @@ public class Game1 : Game
     private float _deathRespawnTimeRemaining;
     private float _exitOpenDelayRemaining;
     private float _exitOpenFlashRemaining;
+    private Vector2 _lastMoveDirection = Vector2.UnitX;
     private Color _backgroundColor;
 
     private GamePalette CurrentPalette => _palettes[_paletteIndex];
@@ -270,6 +271,7 @@ public class Game1 : Game
         }
 
         DrawExit(GetExitBounds());
+        DrawDeathStopLines();
 
         for (var i = 0; i < _gemBounds.Length; i++)
         {
@@ -282,7 +284,6 @@ public class Game1 : Game
         }
 
         DrawGemCollectEffects();
-        DrawDeathStopLines();
 
         foreach (var hazard in _hazards)
         {
@@ -1294,6 +1295,7 @@ public class Game1 : Game
         }
 
         move.Normalize();
+        _lastMoveDirection = move;
         var velocity = move * PlayerSpeed * elapsed;
         TryMove(new Vector2(velocity.X, 0f));
         TryMove(new Vector2(0f, velocity.Y));
@@ -1480,7 +1482,7 @@ public class Game1 : Game
                 LogPlayEvent(PlayEventKind.Death, _currentStageIndex, player.Center.ToVector2(), _currentStageElapsedSeconds, _deaths);
                 PlaySound(_deathSound);
                 AddDeathEffect(player.Center.ToVector2(), _deaths);
-                AddDeathStopLine(player.Center.ToVector2());
+                AddDeathStopLine(player.Center.ToVector2(), _lastMoveDirection);
                 StartDeathRespawnDelay();
                 return;
             }
@@ -1568,38 +1570,57 @@ public class Game1 : Game
         }
     }
 
-    private void AddDeathStopLine(Vector2 position)
+    private void AddDeathStopLine(Vector2 position, Vector2 direction)
     {
-        _deathStopLines.Add(position);
+        if (direction == Vector2.Zero)
+        {
+            direction = Vector2.UnitX;
+        }
+
+        direction.Normalize();
+        _deathStopLines.Add(new DeathStopMark(position, direction));
     }
 
     private void DrawDeathStopLines()
     {
-        foreach (var position in _deathStopLines)
+        foreach (var mark in _deathStopLines)
         {
-            DrawDeathStopLine(position, 1f);
+            DrawDeathStopLine(mark.Position, mark.Direction, 1f);
         }
     }
 
-    private void DrawDeathStopLine(Vector2 position, float fade)
+    private void DrawDeathStopLine(Vector2 position, Vector2 direction, float fade)
     {
+        if (direction == Vector2.Zero)
+        {
+            direction = Vector2.UnitX;
+        }
+
+        direction.Normalize();
+        var perp = new Vector2(-direction.Y, direction.X);
         var alpha = (byte)(145f * fade);
-        var patch = new Rectangle((int)position.X - 58, (int)position.Y + 26, 116, 42);
         var fill = WithAlpha(CurrentPalette.HudBackground, alpha);
         var outline = WithAlpha(CurrentPalette.WallInner, (byte)(185f * fade));
         var dot = WithAlpha(CurrentPalette.HudInactive, (byte)(150f * fade));
+        var center = position + direction * 8f;
 
-        DrawRoundedRectangleApprox(patch, fill, outline, 5);
-        var pad = new Rectangle(patch.Center.X - 18, patch.Y + 7, 36, patch.Height - 14);
-        DrawRoundedRectangleApprox(pad, WithAlpha(CurrentPalette.Background, (byte)(90f * fade)), WithAlpha(CurrentPalette.WallOuter, (byte)(120f * fade)), 3);
+        DrawLine(center - direction * 58f, center + direction * 58f, 48, outline);
+        DrawLine(center - direction * 54f, center + direction * 54f, 40, fill);
+        DrawLine(center - perp * 18f, center + perp * 18f, 34, WithAlpha(CurrentPalette.Background, (byte)(95f * fade)));
+        DrawLine(center - perp * 17f, center + perp * 17f, 3, WithAlpha(CurrentPalette.WallOuter, (byte)(120f * fade)));
 
         for (var i = 0; i < 6; i++)
         {
-            var x = patch.X + 13 + i % 3 * 14;
-            var y = patch.Y + 10 + i / 3 * 18;
-            DrawRectangle(new Rectangle(x, y, 5, 5), dot);
-            DrawRectangle(new Rectangle(patch.Right - 18 - i % 3 * 14, y, 5, 5), dot);
+            var along = -38f + i % 3 * 15f;
+            var side = i / 3 == 0 ? -13f : 13f;
+            DrawBandageDot(center + direction * along + perp * side, dot);
+            DrawBandageDot(center - direction * along - perp * side, dot);
         }
+    }
+
+    private void DrawBandageDot(Vector2 position, Color color)
+    {
+        DrawRectangle(new Rectangle((int)position.X - 2, (int)position.Y - 2, 5, 5), color);
     }
     private void DrawRoundedRectangleApprox(Rectangle bounds, Color fill, Color outline, int radius)
     {
@@ -2137,6 +2158,7 @@ public class Game1 : Game
 
     private readonly record struct GemCollectEffect(Vector2 Position, float TimeRemaining, float Duration, int Seed);
     private readonly record struct DeathEffect(Vector2 Position, float TimeRemaining, float Duration, int Seed);
+    private readonly record struct DeathStopMark(Vector2 Position, Vector2 Direction);
 
     private enum WaveShape
     {
