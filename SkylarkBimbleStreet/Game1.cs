@@ -322,23 +322,33 @@ public class Game1 : Game
 
     private void DrawHospital(Rectangle bounds)
     {
-        DrawRectangle(bounds, CurrentPalette.HudBackground);
-        DrawFrame(bounds, CurrentPalette.GemShine, 6);
+        DrawRectangle(bounds, CurrentPalette.GemShine);
+        DrawFrame(bounds, CurrentPalette.WallInner, 6);
 
         var roof = new Rectangle(bounds.X + 10, bounds.Y + 8, bounds.Width - 20, 24);
         DrawRectangle(roof, CurrentPalette.PlayerInner);
-        DrawFrame(roof, CurrentPalette.GemShine, 3);
+        DrawFrame(roof, CurrentPalette.WallInner, 3);
 
-        var crossCenter = new Vector2(bounds.Center.X, bounds.Y + 63);
-        DrawRectangle(new Rectangle((int)crossCenter.X - 11, (int)crossCenter.Y - 34, 22, 68), CurrentPalette.Hazard);
-        DrawRectangle(new Rectangle((int)crossCenter.X - 34, (int)crossCenter.Y - 11, 68, 22), CurrentPalette.Hazard);
-        DrawFrame(new Rectangle((int)crossCenter.X - 38, (int)crossCenter.Y - 38, 76, 76), CurrentPalette.PlayerInner, 4);
+        var windowColor = CurrentPalette.StageCurrent;
+        for (var row = 0; row < 2; row++)
+        {
+            for (var column = 0; column < 4; column++)
+            {
+                var window = new Rectangle(bounds.X + 20 + column * 34, bounds.Y + 42 + row * 28, 22, 16);
+                DrawRectangle(window, windowColor);
+                DrawFrame(window, CurrentPalette.PlayerInner, 2);
+            }
+        }
 
-        var door = new Rectangle(bounds.Center.X - 20, bounds.Bottom - 38, 40, 34);
-        DrawRectangle(door, CurrentPalette.WallInner);
-        DrawFrame(door, CurrentPalette.PlayerInner, 3);
-        DrawRectangle(new Rectangle(bounds.X + 18, bounds.Bottom - 34, 32, 18), CurrentPalette.PlayerInner);
-        DrawRectangle(new Rectangle(bounds.Right - 50, bounds.Bottom - 34, 32, 18), CurrentPalette.PlayerInner);
+        var bay = new Rectangle(bounds.Center.X - 48, bounds.Bottom - 44, 96, 38);
+        DrawRectangle(bay, CurrentPalette.WallInner);
+        DrawFrame(bay, CurrentPalette.PlayerInner, 4);
+        DrawRectangle(new Rectangle(bay.X + 10, bay.Y + 9, bay.Width - 20, 10), CurrentPalette.HudBackground);
+        DrawRectangle(new Rectangle(bay.X + 12, bay.Bottom - 9, 18, 10), CurrentPalette.PlayerInner);
+        DrawRectangle(new Rectangle(bay.Right - 30, bay.Bottom - 9, 18, 10), CurrentPalette.PlayerInner);
+
+        var driveway = new Rectangle(bounds.Center.X - 58, bounds.Bottom - 6, 116, 10);
+        DrawRectangle(driveway, CurrentPalette.WallInner);
     }
 
     private void DrawBusStop(Rectangle bounds)
@@ -1796,8 +1806,8 @@ public class Game1 : Game
         DrawRectangle(body, WithAlpha(CurrentPalette.GemShine, alpha));
         DrawFrame(body, WithAlpha(CurrentPalette.WallInner, alpha), 4);
         DrawRectangle(cab, WithAlpha(CurrentPalette.PlayerInner, alpha));
-        DrawRectangle(new Rectangle(body.X + 38, body.Y + 12, 12, 24), WithAlpha(CurrentPalette.Hazard, alpha));
-        DrawRectangle(new Rectangle(body.X + 28, body.Y + 18, 32, 12), WithAlpha(CurrentPalette.Hazard, alpha));
+        DrawRectangle(new Rectangle(body.X + 16, body.Y + 14, 52, 12), WithAlpha(CurrentPalette.Hazard, alpha));
+        DrawRectangle(new Rectangle(body.X + 18, body.Y + 30, 42, 7), WithAlpha(CurrentPalette.StageCurrent, alpha));
         DrawRectangle(new Rectangle(body.X + 18, body.Bottom - 8, 20, 10), WithAlpha(CurrentPalette.WallInner, alpha));
         DrawRectangle(new Rectangle(body.Right - 34, body.Bottom - 8, 20, 10), WithAlpha(CurrentPalette.WallInner, alpha));
 
