@@ -126,8 +126,8 @@ internal static class StageDefinitions
             "Stage 4",
             new Vector2(95, 95),
             new Rectangle(VirtualWidth - 150, VirtualHeight - 150, 92, 92),
-            new Rectangle(64, 210, 176, 124),
-            new Rectangle(64, 64, 176, 126),
+            new Rectangle(64, 64, 176, 124),
+            new Rectangle(64, 350, 176, 126),
             new Color(22, 20, 28),
             [
                 new(0, 0, VirtualWidth, 38),
@@ -170,8 +170,8 @@ internal static class StageDefinitions
             "Stage 5",
             new Vector2(95, 95),
             new Rectangle(VirtualWidth - 150, VirtualHeight - 150, 92, 92),
-            new Rectangle(64, 210, 176, 124),
-            new Rectangle(64, 64, 176, 126),
+            new Rectangle(64, 610, 176, 124),
+            new Rectangle(64, 760, 176, 126),
             new Color(18, 25, 32),
             [
                 new(0, 0, VirtualWidth, 38),
