@@ -1,5 +1,6 @@
 namespace SkylarkBimbleStreet;
 
+using System;
 using Microsoft.Xna.Framework;
 
 internal sealed class Stage
@@ -11,6 +12,7 @@ internal sealed class Stage
     public readonly Rectangle HospitalBounds;
     public readonly Color BackgroundColor;
     public readonly Rectangle[] Walls;
+    public readonly Rectangle[] TicketPieces;
     public readonly Rectangle[] Gems;
     public readonly Hazard[] Hazards;
 
@@ -22,7 +24,7 @@ internal sealed class Stage
         Rectangle hospitalBounds,
         Color backgroundColor,
         Rectangle[] walls,
-        Rectangle[] gems,
+        Rectangle[] collectibles,
         Hazard[] hazards)
     {
         Name = name;
@@ -32,7 +34,9 @@ internal sealed class Stage
         HospitalBounds = hospitalBounds;
         BackgroundColor = backgroundColor;
         Walls = walls;
-        Gems = gems;
+        var ticketPieceCount = Math.Min(3, collectibles.Length);
+        TicketPieces = collectibles[..ticketPieceCount];
+        Gems = collectibles[ticketPieceCount..];
         Hazards = hazards;
     }
 }

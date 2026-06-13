@@ -71,15 +71,17 @@ public class Game1 : Game
     ];
 
     private Rectangle[] _walls = [];
+    private Rectangle[] _ticketPieceBounds = [];
     private Rectangle[] _gemBounds = [];
     private Hazard[] _hazards = [];
+    private bool[] _ticketPiecesCollected = [];
     private bool[] _gemsCollected = [];
     private bool[] _stagesCleared = [];
     private bool[] _stagePassRecords = [];
-    private bool[] _stageAllGemRecords = [];
     private bool[] _stageNoDamageRecords = [];
     private int[] _stageDeathCounts = [];
     private int[] _stageGemCounts = [];
+    private int[] _stageBestGemCounts = [];
     private double[] _stageElapsedSeconds = [];
     private double _runElapsedSeconds;
     private double _currentStageElapsedSeconds;
@@ -161,8 +163,8 @@ public class Game1 : Game
         _runStartStageIndex = 0;
         _stagesCleared = new bool[_stages.Length];
         _stagePassRecords = new bool[_stages.Length];
-        _stageAllGemRecords = new bool[_stages.Length];
         _stageNoDamageRecords = new bool[_stages.Length];
+        _stageBestGemCounts = new int[_stages.Length];
         StartStatsRun(false);
         LoadStage(0);
         OpenStageSelect();
@@ -323,6 +325,16 @@ public class Game1 : Game
         DrawHospital(_hospitalBounds);
         DrawBusStop(_busStopBounds);
         DrawDeathStopLines();
+
+        for (var i = 0; i < _ticketPieceBounds.Length; i++)
+        {
+            if (_ticketPiecesCollected[i])
+            {
+                continue;
+            }
+
+            DrawTicketPiece(_ticketPieceBounds[i], i, CurrentPalette.ExitOpen, CurrentPalette.GemShine);
+        }
 
         for (var i = 0; i < _gemBounds.Length; i++)
         {
@@ -533,12 +545,22 @@ public class Game1 : Game
 
     private void DrawHud()
     {
-        DrawRectangle(new Rectangle(58, 58, Math.Max(120, 40 + _gemBounds.Length * 76), 22), CurrentPalette.HudBackground);
+        var ticketHudWidth = Math.Max(120, 40 + _ticketPieceBounds.Length * 58);
+        DrawRectangle(new Rectangle(58, 58, ticketHudWidth, 22), CurrentPalette.HudBackground);
+        for (var i = 0; i < _ticketPieceBounds.Length; i++)
+        {
+            var body = _ticketPiecesCollected[i] ? CurrentPalette.ExitOpen : CurrentPalette.HudInactive;
+            var detail = _ticketPiecesCollected[i] ? CurrentPalette.GemShine : CurrentPalette.WallInner;
+            DrawTicketPiece(new Rectangle(76 + i * 58, 54, 34, 38), i, body, detail);
+        }
+
+        var gemHudWidth = Math.Max(80, 34 + _gemBounds.Length * 48);
+        DrawRectangle(new Rectangle(58, 92, gemHudWidth, 18), CurrentPalette.HudBackground);
         for (var i = 0; i < _gemBounds.Length; i++)
         {
             var body = _gemsCollected[i] ? CurrentPalette.Gem : CurrentPalette.HudInactive;
             var shine = _gemsCollected[i] ? CurrentPalette.GemShine : CurrentPalette.WallInner;
-            DrawGem(new Vector2(91 + i * 76, 73), 42, body, shine);
+            DrawGem(new Vector2(82 + i * 48, 101), 28, body, shine);
         }
 
         for (var i = 0; i < Math.Min(_deaths, 8); i++)
@@ -676,9 +698,10 @@ public class Game1 : Game
         DrawFrame(card, frameColor, 10 + (int)(6f * focusAmount));
         DrawFrame(Inset(card, 34), selected ? CurrentPalette.ExitOpen : CurrentPalette.WallOuter, 6 + (int)(2f * focusAmount));
 
-        var preview = new Rectangle(card.X + 54, card.Y + 122, card.Width - 108, card.Height - 220);
+        var preview = new Rectangle(card.X + 54, card.Y + 122, card.Width - 108, card.Height - 245);
         DrawStageMiniMap(preview, _stages[stageIndex], bodyColor);
-        DrawStageRecordStats(new Rectangle(card.X + 54, card.Bottom - 88, card.Width - 108, 36), stageIndex);
+        DrawStageGemCollection(new Rectangle(card.X + 54, card.Bottom - 112, card.Width - 108, 24), stageIndex);
+        DrawStageRecordStats(new Rectangle(card.X + 54, card.Bottom - 80, card.Width - 108, 36), stageIndex);
 
         if (_stagesCleared.Length > stageIndex && _stagesCleared[stageIndex])
         {
@@ -731,6 +754,12 @@ public class Game1 : Game
         DrawFrame(exit, CurrentPalette.ExitOpen, Math.Max(2, exit.Width / 5));
         DrawRectangle(Inset(exit, Math.Max(3, exit.Width / 3)), cardBody);
 
+        foreach (var ticketPiece in stage.TicketPieces)
+        {
+            var mapped = MapStageRectangle(ticketPiece, map);
+            DrawTicketPiece(mapped, 0, CurrentPalette.ExitOpen, CurrentPalette.GemShine);
+        }
+
         foreach (var gem in stage.Gems)
         {
             var mapped = MapStageRectangle(gem, map);
@@ -755,19 +784,42 @@ public class Game1 : Game
         DrawRectangle(Inset(player, Math.Max(2, playerSize / 4)), CurrentPalette.PlayerInner);
     }
 
+    private void DrawStageGemCollection(Rectangle bounds, int stageIndex)
+    {
+        if (stageIndex < 0 || stageIndex >= _stages.Length)
+        {
+            return;
+        }
+
+        var total = _stages[stageIndex].Gems.Length;
+        if (total <= 0)
+        {
+            return;
+        }
+
+        var collected = _stageBestGemCounts.Length > stageIndex ? Math.Clamp(_stageBestGemCounts[stageIndex], 0, total) : 0;
+        var size = Math.Min(bounds.Height, 22);
+        var gap = 6;
+        var totalWidth = total * size + (total - 1) * gap;
+        var startX = bounds.Center.X - totalWidth / 2;
+        for (var i = 0; i < total; i++)
+        {
+            var center = new Vector2(startX + i * (size + gap) + size / 2f, bounds.Center.Y);
+            var body = i < collected ? CurrentPalette.Gem : CurrentPalette.HudInactive;
+            var shine = i < collected ? CurrentPalette.GemShine : CurrentPalette.WallInner;
+            DrawGem(center, size, body, shine);
+        }
+    }
     private void DrawStageRecordStats(Rectangle bounds, int stageIndex)
     {
-        Span<StageRecordKind> records = stackalloc StageRecordKind[3];
+        Span<StageRecordKind> records = stackalloc StageRecordKind[2];
         var count = 0;
         if (HasRecord(_stagePassRecords, stageIndex))
         {
             records[count++] = StageRecordKind.Pass;
         }
 
-        if (HasRecord(_stageAllGemRecords, stageIndex))
-        {
-            records[count++] = StageRecordKind.AllGems;
-        }
+
 
         if (HasRecord(_stageNoDamageRecords, stageIndex))
         {
@@ -804,9 +856,7 @@ public class Game1 : Game
             case StageRecordKind.Pass:
                 DrawRecordBus(icon, color, detail, true);
                 break;
-            case StageRecordKind.AllGems:
-                DrawGem(icon.Center.ToVector2(), Math.Min(icon.Width, icon.Height), CurrentPalette.Gem, color);
-                break;
+
             case StageRecordKind.NoDamage:
                 DrawRecordShield(icon, color, detail, true);
                 break;
@@ -1136,6 +1186,20 @@ public class Game1 : Game
         }
     }
 
+    private void DrawTicketPiece(Rectangle bounds, int variant, Color body, Color detail)
+    {
+        var inset = Math.Max(2, Math.Min(bounds.Width, bounds.Height) / 8);
+        DrawRectangle(bounds, body);
+        DrawFrame(bounds, detail, Math.Max(2, inset / 2));
+
+        var notchSize = Math.Max(4, Math.Min(bounds.Width, bounds.Height) / 5);
+        DrawRectangle(new Rectangle(bounds.X - 1, bounds.Center.Y - notchSize / 2, notchSize, notchSize), _backgroundColor);
+        DrawRectangle(new Rectangle(bounds.Right - notchSize + 1, bounds.Center.Y - notchSize / 2, notchSize, notchSize), _backgroundColor);
+
+        var lineX = bounds.X + bounds.Width / 2 + (variant % 2 == 0 ? -2 : 2);
+        DrawLine(new Vector2(lineX, bounds.Y + inset), new Vector2(lineX, bounds.Bottom - inset), Math.Max(2, inset / 2), detail);
+        DrawRectangle(new Rectangle(bounds.X + inset, bounds.Y + inset, Math.Max(4, bounds.Width / 4), Math.Max(3, bounds.Height / 8)), detail);
+    }
     private void DrawGem(Vector2 center, int size, Color body, Color shine)
     {
         var half = size / 2;
@@ -1574,23 +1638,39 @@ public class Game1 : Game
     private void CheckGemCollection()
     {
         var player = GetPlayerBounds();
+        for (var i = 0; i < _ticketPieceBounds.Length; i++)
+        {
+            if (!_ticketPiecesCollected[i] && player.Intersects(_ticketPieceBounds[i]))
+            {
+                _ticketPiecesCollected[i] = true;
+                LogPlayEvent(PlayEventKind.TicketPiece, _currentStageIndex, _ticketPieceBounds[i].Center.ToVector2(), _currentStageElapsedSeconds, i);
+                PlaySound(_gemSound);
+                AddGemCollectEffect(_ticketPieceBounds[i].Center.ToVector2(), i);
+                StartExitOpenDelayIfReady();
+            }
+        }
+
         for (var i = 0; i < _gemBounds.Length; i++)
         {
             if (!_gemsCollected[i] && player.Intersects(_gemBounds[i]))
             {
                 _gemsCollected[i] = true;
                 _stageGemCounts[_currentStageIndex]++;
+                if (_stageBestGemCounts.Length > _currentStageIndex)
+                {
+                    _stageBestGemCounts[_currentStageIndex] = Math.Max(_stageBestGemCounts[_currentStageIndex], CountCollectedGems());
+                }
+
                 LogPlayEvent(PlayEventKind.Gem, _currentStageIndex, _gemBounds[i].Center.ToVector2(), _currentStageElapsedSeconds, i);
                 PlaySound(_gemSound);
-                AddGemCollectEffect(_gemBounds[i].Center.ToVector2(), i);
-                StartExitOpenDelayIfReady();
+                AddGemCollectEffect(_gemBounds[i].Center.ToVector2(), i + _ticketPieceBounds.Length);
             }
         }
     }
 
     private void StartExitOpenDelayIfReady()
     {
-        if (_exitOpen || _exitOpenDelayRemaining > 0f || !AreAllGemsCollected())
+        if (_exitOpen || _exitOpenDelayRemaining > 0f || !AreAllTicketPiecesCollected())
         {
             return;
         }
@@ -2150,7 +2230,6 @@ public class Game1 : Game
         }
 
         AwardStageRecord(StageRecordKind.Pass, _stagePassRecords, true);
-        AwardStageRecord(StageRecordKind.AllGems, _stageAllGemRecords, AreAllGemsCollected());
         AwardStageRecord(StageRecordKind.NoDamage, _stageNoDamageRecords, _stageDeathCounts.Length > _currentStageIndex && _stageDeathCounts[_currentStageIndex] == 0);
     }
 
@@ -2244,8 +2323,10 @@ public class Game1 : Game
         _currentStageIndex = stageIndex;
         var stage = _stages[_currentStageIndex];
         _walls = stage.Walls;
+        _ticketPieceBounds = stage.TicketPieces;
         _gemBounds = stage.Gems;
         _hazards = (Hazard[])stage.Hazards.Clone();
+        _ticketPiecesCollected = new bool[_ticketPieceBounds.Length];
         _gemsCollected = new bool[_gemBounds.Length];
         _gemCollectEffects.Clear();
         _deathEffects.Clear();
@@ -2333,16 +2414,9 @@ public class Game1 : Game
     private void RefreshWindowTitle()
     {
         _titleRefreshTimer = 0.2;
-        var collected = 0;
-        foreach (var gemCollected in _gemsCollected)
-        {
-            if (gemCollected)
-            {
-                collected++;
-            }
-        }
+        var collected = CountCollectedGems();
 
-        var state = _stageSelectOpen ? "STAGE SELECT - Left/Right choose - Enter/Space/Start play" : _paused ? "PAUSE - Left/Right choose - Enter/Space/Start/A select" : _cleared ? "CLEAR - Enter/Space/Start/A stage select - R retry" : "Collect all gems and reach the green exit - Start/Enter pause - Tab for stage select";
+        var state = _stageSelectOpen ? "STAGE SELECT - Left/Right choose - Enter/Space/Start play" : _paused ? "PAUSE - Left/Right choose - Enter/Space/Start/A select" : _cleared ? "CLEAR - Enter/Space/Start/A stage select - R retry" : "Collect ticket pieces, then reach the green exit - Start/Enter pause - Tab for stage select";
         var stage = _stages[_currentStageIndex];
         Window.Title = $"SkylarkBimbleStreet - {stage.Name} - Palette {CurrentPalette.Name} - {state} - Gems {collected}/{_gemBounds.Length} - Hits {_deaths} - {GetStatsSummary()}";
     }
@@ -2395,15 +2469,25 @@ public class Game1 : Game
     /// <returns>出口の当たり判定を表す矩形</returns>
     private Rectangle GetExitBounds() => _exitBounds;
 
-    /// <summary>
-    /// 全てのジェムを集めたか。
-    /// </summary>
-    /// <returns>全てのジェムを集めた場合はtrue、それ以外の場合はfalse</returns>
-    private bool AreAllGemsCollected()
+    private int CountCollectedGems()
     {
+        var collected = 0;
         foreach (var gemCollected in _gemsCollected)
         {
-            if (!gemCollected)
+            if (gemCollected)
+            {
+                collected++;
+            }
+        }
+
+        return collected;
+    }
+
+    private bool AreAllTicketPiecesCollected()
+    {
+        foreach (var ticketPieceCollected in _ticketPiecesCollected)
+        {
+            if (!ticketPieceCollected)
             {
                 return false;
             }
@@ -2733,13 +2817,13 @@ public class Game1 : Game
     private enum StageRecordKind
     {
         Pass,
-        AllGems,
         NoDamage,
     }
 
     private enum PlayEventKind
     {
         StageStart,
+        TicketPiece,
         Gem,
         Death,
         Clear,
