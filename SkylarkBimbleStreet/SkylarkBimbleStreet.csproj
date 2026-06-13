@@ -30,4 +30,9 @@
   <ItemGroup>
     <Folder Include="Docs\参考資料\" />
   </ItemGroup>
+  <ItemGroup>
+    <None Update="Stages\*.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
 </Project>

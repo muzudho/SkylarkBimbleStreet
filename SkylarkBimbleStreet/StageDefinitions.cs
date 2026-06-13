@@ -7,7 +7,9 @@ internal static class StageDefinitions
     private const int VirtualWidth = 1920;
     private const int VirtualHeight = 1080;
 
-    public static Stage[] CreateStages() =>
+    public static Stage[] CreateStages() => StageLoader.LoadStagesOrFallback(CreateCodeStages());
+
+    private static Stage[] CreateCodeStages() =>
     [
         new(
             name: "Stage 1",
