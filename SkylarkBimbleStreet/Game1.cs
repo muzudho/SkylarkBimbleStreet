@@ -354,33 +354,30 @@ public class Game1 : Game
     private void DrawBusStop(Rectangle bounds)
     {
         var playerWaiting = !_busPassagePending && GetPlayerBounds().Intersects(bounds);
-        var frame = playerWaiting ? CurrentPalette.GemShine : CurrentPalette.WallInner;
-        var body = CurrentPalette.HudBackground;
+        var accent = playerWaiting ? CurrentPalette.GemShine : CurrentPalette.WallInner;
+        var poleX = bounds.X + 54;
+        var circleCenter = new Vector2(poleX, bounds.Y + 32);
 
-        DrawRectangle(bounds, WithAlpha(body, 235));
-        DrawFrame(bounds, frame, 6);
+        DrawLine(new Vector2(poleX, bounds.Y + 56), new Vector2(poleX, bounds.Bottom - 18), 10, CurrentPalette.WallInner);
+        DrawRectangle(new Rectangle(bounds.X + 20, bounds.Bottom - 22, bounds.Width - 40, 8), accent);
 
-        var roof = new Rectangle(bounds.X + 8, bounds.Y + 6, bounds.Width - 16, 24);
-        DrawRectangle(roof, frame);
-        DrawFrame(roof, CurrentPalette.GemShine, 3);
-        DrawLine(new Vector2(bounds.X + 20, roof.Bottom), new Vector2(bounds.X + 20, bounds.Bottom - 16), 8, CurrentPalette.WallInner);
-        DrawLine(new Vector2(bounds.Right - 20, roof.Bottom), new Vector2(bounds.Right - 20, bounds.Bottom - 16), 8, CurrentPalette.WallInner);
-
-        var sign = new Rectangle(bounds.X + 24, bounds.Y + 38, bounds.Width - 48, 34);
-        DrawRectangle(sign, CurrentPalette.PlayerInner);
-        DrawFrame(sign, frame, 4);
-
-        var busIcon = new Rectangle(bounds.X + 28, bounds.Y + 82, bounds.Width - 56, 32);
+        DrawGem(circleCenter, 62, CurrentPalette.HudBackground, accent);
+        var busIcon = new Rectangle((int)circleCenter.X - 25, (int)circleCenter.Y - 12, 50, 24);
         DrawRectangle(busIcon, CurrentPalette.PlayerInner);
-        DrawFrame(busIcon, frame, 4);
-        DrawRectangle(new Rectangle(busIcon.X + 12, busIcon.Y + 8, 30, 12), CurrentPalette.GemShine);
-        DrawRectangle(new Rectangle(busIcon.X + 50, busIcon.Y + 8, 30, 12), CurrentPalette.GemShine);
-        DrawRectangle(new Rectangle(busIcon.Right - 38, busIcon.Y + 8, 22, 18), CurrentPalette.WallInner);
-        DrawRectangle(new Rectangle(busIcon.X + 16, busIcon.Bottom - 3, 14, 14), CurrentPalette.WallInner);
-        DrawRectangle(new Rectangle(busIcon.Right - 30, busIcon.Bottom - 3, 14, 14), CurrentPalette.WallInner);
+        DrawFrame(busIcon, accent, 3);
+        DrawRectangle(new Rectangle(busIcon.X + 7, busIcon.Y + 6, 13, 8), CurrentPalette.GemShine);
+        DrawRectangle(new Rectangle(busIcon.X + 24, busIcon.Y + 6, 13, 8), CurrentPalette.GemShine);
+        DrawRectangle(new Rectangle(busIcon.Right - 10, busIcon.Y + 6, 6, 12), CurrentPalette.WallInner);
+        DrawRectangle(new Rectangle(busIcon.X + 8, busIcon.Bottom - 2, 8, 8), CurrentPalette.WallInner);
+        DrawRectangle(new Rectangle(busIcon.Right - 16, busIcon.Bottom - 2, 8, 8), CurrentPalette.WallInner);
 
-        var curb = new Rectangle(bounds.X + 12, bounds.Bottom - 14, bounds.Width - 24, 8);
-        DrawRectangle(curb, CurrentPalette.GemShine);
+        var board = new Rectangle(bounds.X + 86, bounds.Y + 24, bounds.Width - 104, 76);
+        DrawRectangle(board, CurrentPalette.HudBackground);
+        DrawFrame(board, accent, 4);
+        for (var i = 0; i < 4; i++)
+        {
+            DrawRectangle(new Rectangle(board.X + 12, board.Y + 12 + i * 14, board.Width - 24, 5), i == 0 ? CurrentPalette.GemShine : CurrentPalette.PlayerInner);
+        }
 
         if (_busStopWaitProgress <= 0f || _busPassagePending)
         {
@@ -391,7 +388,7 @@ public class Game1 : Game
         var bar = new Rectangle(bounds.X, bounds.Y - 18, bounds.Width, 10);
         DrawRectangle(bar, CurrentPalette.HudBackground);
         DrawRectangle(new Rectangle(bar.X, bar.Y, (int)(bar.Width * progress), bar.Height), CurrentPalette.GemShine);
-        DrawFrame(bar, frame, 2);
+        DrawFrame(bar, accent, 2);
     }
     private void DrawExit(Rectangle bounds)
     {
