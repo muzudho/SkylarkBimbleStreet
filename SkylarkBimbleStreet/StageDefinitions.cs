@@ -10,13 +10,13 @@ internal static class StageDefinitions
     public static Stage[] CreateStages() =>
     [
         new(
-            "Stage 1",
-            new Vector2(95, 95),
-            new Rectangle(VirtualWidth - 150, VirtualHeight - 150, 92, 92),
-            new Rectangle(64, 210, 176, 124),
-            new Rectangle(64, 64, 176, 126),
-            new Color(18, 22, 31),
-            [
+            name: "Stage 1",
+            playerStart: new Vector2(95, 95),
+            exitBounds: new Rectangle(VirtualWidth - 150, VirtualHeight - 150, 92, 92),
+            busStopBounds: new Rectangle(64, 210, 176, 124),
+            hospitalBounds: new Rectangle(64, 64, 176, 126),
+            backgroundColor: new Color(18, 22, 31),
+            walls: [
                 new(0, 0, VirtualWidth, 38),
                 new(0, VirtualHeight - 38, VirtualWidth, 38),
                 new(0, 0, 38, VirtualHeight),
@@ -30,27 +30,27 @@ internal static class StageDefinitions
                 new(300, 850, 520, 38),
                 new(1080, 820, 520, 38),
             ],
-            [
+            collectibles: [
                 new(390, 250, 34, 34),
                 new(660, 820, 34, 34),
                 new(920, 230, 34, 34),
                 new(1190, 760, 34, 34),
                 new(1450, 230, 34, 34),
             ],
-            [
-                new(new Rectangle(340, 500, 64, 64), new Vector2(0f, 250f), 410, 760),
-                new(new Rectangle(870, 460, 64, 64), new Vector2(0f, -310f), 330, 720),
-                new(new Rectangle(1160, 410, 64, 64), new Vector2(0f, 280f), 330, 720),
-                new(new Rectangle(1400, 720, 64, 64), new Vector2(300f, 0f), 1360, 1510),
+            hazards: [
+                new(bounds: new Rectangle(340, 500, 64, 64), velocity: new Vector2(0f, 250f), min: 410, max: 760),
+                new(bounds: new Rectangle(870, 460, 64, 64), velocity: new Vector2(0f, -310f), min: 330, max: 720),
+                new(bounds: new Rectangle(1160, 410, 64, 64), velocity: new Vector2(0f, 280f), min: 330, max: 720),
+                new(bounds: new Rectangle(1400, 720, 64, 64), velocity: new Vector2(300f, 0f), min: 1360, max: 1510),
             ]),
         new(
-            "Stage 2",
-            new Vector2(95, VirtualHeight - 155),
-            new Rectangle(VirtualWidth - 150, 58, 92, 92),
-            new Rectangle(300, 690, 176, 124),
-            new Rectangle(64, 840, 176, 126),
-            new Color(20, 26, 28),
-            [
+            name: "Stage 2",
+            playerStart: new Vector2(95, VirtualHeight - 155),
+            exitBounds: new Rectangle(VirtualWidth - 150, 58, 92, 92),
+            busStopBounds: new Rectangle(300, 690, 176, 124),
+            hospitalBounds: new Rectangle(64, 840, 176, 126),
+            backgroundColor: new Color(20, 26, 28),
+            walls: [
                 new(0, 0, VirtualWidth, 38),
                 new(0, VirtualHeight - 38, VirtualWidth, 38),
                 new(0, 0, 38, VirtualHeight),
@@ -64,7 +64,7 @@ internal static class StageDefinitions
                 new(1520, 120, 38, 620),
                 new(1120, 210, 380, 38),
             ],
-            [
+            collectibles: [
                 new(360, 760, 34, 34),
                 new(690, 170, 34, 34),
                 new(940, 790, 34, 34),
@@ -72,21 +72,21 @@ internal static class StageDefinitions
                 new(1640, 600, 34, 34),
                 new(1660, 210, 34, 34),
             ],
-            [
-                new(new Rectangle(350, 220, 64, 64), new Vector2(0f, 330f), 180, 780),
-                new(new Rectangle(650, 740, 64, 64), new Vector2(300f, 0f), 630, 760),
-                new(new Rectangle(930, 360, 64, 64), new Vector2(0f, 270f), 330, 840),
-                new(new Rectangle(1190, 640, 64, 64), new Vector2(340f, 0f), 1160, 1280),
-                new(new Rectangle(1620, 250, 64, 64), new Vector2(0f, 300f), 210, 660),
+            hazards: [
+                new(bounds: new Rectangle(350, 220, 64, 64), velocity: new Vector2(0f, 330f), min: 180, max: 780),
+                new(bounds: new Rectangle(650, 740, 64, 64), velocity: new Vector2(300f, 0f), min: 630, max: 760),
+                new(bounds: new Rectangle(930, 360, 64, 64), velocity: new Vector2(0f, 270f), min: 330, max: 840),
+                new(bounds: new Rectangle(1190, 640, 64, 64), velocity: new Vector2(340f, 0f), min: 1160, max: 1280),
+                new(bounds: new Rectangle(1620, 250, 64, 64), velocity: new Vector2(0f, 300f), min: 210, max: 660),
             ]),
         new(
-            "Stage 3",
-            new Vector2(95, 520),
-            new Rectangle(VirtualWidth - 150, 58, 92, 92),
-            new Rectangle(330, 470, 176, 124),
-            new Rectangle(64, 460, 176, 126),
-            new Color(24, 22, 31),
-            [
+            name: "Stage 3",
+            playerStart: new Vector2(95, 520),
+            exitBounds: new Rectangle(VirtualWidth - 150, 58, 92, 92),
+            busStopBounds: new Rectangle(330, 470, 176, 124),
+            hospitalBounds: new Rectangle(64, 460, 176, 126),
+            backgroundColor: new Color(24, 22, 31),
+            walls: [
                 new(0, 0, VirtualWidth, 38),
                 new(0, VirtualHeight - 38, VirtualWidth, 38),
                 new(0, 0, 38, VirtualHeight),
@@ -106,7 +106,7 @@ internal static class StageDefinitions
                 new(800, 558, 200, 38),
                 new(1038, 840, 202, 38),
             ],
-            [
+            collectibles: [
                 new(390, 500, 34, 34),
                 new(640, 930, 34, 34),
                 new(890, 630, 34, 34),
@@ -114,22 +114,22 @@ internal static class StageDefinitions
                 new(1350, 500, 34, 34),
                 new(1630, 150, 34, 34),
             ],
-            [
-                new(new Rectangle(390, 430, 64, 64), new Vector2(0f, 290f), 430, 590),
-                new(new Rectangle(620, 920, 64, 64), new Vector2(310f, 0f), 600, 710),
-                new(new Rectangle(880, 640, 64, 64), new Vector2(0f, 300f), 610, 760),
-                new(new Rectangle(1110, 470, 64, 64), new Vector2(330f, 0f), 1060, 1160),
-                new(new Rectangle(1370, 430, 64, 64), new Vector2(0f, 280f), 410, 610),
-                new(new Rectangle(1600, 130, 64, 64), new Vector2(320f, 0f), 1540, 1710),
+            hazards: [
+                new(bounds: new Rectangle(390, 430, 64, 64), velocity: new Vector2(0f, 290f), min: 430, max: 590),
+                new(bounds: new Rectangle(620, 920, 64, 64), velocity: new Vector2(310f, 0f), min: 600, max: 710),
+                new(bounds: new Rectangle(880, 640, 64, 64), velocity: new Vector2(0f, 300f), min: 610, max: 760),
+                new(bounds: new Rectangle(1110, 470, 64, 64), velocity: new Vector2(330f, 0f), min: 1060, max: 1160),
+                new(bounds: new Rectangle(1370, 430, 64, 64), velocity: new Vector2(0f, 280f), min: 410, max: 610),
+                new(bounds: new Rectangle(1600, 130, 64, 64), velocity: new Vector2(320f, 0f), min: 1540, max: 1710),
             ]),
         new(
-            "Stage 4",
-            new Vector2(95, 95),
-            new Rectangle(VirtualWidth - 150, VirtualHeight - 150, 92, 92),
-            new Rectangle(408, 382, 176, 124),
-            new Rectangle(64, 64, 176, 126),
-            new Color(22, 20, 28),
-            [
+            name: "Stage 4",
+            playerStart: new Vector2(95, 95),
+            exitBounds: new Rectangle(VirtualWidth - 150, VirtualHeight - 150, 92, 92),
+            busStopBounds: new Rectangle(408, 382, 176, 124),
+            hospitalBounds: new Rectangle(64, 64, 176, 126),
+            backgroundColor: new Color(22, 20, 28),
+            walls: [
                 new(0, 0, VirtualWidth, 38),
                 new(0, VirtualHeight - 38, VirtualWidth, 38),
                 new(0, 0, 38, VirtualHeight),
@@ -149,7 +149,7 @@ internal static class StageDefinitions
                 new(998, 210, 262, 38),
                 new(1298, 490, 262, 38),
             ],
-            [
+            collectibles: [
                 new(470, 440, 34, 34),
                 new(770, 150, 34, 34),
                 new(850, 820, 34, 34),
@@ -158,22 +158,22 @@ internal static class StageDefinitions
                 new(1680, 740, 34, 34),
                 new(1710, 210, 34, 34),
             ],
-            [
-                new(new Rectangle(230, 410, 64, 64), new Vector2(0f, 310f), 170, 760),
-                new(new Rectangle(510, 500, 64, 64), new Vector2(320f, 0f), 430, 590),
-                new(new Rectangle(800, 140, 64, 64), new Vector2(0f, 300f), 110, 220),
-                new(new Rectangle(1110, 560, 64, 64), new Vector2(330f, 0f), 1040, 1160),
-                new(new Rectangle(1400, 360, 64, 64), new Vector2(0f, 320f), 330, 450),
-                new(new Rectangle(1680, 720, 64, 64), new Vector2(0f, 300f), 650, 850),
+            hazards: [
+                new(bounds: new Rectangle(230, 410, 64, 64), velocity: new Vector2(0f, 310f), min: 170, max: 760),
+                new(bounds: new Rectangle(510, 500, 64, 64), velocity: new Vector2(320f, 0f), min: 430, max: 590),
+                new(bounds: new Rectangle(800, 140, 64, 64), velocity: new Vector2(0f, 300f), min: 110, max: 220),
+                new(bounds: new Rectangle(1110, 560, 64, 64), velocity: new Vector2(330f, 0f), min: 1040, max: 1160),
+                new(bounds: new Rectangle(1400, 360, 64, 64), velocity: new Vector2(0f, 320f), min: 330, max: 450),
+                new(bounds: new Rectangle(1680, 720, 64, 64), velocity: new Vector2(0f, 300f), min: 650, max: 850),
             ]),
         new(
-            "Stage 5",
-            new Vector2(95, 95),
-            new Rectangle(VirtualWidth - 150, VirtualHeight - 150, 92, 92),
-            new Rectangle(180, 368, 176, 124),
-            new Rectangle(64, 760, 176, 126),
-            new Color(18, 25, 32),
-            [
+            name: "Stage 5",
+            playerStart: new Vector2(95, 95),
+            exitBounds: new Rectangle(VirtualWidth - 150, VirtualHeight - 150, 92, 92),
+            busStopBounds: new Rectangle(180, 368, 176, 124),
+            hospitalBounds: new Rectangle(64, 760, 176, 126),
+            backgroundColor: new Color(18, 25, 32),
+            walls: [
                 new(0, 0, VirtualWidth, 38),
                 new(0, VirtualHeight - 38, VirtualWidth, 38),
                 new(0, 0, 38, VirtualHeight),
@@ -196,7 +196,7 @@ internal static class StageDefinitions
                 new(1118, 678, 150, 38),
                 new(1378, 388, 150, 38),
             ],
-            [
+            collectibles: [
                 new(190, 350, 34, 34),
                 new(430, 160, 34, 34),
                 new(690, 660, 34, 34),
@@ -205,23 +205,23 @@ internal static class StageDefinitions
                 new(1470, 470, 34, 34),
                 new(1710, 890, 34, 34),
             ],
-            [
-                new(new Rectangle(180, 320, 64, 64), new Vector2(0f, 300f), 260, 430),
-                new(new Rectangle(420, 250, 64, 64), new Vector2(320f, 0f), 370, 500),
-                new(new Rectangle(690, 620, 64, 64), new Vector2(0f, 300f), 590, 720),
-                new(new Rectangle(950, 370, 64, 64), new Vector2(330f, 0f), 900, 1020),
-                new(new Rectangle(1210, 730, 64, 64), new Vector2(0f, 310f), 700, 810),
-                new(new Rectangle(1470, 460, 64, 64), new Vector2(330f, 0f), 1420, 1540),
-                new(new Rectangle(1700, 800, 64, 64), new Vector2(0f, 280f), 760, 910),
+            hazards: [
+                new(bounds: new Rectangle(180, 320, 64, 64), velocity: new Vector2(0f, 300f), min: 260, max: 430),
+                new(bounds: new Rectangle(420, 250, 64, 64), velocity: new Vector2(320f, 0f), min: 370, max: 500),
+                new(bounds: new Rectangle(690, 620, 64, 64), velocity: new Vector2(0f, 300f), min: 590, max: 720),
+                new(bounds: new Rectangle(950, 370, 64, 64), velocity: new Vector2(330f, 0f), min: 900, max: 1020),
+                new(bounds: new Rectangle(1210, 730, 64, 64), velocity: new Vector2(0f, 310f), min: 700, max: 810),
+                new(bounds: new Rectangle(1470, 460, 64, 64), velocity: new Vector2(330f, 0f), min: 1420, max: 1540),
+                new(bounds: new Rectangle(1700, 800, 64, 64), velocity: new Vector2(0f, 280f), min: 760, max: 910),
             ]),
         new(
-            "Stage 6",
-            new Vector2(VirtualWidth - 160, VirtualHeight - 145),
-            new Rectangle(58, 58, 92, 92),
-            new Rectangle(1080, 520, 176, 124),
-            new Rectangle(1360, 830, 176, 126),
-            new Color(23, 28, 24),
-            [
+            name: "Stage 6",
+            playerStart: new Vector2(VirtualWidth - 160, VirtualHeight - 145),
+            exitBounds: new Rectangle(58, 58, 92, 92),
+            busStopBounds: new Rectangle(1080, 520, 176, 124),
+            hospitalBounds: new Rectangle(1360, 830, 176, 126),
+            backgroundColor: new Color(23, 28, 24),
+            walls: [
                 new(0, 0, VirtualWidth, 38),
                 new(0, VirtualHeight - 38, VirtualWidth, 38),
                 new(0, 0, 38, VirtualHeight),
@@ -238,7 +238,7 @@ internal static class StageDefinitions
                 new(1078, 470, 222, 38),
                 new(1338, 360, 222, 38),
             ],
-            [
+            collectibles: [
                 new(1710, 720, 34, 34),
                 new(1450, 430, 34, 34),
                 new(1270, 650, 34, 34),
@@ -247,23 +247,23 @@ internal static class StageDefinitions
                 new(390, 610, 34, 34),
                 new(180, 220, 34, 34),
             ],
-            [
-                new(new Rectangle(1680, 690, 64, 64), new Vector2(0f, 290f), 620, 850),
-                new(new Rectangle(1430, 410, 64, 64), new Vector2(300f, 0f), 1380, 1520),
-                new(new Rectangle(1260, 620, 64, 64), new Vector2(0f, 310f), 600, 720),
-                new(new Rectangle(910, 550, 64, 64), new Vector2(320f, 0f), 860, 990),
-                new(new Rectangle(640, 250, 64, 64), new Vector2(0f, 280f), 220, 350),
-                new(new Rectangle(380, 590, 64, 64), new Vector2(300f, 0f), 340, 460),
-                new(new Rectangle(170, 200, 64, 64), new Vector2(0f, 270f), 170, 280),
+            hazards: [
+                new(bounds: new Rectangle(1680, 690, 64, 64), velocity: new Vector2(0f, 290f), min: 620, max: 850),
+                new(bounds: new Rectangle(1430, 410, 64, 64), velocity: new Vector2(300f, 0f), min: 1380, max: 1520),
+                new(bounds: new Rectangle(1260, 620, 64, 64), velocity: new Vector2(0f, 310f), min: 600, max: 720),
+                new(bounds: new Rectangle(910, 550, 64, 64), velocity: new Vector2(320f, 0f), min: 860, max: 990),
+                new(bounds: new Rectangle(640, 250, 64, 64), velocity: new Vector2(0f, 280f), min: 220, max: 350),
+                new(bounds: new Rectangle(380, 590, 64, 64), velocity: new Vector2(300f, 0f), min: 340, max: 460),
+                new(bounds: new Rectangle(170, 200, 64, 64), velocity: new Vector2(0f, 270f), min: 170, max: 280),
             ]),
         new(
-            "Stage 7",
-            new Vector2(95, 520),
-            new Rectangle(VirtualWidth - 150, 520, 92, 92),
-            new Rectangle(760, 780, 176, 124),
-            new Rectangle(64, 120, 176, 126),
-            new Color(26, 24, 22),
-            [
+            name: "Stage 7",
+            playerStart: new Vector2(95, 520),
+            exitBounds: new Rectangle(VirtualWidth - 150, 520, 92, 92),
+            busStopBounds: new Rectangle(760, 780, 176, 124),
+            hospitalBounds: new Rectangle(64, 120, 176, 126),
+            backgroundColor: new Color(26, 24, 22),
+            walls: [
                 new(0, 0, VirtualWidth, 38),
                 new(0, VirtualHeight - 38, VirtualWidth, 38),
                 new(0, 0, 38, VirtualHeight),
@@ -286,7 +286,7 @@ internal static class StageDefinitions
                 new(1118, 438, 222, 38),
                 new(1378, 610, 222, 38),
             ],
-            [
+            collectibles: [
                 new(420, 500, 34, 34),
                 new(680, 300, 34, 34),
                 new(710, 910, 34, 34),
@@ -295,14 +295,14 @@ internal static class StageDefinitions
                 new(1460, 500, 34, 34),
                 new(1680, 760, 34, 34),
             ],
-            [
-                new(new Rectangle(410, 500, 64, 64), new Vector2(0f, 300f), 470, 590),
-                new(new Rectangle(670, 280, 64, 64), new Vector2(310f, 0f), 630, 760),
-                new(new Rectangle(710, 880, 64, 64), new Vector2(0f, 300f), 860, 960),
-                new(new Rectangle(940, 600, 64, 64), new Vector2(320f, 0f), 900, 1020),
-                new(new Rectangle(1200, 500, 64, 64), new Vector2(0f, 300f), 480, 610),
-                new(new Rectangle(1460, 500, 64, 64), new Vector2(330f, 0f), 1410, 1530),
-                new(new Rectangle(1680, 730, 64, 64), new Vector2(0f, 290f), 700, 820),
+            hazards: [
+                new(bounds: new Rectangle(410, 500, 64, 64), velocity: new Vector2(0f, 300f), min: 470, max: 590),
+                new(bounds: new Rectangle(670, 280, 64, 64), velocity: new Vector2(310f, 0f), min: 630, max: 760),
+                new(bounds: new Rectangle(710, 880, 64, 64), velocity: new Vector2(0f, 300f), min: 860, max: 960),
+                new(bounds: new Rectangle(940, 600, 64, 64), velocity: new Vector2(320f, 0f), min: 900, max: 1020),
+                new(bounds: new Rectangle(1200, 500, 64, 64), velocity: new Vector2(0f, 300f), min: 480, max: 610),
+                new(bounds: new Rectangle(1460, 500, 64, 64), velocity: new Vector2(330f, 0f), min: 1410, max: 1530),
+                new(bounds: new Rectangle(1680, 730, 64, 64), velocity: new Vector2(0f, 290f), min: 700, max: 820),
             ]),
     ];
 }
