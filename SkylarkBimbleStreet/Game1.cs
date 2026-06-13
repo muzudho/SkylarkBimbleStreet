@@ -21,7 +21,6 @@ public class Game1 : Game
     private const float BusStopWaitSeconds = 2.0f;
     private const float BusPassageSeconds = 1.6f;
     private const float BusArrivalSeconds = 1.35f;
-    private const double RapidStageSeconds = 45d;
     private const float StageSelectFocusStartOffset = 12f;
     private const float StageSelectFocusExpandFastRate = 22f;
     private const float StageSelectFocusExpandSlowRate = 8f;
@@ -77,7 +76,6 @@ public class Game1 : Game
     private bool[] _stagePassRecords = [];
     private bool[] _stageAllGemRecords = [];
     private bool[] _stageNoDamageRecords = [];
-    private bool[] _stageRapidRecords = [];
     private int[] _stageDeathCounts = [];
     private int[] _stageGemCounts = [];
     private double[] _stageElapsedSeconds = [];
@@ -163,7 +161,6 @@ public class Game1 : Game
         _stagePassRecords = new bool[_stages.Length];
         _stageAllGemRecords = new bool[_stages.Length];
         _stageNoDamageRecords = new bool[_stages.Length];
-        _stageRapidRecords = new bool[_stages.Length];
         StartStatsRun(false);
         LoadStage(0);
         OpenStageSelect();
@@ -755,39 +752,58 @@ public class Game1 : Game
 
     private void DrawStageRecordStats(Rectangle bounds, int stageIndex)
     {
-        var segmentWidth = bounds.Width / 4;
-        DrawStageRecordIcon(new Rectangle(bounds.X, bounds.Y, segmentWidth, bounds.Height), StageRecordKind.Pass, HasRecord(_stagePassRecords, stageIndex));
-        DrawStageRecordIcon(new Rectangle(bounds.X + segmentWidth, bounds.Y, segmentWidth, bounds.Height), StageRecordKind.AllGems, HasRecord(_stageAllGemRecords, stageIndex));
-        DrawStageRecordIcon(new Rectangle(bounds.X + segmentWidth * 2, bounds.Y, segmentWidth, bounds.Height), StageRecordKind.NoDamage, HasRecord(_stageNoDamageRecords, stageIndex));
-        DrawStageRecordIcon(new Rectangle(bounds.X + segmentWidth * 3, bounds.Y, bounds.Width - segmentWidth * 3, bounds.Height), StageRecordKind.Rapid, HasRecord(_stageRapidRecords, stageIndex));
+        Span<StageRecordKind> records = stackalloc StageRecordKind[3];
+        var count = 0;
+        if (HasRecord(_stagePassRecords, stageIndex))
+        {
+            records[count++] = StageRecordKind.Pass;
+        }
+
+        if (HasRecord(_stageAllGemRecords, stageIndex))
+        {
+            records[count++] = StageRecordKind.AllGems;
+        }
+
+        if (HasRecord(_stageNoDamageRecords, stageIndex))
+        {
+            records[count++] = StageRecordKind.NoDamage;
+        }
+
+        if (count == 0)
+        {
+            return;
+        }
+
+        var badgeSize = Math.Min(bounds.Height, 34);
+        var gap = 8;
+        var totalWidth = count * badgeSize + (count - 1) * gap;
+        var startX = bounds.Center.X - totalWidth / 2;
+        for (var i = 0; i < count; i++)
+        {
+            var badge = new Rectangle(startX + i * (badgeSize + gap), bounds.Center.Y - badgeSize / 2, badgeSize, badgeSize);
+            DrawStageRecordBadge(badge, records[i]);
+        }
     }
 
-    private void DrawStageRecordIcon(Rectangle bounds, StageRecordKind kind, bool achieved)
+    private void DrawStageRecordBadge(Rectangle bounds, StageRecordKind kind)
     {
-        var color = achieved ? CurrentPalette.GemShine : CurrentPalette.HudInactive;
-        var detail = achieved ? CurrentPalette.ExitOpen : CurrentPalette.WallInner;
+        var color = CurrentPalette.GemShine;
+        var detail = CurrentPalette.ExitOpen;
         DrawFrame(bounds, color, 3);
+        DrawRectangle(new Rectangle(bounds.Right - 8, bounds.Y + 4, 5, 5), CurrentPalette.GemShine);
 
-        var icon = Inset(bounds, 8);
+        var icon = Inset(bounds, 7);
         switch (kind)
         {
             case StageRecordKind.Pass:
-                DrawRecordBus(icon, color, detail, achieved);
+                DrawRecordBus(icon, color, detail, true);
                 break;
             case StageRecordKind.AllGems:
-                DrawGem(icon.Center.ToVector2(), Math.Min(icon.Width, icon.Height), achieved ? CurrentPalette.Gem : CurrentPalette.HudInactive, color);
+                DrawGem(icon.Center.ToVector2(), Math.Min(icon.Width, icon.Height), CurrentPalette.Gem, color);
                 break;
             case StageRecordKind.NoDamage:
-                DrawRecordShield(icon, color, detail, achieved);
+                DrawRecordShield(icon, color, detail, true);
                 break;
-            case StageRecordKind.Rapid:
-                DrawRecordSpeed(icon, color, detail, achieved);
-                break;
-        }
-
-        if (achieved)
-        {
-            DrawRectangle(new Rectangle(bounds.Right - 9, bounds.Y + 5, 5, 5), CurrentPalette.GemShine);
         }
     }
 
@@ -821,16 +837,6 @@ public class Game1 : Game
         DrawLine(right, bottom, 4, color);
         DrawLine(bottom, left, 4, color);
         DrawLine(left, top, 4, color);
-    }
-
-    private void DrawRecordSpeed(Rectangle bounds, Color color, Color detail, bool achieved)
-    {
-        var centerY = bounds.Center.Y;
-        DrawLine(new Vector2(bounds.X + 6, centerY - 8), new Vector2(bounds.Right - 8, centerY - 8), 4, color);
-        DrawLine(new Vector2(bounds.X + 2, centerY), new Vector2(bounds.Right - 4, centerY), 5, achieved ? detail : color);
-        DrawLine(new Vector2(bounds.X + 10, centerY + 8), new Vector2(bounds.Right - 12, centerY + 8), 4, color);
-        DrawLine(new Vector2(bounds.Right - 14, centerY - 12), new Vector2(bounds.Right - 4, centerY), 4, color);
-        DrawLine(new Vector2(bounds.Right - 14, centerY + 12), new Vector2(bounds.Right - 4, centerY), 4, color);
     }
 
     private static bool HasRecord(bool[] records, int stageIndex) => records.Length > stageIndex && records[stageIndex];
@@ -2119,7 +2125,6 @@ public class Game1 : Game
         _stagePassRecords[_currentStageIndex] = true;
         _stageAllGemRecords[_currentStageIndex] |= AreAllGemsCollected();
         _stageNoDamageRecords[_currentStageIndex] |= _stageDeathCounts.Length > _currentStageIndex && _stageDeathCounts[_currentStageIndex] == 0;
-        _stageRapidRecords[_currentStageIndex] |= _currentStageElapsedSeconds <= RapidStageSeconds;
     }
     private void StartStatsRun(bool startedFromStageSelect)
     {
@@ -2675,7 +2680,6 @@ public class Game1 : Game
         Pass,
         AllGems,
         NoDamage,
-        Rapid,
     }
 
     private enum PlayEventKind
