@@ -8,6 +8,7 @@ internal sealed class Stage
     public readonly Vector2 PlayerStart;
     public readonly Rectangle ExitBounds;
     public readonly Rectangle BusStopBounds;
+    public readonly Rectangle HospitalBounds;
     public readonly Color BackgroundColor;
     public readonly Rectangle[] Walls;
     public readonly Rectangle[] Gems;
@@ -18,6 +19,7 @@ internal sealed class Stage
         Vector2 playerStart,
         Rectangle exitBounds,
         Rectangle busStopBounds,
+        Rectangle hospitalBounds,
         Color backgroundColor,
         Rectangle[] walls,
         Rectangle[] gems,
@@ -27,6 +29,7 @@ internal sealed class Stage
         PlayerStart = playerStart;
         ExitBounds = exitBounds;
         BusStopBounds = busStopBounds;
+        HospitalBounds = hospitalBounds;
         BackgroundColor = backgroundColor;
         Walls = walls;
         Gems = gems;

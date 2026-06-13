@@ -85,6 +85,7 @@ public class Game1 : Game
     private Vector2 _playerStart;
     private Rectangle _exitBounds;
     private Rectangle _busStopBounds;
+    private Rectangle _hospitalBounds;
     private KeyboardState _previousKeyboard;
     private GamePadState _previousGamePad;
     private int _currentStageIndex;
@@ -290,6 +291,7 @@ public class Game1 : Game
         }
 
         DrawExit(GetExitBounds());
+        DrawHospital(_hospitalBounds);
         DrawBusStop(_busStopBounds);
         DrawDeathStopLines();
 
@@ -318,25 +320,57 @@ public class Game1 : Game
     }
 
 
+    private void DrawHospital(Rectangle bounds)
+    {
+        DrawRectangle(bounds, CurrentPalette.HudBackground);
+        DrawFrame(bounds, CurrentPalette.GemShine, 6);
+
+        var roof = new Rectangle(bounds.X + 10, bounds.Y + 8, bounds.Width - 20, 24);
+        DrawRectangle(roof, CurrentPalette.PlayerInner);
+        DrawFrame(roof, CurrentPalette.GemShine, 3);
+
+        var crossCenter = new Vector2(bounds.Center.X, bounds.Y + 63);
+        DrawRectangle(new Rectangle((int)crossCenter.X - 11, (int)crossCenter.Y - 34, 22, 68), CurrentPalette.Hazard);
+        DrawRectangle(new Rectangle((int)crossCenter.X - 34, (int)crossCenter.Y - 11, 68, 22), CurrentPalette.Hazard);
+        DrawFrame(new Rectangle((int)crossCenter.X - 38, (int)crossCenter.Y - 38, 76, 76), CurrentPalette.PlayerInner, 4);
+
+        var door = new Rectangle(bounds.Center.X - 20, bounds.Bottom - 38, 40, 34);
+        DrawRectangle(door, CurrentPalette.WallInner);
+        DrawFrame(door, CurrentPalette.PlayerInner, 3);
+        DrawRectangle(new Rectangle(bounds.X + 18, bounds.Bottom - 34, 32, 18), CurrentPalette.PlayerInner);
+        DrawRectangle(new Rectangle(bounds.Right - 50, bounds.Bottom - 34, 32, 18), CurrentPalette.PlayerInner);
+    }
+
     private void DrawBusStop(Rectangle bounds)
     {
         var playerWaiting = !_busPassagePending && GetPlayerBounds().Intersects(bounds);
         var frame = playerWaiting ? CurrentPalette.GemShine : CurrentPalette.StageCurrent;
         var body = playerWaiting ? CurrentPalette.StageCurrent : CurrentPalette.HudBackground;
 
+        DrawRectangle(bounds, WithAlpha(body, 235));
         DrawFrame(bounds, frame, 6);
-        DrawRectangle(Inset(bounds, 14), body);
 
-        var pole = new Rectangle(bounds.Center.X - 5, bounds.Y + 12, 10, bounds.Height - 22);
-        DrawRectangle(pole, CurrentPalette.WallInner);
-        DrawRectangle(new Rectangle(bounds.X + 22, bounds.Y + 14, bounds.Width - 44, 30), frame);
-        DrawFrame(new Rectangle(bounds.X + 22, bounds.Y + 14, bounds.Width - 44, 30), CurrentPalette.GemShine, 3);
+        var roof = new Rectangle(bounds.X + 8, bounds.Y + 6, bounds.Width - 16, 24);
+        DrawRectangle(roof, frame);
+        DrawFrame(roof, CurrentPalette.GemShine, 3);
+        DrawLine(new Vector2(bounds.X + 20, roof.Bottom), new Vector2(bounds.X + 20, bounds.Bottom - 16), 8, CurrentPalette.WallInner);
+        DrawLine(new Vector2(bounds.Right - 20, roof.Bottom), new Vector2(bounds.Right - 20, bounds.Bottom - 16), 8, CurrentPalette.WallInner);
 
-        var busIcon = new Rectangle(bounds.X + 25, bounds.Bottom - 33, bounds.Width - 50, 18);
+        var sign = new Rectangle(bounds.X + 24, bounds.Y + 38, bounds.Width - 48, 34);
+        DrawRectangle(sign, CurrentPalette.PlayerInner);
+        DrawFrame(sign, frame, 4);
+
+        var busIcon = new Rectangle(bounds.X + 28, bounds.Y + 82, bounds.Width - 56, 32);
         DrawRectangle(busIcon, CurrentPalette.PlayerInner);
-        DrawFrame(busIcon, frame, 3);
-        DrawRectangle(new Rectangle(busIcon.X + 9, busIcon.Bottom - 2, 9, 9), CurrentPalette.WallInner);
-        DrawRectangle(new Rectangle(busIcon.Right - 18, busIcon.Bottom - 2, 9, 9), CurrentPalette.WallInner);
+        DrawFrame(busIcon, frame, 4);
+        DrawRectangle(new Rectangle(busIcon.X + 12, busIcon.Y + 8, 30, 12), CurrentPalette.GemShine);
+        DrawRectangle(new Rectangle(busIcon.X + 50, busIcon.Y + 8, 30, 12), CurrentPalette.GemShine);
+        DrawRectangle(new Rectangle(busIcon.Right - 38, busIcon.Y + 8, 22, 18), CurrentPalette.WallInner);
+        DrawRectangle(new Rectangle(busIcon.X + 16, busIcon.Bottom - 3, 14, 14), CurrentPalette.WallInner);
+        DrawRectangle(new Rectangle(busIcon.Right - 30, busIcon.Bottom - 3, 14, 14), CurrentPalette.WallInner);
+
+        var curb = new Rectangle(bounds.X + 12, bounds.Bottom - 14, bounds.Width - 24, 8);
+        DrawRectangle(curb, CurrentPalette.GemShine);
 
         if (_busStopWaitProgress <= 0f || _busPassagePending)
         {
@@ -645,9 +679,13 @@ public class Game1 : Game
             DrawRectangle(Inset(mapped, Math.Max(1, mapped.Width > mapped.Height ? mapped.Height / 4 : mapped.Width / 4)), CurrentPalette.WallInner);
         }
 
+        var hospital = MapStageRectangle(stage.HospitalBounds, map);
+        DrawRectangle(hospital, CurrentPalette.HudBackground);
+        DrawFrame(hospital, CurrentPalette.GemShine, Math.Max(2, hospital.Width / 6));
+
         var busStop = MapStageRectangle(stage.BusStopBounds, map);
         DrawRectangle(busStop, CurrentPalette.StageCurrent);
-        DrawFrame(busStop, CurrentPalette.GemShine, Math.Max(2, busStop.Width / 5));
+        DrawFrame(busStop, CurrentPalette.GemShine, Math.Max(2, busStop.Width / 6));
 
         var exit = MapStageRectangle(stage.ExitBounds, map);
         DrawRectangle(exit, CurrentPalette.ExitClosed);
@@ -1623,7 +1661,7 @@ public class Game1 : Game
         {
             _deathRespawnCompleted = true;
             _playerInAmbulance = false;
-            ResetPlayerOnly(true);
+            ResetPlayerAtHospital(true);
         }
 
         if (_deathRespawnTimeRemaining > 0f)
@@ -1748,7 +1786,7 @@ public class Game1 : Game
     private void DrawAmbulance(Vector2 target, float progress, float fade)
     {
         var pickup = new Vector2(target.X, target.Y - 42f);
-        var dropoff = new Vector2(_playerStart.X + PlayerSize / 2f, _playerStart.Y - 42f);
+        var dropoff = GetHospitalDropoffPoint();
         var ambulance = GetAmbulancePosition(progress, pickup, dropoff);
         var y = ambulance.Y + (float)Math.Sin(progress * Math.PI * 14f) * 2f;
         var body = new Rectangle((int)ambulance.X - 56, (int)y - 26, 112, 48);
@@ -1816,7 +1854,7 @@ public class Game1 : Game
         else
         {
             var drop = MathHelper.Clamp((progress - 0.72f) / 0.12f, 0f, 1f);
-            position = Vector2.Lerp(dropoff - new Vector2(PlayerSize / 2f, 18f), _playerStart, drop);
+            position = Vector2.Lerp(dropoff - new Vector2(PlayerSize / 2f, 18f), GetHospitalRespawnPosition(), drop);
         }
 
         var player = new Rectangle((int)position.X, (int)position.Y, PlayerSize, PlayerSize);
@@ -2025,6 +2063,7 @@ public class Game1 : Game
         _playerStart = stage.PlayerStart;
         _exitBounds = stage.ExitBounds;
         _busStopBounds = stage.BusStopBounds;
+        _hospitalBounds = stage.HospitalBounds;
         _backgroundColor = CurrentPalette.Background;
         _stageSelectOpen = false;
         _paused = false;
@@ -2049,6 +2088,18 @@ public class Game1 : Game
         _playerPosition = _playerStart;
         _invincibleTimeRemaining = grantInvincibility ? RespawnInvincibleSeconds : 0f;
     }
+
+    private void ResetPlayerAtHospital(bool grantInvincibility)
+    {
+        _playerPosition = GetHospitalRespawnPosition();
+        _invincibleTimeRemaining = grantInvincibility ? RespawnInvincibleSeconds : 0f;
+    }
+
+    private Vector2 GetHospitalRespawnPosition() => new(
+        _hospitalBounds.Center.X - PlayerSize / 2f,
+        _hospitalBounds.Bottom - PlayerSize - 14f);
+
+    private Vector2 GetHospitalDropoffPoint() => new(_hospitalBounds.Center.X, _hospitalBounds.Y - 42f);
 
     /// <summary>
     /// ウィンドウ・タイトルを更新します。

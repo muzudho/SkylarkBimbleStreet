@@ -13,7 +13,8 @@ internal static class StageDefinitions
             "Stage 1",
             new Vector2(95, 95),
             new Rectangle(VirtualWidth - 150, VirtualHeight - 150, 92, 92),
-            new Rectangle(126, 154, 112, 86),
+            new Rectangle(64, 210, 176, 124),
+            new Rectangle(64, 64, 176, 126),
             new Color(18, 22, 31),
             [
                 new(0, 0, VirtualWidth, 38),
@@ -46,7 +47,8 @@ internal static class StageDefinitions
             "Stage 2",
             new Vector2(95, VirtualHeight - 155),
             new Rectangle(VirtualWidth - 150, 58, 92, 92),
-            new Rectangle(126, 840, 112, 86),
+            new Rectangle(64, 690, 176, 124),
+            new Rectangle(64, 840, 176, 126),
             new Color(20, 26, 28),
             [
                 new(0, 0, VirtualWidth, 38),
@@ -81,7 +83,8 @@ internal static class StageDefinitions
             "Stage 3",
             new Vector2(95, 520),
             new Rectangle(VirtualWidth - 150, 58, 92, 92),
-            new Rectangle(126, 470, 112, 86),
+            new Rectangle(64, 610, 176, 124),
+            new Rectangle(64, 460, 176, 126),
             new Color(24, 22, 31),
             [
                 new(0, 0, VirtualWidth, 38),
@@ -123,7 +126,8 @@ internal static class StageDefinitions
             "Stage 4",
             new Vector2(95, 95),
             new Rectangle(VirtualWidth - 150, VirtualHeight - 150, 92, 92),
-            new Rectangle(126, 154, 112, 86),
+            new Rectangle(64, 210, 176, 124),
+            new Rectangle(64, 64, 176, 126),
             new Color(22, 20, 28),
             [
                 new(0, 0, VirtualWidth, 38),
@@ -166,7 +170,8 @@ internal static class StageDefinitions
             "Stage 5",
             new Vector2(95, 95),
             new Rectangle(VirtualWidth - 150, VirtualHeight - 150, 92, 92),
-            new Rectangle(126, 154, 112, 86),
+            new Rectangle(64, 210, 176, 124),
+            new Rectangle(64, 64, 176, 126),
             new Color(18, 25, 32),
             [
                 new(0, 0, VirtualWidth, 38),
