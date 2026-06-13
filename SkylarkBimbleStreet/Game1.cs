@@ -21,6 +21,7 @@ public class Game1 : Game
     private const float BusStopWaitSeconds = 2.0f;
     private const float BusPassageSeconds = 1.6f;
     private const float BusArrivalSeconds = 1.35f;
+    private const float BadgeAwardEffectSeconds = 2.4f;
     private const float StageSelectFocusStartOffset = 12f;
     private const float StageSelectFocusExpandFastRate = 22f;
     private const float StageSelectFocusExpandSlowRate = 8f;
@@ -42,6 +43,7 @@ public class Game1 : Game
     private readonly List<GemCollectEffect> _gemCollectEffects = [];
     private readonly List<DeathEffect> _deathEffects = [];
     private readonly List<DeathStopMark> _deathStopLines = [];
+    private readonly List<BadgeAwardEffect> _badgeAwardEffects = [];
     private SpriteBatch _spriteBatch = null!;
     private Texture2D _pixel = null!;
     private RenderTarget2D _scene = null!;
@@ -200,6 +202,7 @@ public class Game1 : Game
             _stageSelectAnimationTime += elapsed;
             UpdateStageSelect(keyboard, gamePad, elapsed);
             UpdateStageSelectSlide(elapsed);
+            UpdateBadgeAwardEffects(elapsed);
             UpdateWindowTitle(gameTime);
             _previousKeyboard = keyboard;
             _previousGamePad = gamePad;
@@ -253,6 +256,7 @@ public class Game1 : Game
             _invincibleTimeRemaining = Math.Max(0f, _invincibleTimeRemaining - elapsed);
             _exitOpenFlashRemaining = Math.Max(0f, _exitOpenFlashRemaining - elapsed);
             UpdateGemCollectEffects(elapsed);
+            UpdateBadgeAwardEffects(elapsed);
             UpdateDeathEffects(elapsed);
             UpdateDeathRespawn(elapsed);
             UpdateBusPassage(elapsed);
@@ -275,6 +279,7 @@ public class Game1 : Game
         else if (_cleared)
         {
             _clearAnimationTime += elapsed;
+            UpdateBadgeAwardEffects(elapsed);
         }
 
         UpdateWindowTitle(gameTime);
@@ -782,6 +787,7 @@ public class Game1 : Game
         {
             var badge = new Rectangle(startX + i * (badgeSize + gap), bounds.Center.Y - badgeSize / 2, badgeSize, badgeSize);
             DrawStageRecordBadge(badge, records[i]);
+            DrawBadgeAwardEffect(badge, stageIndex, records[i]);
         }
     }
 
@@ -807,6 +813,27 @@ public class Game1 : Game
         }
     }
 
+
+    private void DrawBadgeAwardEffect(Rectangle bounds, int stageIndex, StageRecordKind kind)
+    {
+        foreach (var effect in _badgeAwardEffects)
+        {
+            if (effect.StageIndex != stageIndex || effect.Kind != kind)
+            {
+                continue;
+            }
+
+            var progress = 1f - effect.TimeRemaining / effect.Duration;
+            var pulse = (float)Math.Sin(progress * Math.PI * 6f) * 0.5f + 0.5f;
+            var spread = 4 + (int)(12f * progress);
+            var alpha = (byte)(210f * (1f - progress));
+            DrawFrame(new Rectangle(bounds.X - spread, bounds.Y - spread, bounds.Width + spread * 2, bounds.Height + spread * 2), WithAlpha(CurrentPalette.GemShine, alpha), 3 + (int)(pulse * 3f));
+            DrawRectangle(new Rectangle(bounds.Center.X - 3, bounds.Y - 10 - (int)(10f * progress), 6, 6), WithAlpha(CurrentPalette.GemShine, alpha));
+            DrawRectangle(new Rectangle(bounds.X - 9 - (int)(7f * progress), bounds.Center.Y - 3, 6, 6), WithAlpha(CurrentPalette.ExitOpen, alpha));
+            DrawRectangle(new Rectangle(bounds.Right + 3 + (int)(7f * progress), bounds.Center.Y - 3, 6, 6), WithAlpha(CurrentPalette.ExitOpen, alpha));
+            return;
+        }
+    }
     private void DrawRecordBus(Rectangle bounds, Color color, Color detail, bool achieved)
     {
         var body = new Rectangle(bounds.X + 2, bounds.Center.Y - 7, bounds.Width - 4, 16);
@@ -2122,9 +2149,36 @@ public class Game1 : Game
             return;
         }
 
-        _stagePassRecords[_currentStageIndex] = true;
-        _stageAllGemRecords[_currentStageIndex] |= AreAllGemsCollected();
-        _stageNoDamageRecords[_currentStageIndex] |= _stageDeathCounts.Length > _currentStageIndex && _stageDeathCounts[_currentStageIndex] == 0;
+        AwardStageRecord(StageRecordKind.Pass, _stagePassRecords, true);
+        AwardStageRecord(StageRecordKind.AllGems, _stageAllGemRecords, AreAllGemsCollected());
+        AwardStageRecord(StageRecordKind.NoDamage, _stageNoDamageRecords, _stageDeathCounts.Length > _currentStageIndex && _stageDeathCounts[_currentStageIndex] == 0);
+    }
+
+    private void AwardStageRecord(StageRecordKind kind, bool[] records, bool achieved)
+    {
+        if (!achieved || records.Length <= _currentStageIndex || records[_currentStageIndex])
+        {
+            return;
+        }
+
+        records[_currentStageIndex] = true;
+        _badgeAwardEffects.Add(new BadgeAwardEffect(_currentStageIndex, kind, BadgeAwardEffectSeconds, BadgeAwardEffectSeconds));
+    }
+
+    private void UpdateBadgeAwardEffects(float elapsed)
+    {
+        for (var i = _badgeAwardEffects.Count - 1; i >= 0; i--)
+        {
+            var effect = _badgeAwardEffects[i];
+            var timeRemaining = effect.TimeRemaining - elapsed;
+            if (timeRemaining <= 0f)
+            {
+                _badgeAwardEffects.RemoveAt(i);
+                continue;
+            }
+
+            _badgeAwardEffects[i] = effect with { TimeRemaining = timeRemaining };
+        }
     }
     private void StartStatsRun(bool startedFromStageSelect)
     {
@@ -2667,6 +2721,7 @@ public class Game1 : Game
     private readonly record struct GemCollectEffect(Vector2 Position, float TimeRemaining, float Duration, int Seed);
     private readonly record struct DeathEffect(Vector2 Position, float TimeRemaining, float Duration, int Seed);
     private readonly record struct DeathStopMark(Vector2 Position, Vector2 Direction);
+    private readonly record struct BadgeAwardEffect(int StageIndex, StageRecordKind Kind, float TimeRemaining, float Duration);
 
     private enum WaveShape
     {
