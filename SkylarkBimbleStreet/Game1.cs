@@ -18,6 +18,8 @@ public class Game1 : Game
     private const float ExitOpenFlashSeconds = 0.55f;
     private const float GemCollectEffectSeconds = 0.34f;
     private const float DeathEffectSeconds = 3.0f;
+    private const float BusStopWaitSeconds = 2.0f;
+    private const float BusPassageSeconds = 1.6f;
     private const float StageSelectFocusStartOffset = 12f;
     private const float StageSelectFocusExpandFastRate = 22f;
     private const float StageSelectFocusExpandSlowRate = 8f;
@@ -82,6 +84,7 @@ public class Game1 : Game
     private Vector2 _playerPosition;
     private Vector2 _playerStart;
     private Rectangle _exitBounds;
+    private Rectangle _busStopBounds;
     private KeyboardState _previousKeyboard;
     private GamePadState _previousGamePad;
     private int _currentStageIndex;
@@ -99,6 +102,8 @@ public class Game1 : Game
     private bool _paused;
     private bool _deathRespawnPending;
     private bool _playerInAmbulance;
+    private bool _playerInBus;
+    private bool _busPassagePending;
     private bool _deathRespawnCompleted;
     private bool _ambulancePickupDoorPlayed;
     private bool _ambulanceDropoffDoorPlayed;
@@ -121,6 +126,8 @@ public class Game1 : Game
     private float _deathRespawnTimeRemaining;
     private float _exitOpenDelayRemaining;
     private float _exitOpenFlashRemaining;
+    private float _busStopWaitProgress;
+    private float _busPassageTimeRemaining;
     private Vector2 _lastMoveDirection = Vector2.UnitX;
     private Color _backgroundColor;
 
@@ -224,15 +231,20 @@ public class Game1 : Game
             UpdateGemCollectEffects(elapsed);
             UpdateDeathEffects(elapsed);
             UpdateDeathRespawn(elapsed);
+            UpdateBusPassage(elapsed);
             UpdateExitOpening(elapsed);
             UpdateHazards(elapsed);
 
-            if (!_deathRespawnPending)
+            if (!_deathRespawnPending && !_busPassagePending)
             {
                 MovePlayer(GetMoveInput(keyboard, gamePad), elapsed);
                 CheckGemCollection();
                 CheckHazardCollision();
-                CheckExit();
+                if (!_deathRespawnPending)
+                {
+                    CheckBusStop(elapsed);
+                    CheckExit();
+                }
             }
         }
         else if (_cleared)
@@ -278,6 +290,7 @@ public class Game1 : Game
         }
 
         DrawExit(GetExitBounds());
+        DrawBusStop(_busStopBounds);
         DrawDeathStopLines();
 
         for (var i = 0; i < _gemBounds.Length; i++)
@@ -299,10 +312,43 @@ public class Game1 : Game
 
         DrawPlayer();
         DrawDeathEffects();
+        DrawBusPassage();
         DrawExitOpenRays(GetExitBounds());
         DrawHud();
     }
 
+
+    private void DrawBusStop(Rectangle bounds)
+    {
+        var playerWaiting = !_busPassagePending && GetPlayerBounds().Intersects(bounds);
+        var frame = playerWaiting ? CurrentPalette.GemShine : CurrentPalette.StageCurrent;
+        var body = playerWaiting ? CurrentPalette.StageCurrent : CurrentPalette.HudBackground;
+
+        DrawFrame(bounds, frame, 6);
+        DrawRectangle(Inset(bounds, 14), body);
+
+        var pole = new Rectangle(bounds.Center.X - 5, bounds.Y + 12, 10, bounds.Height - 22);
+        DrawRectangle(pole, CurrentPalette.WallInner);
+        DrawRectangle(new Rectangle(bounds.X + 22, bounds.Y + 14, bounds.Width - 44, 30), frame);
+        DrawFrame(new Rectangle(bounds.X + 22, bounds.Y + 14, bounds.Width - 44, 30), CurrentPalette.GemShine, 3);
+
+        var busIcon = new Rectangle(bounds.X + 25, bounds.Bottom - 33, bounds.Width - 50, 18);
+        DrawRectangle(busIcon, CurrentPalette.PlayerInner);
+        DrawFrame(busIcon, frame, 3);
+        DrawRectangle(new Rectangle(busIcon.X + 9, busIcon.Bottom - 2, 9, 9), CurrentPalette.WallInner);
+        DrawRectangle(new Rectangle(busIcon.Right - 18, busIcon.Bottom - 2, 9, 9), CurrentPalette.WallInner);
+
+        if (_busStopWaitProgress <= 0f || _busPassagePending)
+        {
+            return;
+        }
+
+        var progress = MathHelper.Clamp(_busStopWaitProgress / BusStopWaitSeconds, 0f, 1f);
+        var bar = new Rectangle(bounds.X, bounds.Y - 18, bounds.Width, 10);
+        DrawRectangle(bar, CurrentPalette.HudBackground);
+        DrawRectangle(new Rectangle(bar.X, bar.Y, (int)(bar.Width * progress), bar.Height), CurrentPalette.GemShine);
+        DrawFrame(bar, frame, 2);
+    }
     private void DrawExit(Rectangle bounds)
     {
         var open = _exitOpen;
@@ -598,6 +644,10 @@ public class Game1 : Game
             DrawRectangle(mapped, CurrentPalette.WallOuter);
             DrawRectangle(Inset(mapped, Math.Max(1, mapped.Width > mapped.Height ? mapped.Height / 4 : mapped.Width / 4)), CurrentPalette.WallInner);
         }
+
+        var busStop = MapStageRectangle(stage.BusStopBounds, map);
+        DrawRectangle(busStop, CurrentPalette.StageCurrent);
+        DrawFrame(busStop, CurrentPalette.GemShine, Math.Max(2, busStop.Width / 5));
 
         var exit = MapStageRectangle(stage.ExitBounds, map);
         DrawRectangle(exit, CurrentPalette.ExitClosed);
@@ -1331,7 +1381,7 @@ public class Game1 : Game
 
     private void DrawPlayer()
     {
-        if (_playerInAmbulance)
+        if (_playerInAmbulance || _playerInBus)
         {
             return;
         }
@@ -1774,6 +1824,105 @@ public class Game1 : Game
         DrawRectangle(Inset(player, 10), CurrentPalette.PlayerInner);
     }
 
+    private void CheckBusStop(float elapsed)
+    {
+        if (_busPassagePending)
+        {
+            return;
+        }
+
+        if (!GetPlayerBounds().Intersects(_busStopBounds))
+        {
+            _busStopWaitProgress = Math.Max(0f, _busStopWaitProgress - elapsed * 1.5f);
+            return;
+        }
+
+        _busStopWaitProgress = Math.Min(BusStopWaitSeconds, _busStopWaitProgress + elapsed);
+        if (_busStopWaitProgress < BusStopWaitSeconds)
+        {
+            return;
+        }
+
+        StartBusPassage();
+    }
+
+    private void StartBusPassage()
+    {
+        _busPassagePending = true;
+        _playerInBus = true;
+        _busPassageTimeRemaining = BusPassageSeconds;
+        _busStopWaitProgress = BusStopWaitSeconds;
+        PlaySound(_confirmSound, 0.72f);
+    }
+
+    private void UpdateBusPassage(float elapsed)
+    {
+        if (!_busPassagePending)
+        {
+            return;
+        }
+
+        _busPassageTimeRemaining = Math.Max(0f, _busPassageTimeRemaining - elapsed);
+        if (_busPassageTimeRemaining > 0f)
+        {
+            return;
+        }
+
+        CompleteBusPassage();
+    }
+
+    private void CompleteBusPassage()
+    {
+        var playerCenter = _busStopBounds.Center.ToVector2();
+        LogPlayEvent(PlayEventKind.Pass, _currentStageIndex, playerCenter, _currentStageElapsedSeconds, _stageGemCounts[_currentStageIndex]);
+        PlaySound(_stageMoveSound, 0.72f);
+        _stagesCleared[_currentStageIndex] = true;
+
+        if (_currentStageIndex + 1 < _stages.Length)
+        {
+            LoadStage(_currentStageIndex + 1);
+            return;
+        }
+
+        LogPlayEvent(PlayEventKind.FullClear, _currentStageIndex, playerCenter, _runElapsedSeconds, _deaths);
+        _clearRank = CalculateClearRank();
+        _cleared = true;
+        _clearAnimationTime = 0d;
+        _busPassagePending = false;
+        _playerInBus = false;
+    }
+
+    private void DrawBusPassage()
+    {
+        if (!_busPassagePending)
+        {
+            return;
+        }
+
+        var progress = 1f - _busPassageTimeRemaining / BusPassageSeconds;
+        var stop = _busStopBounds.Center.ToVector2();
+        var start = new Vector2(-150f, stop.Y);
+        var end = new Vector2(VirtualWidth + 150f, stop.Y);
+        var position = progress < 0.45f
+            ? Vector2.Lerp(start, stop, progress / 0.45f)
+            : Vector2.Lerp(stop, end, (progress - 0.45f) / 0.55f);
+
+        DrawBus(position, progress);
+    }
+
+    private void DrawBus(Vector2 position, float progress)
+    {
+        var bounce = (float)Math.Sin(progress * Math.PI * 16f) * 2f;
+        var body = new Rectangle((int)position.X - 68, (int)(position.Y + bounce) - 28, 136, 56);
+        DrawRectangle(body, CurrentPalette.StageCurrent);
+        DrawFrame(body, CurrentPalette.GemShine, 4);
+        DrawRectangle(new Rectangle(body.X + 14, body.Y + 10, 30, 18), CurrentPalette.PlayerInner);
+        DrawRectangle(new Rectangle(body.X + 50, body.Y + 10, 30, 18), CurrentPalette.PlayerInner);
+        DrawRectangle(new Rectangle(body.X + 86, body.Y + 10, 30, 18), CurrentPalette.PlayerInner);
+        DrawRectangle(new Rectangle(body.X + 96, body.Y + 28, 16, 24), CurrentPalette.WallInner);
+        DrawRectangle(new Rectangle(body.X + 20, body.Bottom - 8, 18, 18), CurrentPalette.WallInner);
+        DrawRectangle(new Rectangle(body.Right - 38, body.Bottom - 8, 18, 18), CurrentPalette.WallInner);
+    }
     private void CheckExit()
     {
         if (_exitOpen && _exitOpenFlashRemaining <= 0f && GetPlayerBounds().Intersects(GetExitBounds()))
@@ -1875,6 +2024,7 @@ public class Game1 : Game
         _ambulanceDropoffBrakePlayed = false;
         _playerStart = stage.PlayerStart;
         _exitBounds = stage.ExitBounds;
+        _busStopBounds = stage.BusStopBounds;
         _backgroundColor = CurrentPalette.Background;
         _stageSelectOpen = false;
         _paused = false;
@@ -1882,6 +2032,10 @@ public class Game1 : Game
         _exitOpen = false;
         _exitOpenDelayRemaining = 0f;
         _exitOpenFlashRemaining = 0f;
+        _busStopWaitProgress = 0f;
+        _busPassageTimeRemaining = 0f;
+        _playerInBus = false;
+        _busPassagePending = false;
         _clearRank = 0;
         _clearAnimationTime = 0d;
         _currentStageElapsedSeconds = 0d;
@@ -2323,6 +2477,7 @@ public class Game1 : Game
         Pause,
         Retry,
         StageSelect,
+        Pass,
     }
 
     private readonly record struct PlayEvent(
