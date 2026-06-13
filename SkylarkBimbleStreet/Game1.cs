@@ -354,8 +354,8 @@ public class Game1 : Game
     private void DrawBusStop(Rectangle bounds)
     {
         var playerWaiting = !_busPassagePending && GetPlayerBounds().Intersects(bounds);
-        var frame = playerWaiting ? CurrentPalette.GemShine : CurrentPalette.StageCurrent;
-        var body = playerWaiting ? CurrentPalette.StageCurrent : CurrentPalette.HudBackground;
+        var frame = playerWaiting ? CurrentPalette.GemShine : CurrentPalette.WallInner;
+        var body = CurrentPalette.HudBackground;
 
         DrawRectangle(bounds, WithAlpha(body, 235));
         DrawFrame(bounds, frame, 6);
@@ -2109,7 +2109,7 @@ public class Game1 : Game
         _hospitalBounds.Center.X - PlayerSize / 2f,
         _hospitalBounds.Bottom - PlayerSize - 14f);
 
-    private Vector2 GetHospitalDropoffPoint() => new(_hospitalBounds.Center.X, _hospitalBounds.Y - 42f);
+    private Vector2 GetHospitalDropoffPoint() => new(_hospitalBounds.Center.X, _hospitalBounds.Bottom + 42f);
 
     /// <summary>
     /// ウィンドウ・タイトルを更新します。
