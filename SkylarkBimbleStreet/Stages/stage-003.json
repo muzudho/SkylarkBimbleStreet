@@ -1,0 +1,265 @@
+{
+  "version": 1,
+  "name": "Stage 3",
+  "playerStart": {
+    "x": 95.0,
+    "y": 520.0
+  },
+  "exitBounds": {
+    "x": 1770,
+    "y": 58,
+    "width": 92,
+    "height": 92
+  },
+  "busStopBounds": {
+    "x": 330,
+    "y": 470,
+    "width": 176,
+    "height": 124
+  },
+  "hospitalBounds": {
+    "x": 64,
+    "y": 460,
+    "width": 176,
+    "height": 126
+  },
+  "backgroundColor": {
+    "r": 24,
+    "g": 22,
+    "b": 31
+  },
+  "walls": [
+    {
+      "x": 0,
+      "y": 0,
+      "width": 1920,
+      "height": 38
+    },
+    {
+      "x": 0,
+      "y": 1042,
+      "width": 1920,
+      "height": 38
+    },
+    {
+      "x": 0,
+      "y": 0,
+      "width": 38,
+      "height": 1080
+    },
+    {
+      "x": 1882,
+      "y": 0,
+      "width": 38,
+      "height": 1080
+    },
+    {
+      "x": 280,
+      "y": 38,
+      "width": 38,
+      "height": 360
+    },
+    {
+      "x": 280,
+      "y": 650,
+      "width": 38,
+      "height": 392
+    },
+    {
+      "x": 520,
+      "y": 210,
+      "width": 38,
+      "height": 640
+    },
+    {
+      "x": 760,
+      "y": 38,
+      "width": 38,
+      "height": 520
+    },
+    {
+      "x": 760,
+      "y": 780,
+      "width": 38,
+      "height": 262
+    },
+    {
+      "x": 1000,
+      "y": 220,
+      "width": 38,
+      "height": 280
+    },
+    {
+      "x": 1000,
+      "y": 650,
+      "width": 38,
+      "height": 190
+    },
+    {
+      "x": 1240,
+      "y": 38,
+      "width": 38,
+      "height": 360
+    },
+    {
+      "x": 1240,
+      "y": 650,
+      "width": 38,
+      "height": 392
+    },
+    {
+      "x": 1480,
+      "y": 220,
+      "width": 38,
+      "height": 260
+    },
+    {
+      "x": 1480,
+      "y": 650,
+      "width": 38,
+      "height": 210
+    },
+    {
+      "x": 330,
+      "y": 398,
+      "width": 190,
+      "height": 38
+    },
+    {
+      "x": 800,
+      "y": 558,
+      "width": 200,
+      "height": 38
+    },
+    {
+      "x": 1038,
+      "y": 840,
+      "width": 202,
+      "height": 38
+    }
+  ],
+  "collectibles": [
+    {
+      "x": 390,
+      "y": 500,
+      "width": 34,
+      "height": 34
+    },
+    {
+      "x": 640,
+      "y": 930,
+      "width": 34,
+      "height": 34
+    },
+    {
+      "x": 890,
+      "y": 630,
+      "width": 34,
+      "height": 34
+    },
+    {
+      "x": 1130,
+      "y": 920,
+      "width": 34,
+      "height": 34
+    },
+    {
+      "x": 1350,
+      "y": 500,
+      "width": 34,
+      "height": 34
+    },
+    {
+      "x": 1630,
+      "y": 150,
+      "width": 34,
+      "height": 34
+    }
+  ],
+  "hazards": [
+    {
+      "bounds": {
+        "x": 390,
+        "y": 430,
+        "width": 64,
+        "height": 64
+      },
+      "velocity": {
+        "x": 0.0,
+        "y": 290.0
+      },
+      "min": 430,
+      "max": 590
+    },
+    {
+      "bounds": {
+        "x": 620,
+        "y": 920,
+        "width": 64,
+        "height": 64
+      },
+      "velocity": {
+        "x": 310.0,
+        "y": 0.0
+      },
+      "min": 600,
+      "max": 710
+    },
+    {
+      "bounds": {
+        "x": 880,
+        "y": 640,
+        "width": 64,
+        "height": 64
+      },
+      "velocity": {
+        "x": 0.0,
+        "y": 300.0
+      },
+      "min": 610,
+      "max": 760
+    },
+    {
+      "bounds": {
+        "x": 1110,
+        "y": 470,
+        "width": 64,
+        "height": 64
+      },
+      "velocity": {
+        "x": 330.0,
+        "y": 0.0
+      },
+      "min": 1060,
+      "max": 1160
+    },
+    {
+      "bounds": {
+        "x": 1370,
+        "y": 430,
+        "width": 64,
+        "height": 64
+      },
+      "velocity": {
+        "x": 0.0,
+        "y": 280.0
+      },
+      "min": 410,
+      "max": 610
+    },
+    {
+      "bounds": {
+        "x": 1600,
+        "y": 130,
+        "width": 64,
+        "height": 64
+      },
+      "velocity": {
+        "x": 320.0,
+        "y": 0.0
+      },
+      "min": 1540,
+      "max": 1710
+    }
+  ]
+}

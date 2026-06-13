@@ -14,38 +14,30 @@ internal static class StageLoader
         PropertyNameCaseInsensitive = true,
     };
 
-    public static Stage[] LoadStagesOrFallback(Stage[] fallbackStages)
+    public static Stage[] LoadStages()
     {
         var stageDirectory = Path.Combine(AppContext.BaseDirectory, "Stages");
         if (!Directory.Exists(stageDirectory))
         {
-            return fallbackStages;
+            throw new InvalidOperationException($"Stage directory '{stageDirectory}' does not exist.");
         }
 
         var stageFiles = Directory.GetFiles(stageDirectory, "stage-*.json").OrderBy(static path => path).ToArray();
         if (stageFiles.Length == 0)
         {
-            return fallbackStages;
+            throw new InvalidOperationException($"Stage directory '{stageDirectory}' has no stage-*.json files.");
         }
 
-        var stages = new List<Stage>(fallbackStages);
+        var stages = new List<Stage>(stageFiles.Length);
         foreach (var stageFile in stageFiles)
         {
-            var stage = LoadStage(stageFile);
             var stageIndex = GetStageIndex(stageFile);
-            if (stageIndex < stages.Count)
+            if (stageIndex != stages.Count)
             {
-                stages[stageIndex] = stage;
-                continue;
+                throw new InvalidOperationException($"Stage file '{stageFile}' skips a stage number. Expected stage-{stages.Count + 1:000}.json.");
             }
 
-            if (stageIndex == stages.Count)
-            {
-                stages.Add(stage);
-                continue;
-            }
-
-            throw new InvalidOperationException($"Stage file '{stageFile}' skips a stage number. Expected stage-{stages.Count + 1:000}.json or earlier.");
+            stages.Add(LoadStage(stageFile));
         }
 
         return stages.ToArray();

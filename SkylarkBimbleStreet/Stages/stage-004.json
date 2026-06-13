@@ -1,0 +1,271 @@
+{
+  "version": 1,
+  "name": "Stage 4",
+  "playerStart": {
+    "x": 95.0,
+    "y": 95.0
+  },
+  "exitBounds": {
+    "x": 1770,
+    "y": 930,
+    "width": 92,
+    "height": 92
+  },
+  "busStopBounds": {
+    "x": 408,
+    "y": 382,
+    "width": 176,
+    "height": 124
+  },
+  "hospitalBounds": {
+    "x": 64,
+    "y": 64,
+    "width": 176,
+    "height": 126
+  },
+  "backgroundColor": {
+    "r": 22,
+    "g": 20,
+    "b": 28
+  },
+  "walls": [
+    {
+      "x": 0,
+      "y": 0,
+      "width": 1920,
+      "height": 38
+    },
+    {
+      "x": 0,
+      "y": 1042,
+      "width": 1920,
+      "height": 38
+    },
+    {
+      "x": 0,
+      "y": 0,
+      "width": 38,
+      "height": 1080
+    },
+    {
+      "x": 1882,
+      "y": 0,
+      "width": 38,
+      "height": 1080
+    },
+    {
+      "x": 360,
+      "y": 38,
+      "width": 38,
+      "height": 300
+    },
+    {
+      "x": 360,
+      "y": 520,
+      "width": 38,
+      "height": 522
+    },
+    {
+      "x": 660,
+      "y": 250,
+      "width": 38,
+      "height": 250
+    },
+    {
+      "x": 660,
+      "y": 760,
+      "width": 38,
+      "height": 282
+    },
+    {
+      "x": 960,
+      "y": 38,
+      "width": 38,
+      "height": 430
+    },
+    {
+      "x": 960,
+      "y": 690,
+      "width": 38,
+      "height": 352
+    },
+    {
+      "x": 1260,
+      "y": 250,
+      "width": 38,
+      "height": 250
+    },
+    {
+      "x": 1260,
+      "y": 760,
+      "width": 38,
+      "height": 282
+    },
+    {
+      "x": 1560,
+      "y": 38,
+      "width": 38,
+      "height": 240
+    },
+    {
+      "x": 1560,
+      "y": 650,
+      "width": 38,
+      "height": 392
+    },
+    {
+      "x": 398,
+      "y": 330,
+      "width": 262,
+      "height": 38
+    },
+    {
+      "x": 698,
+      "y": 650,
+      "width": 262,
+      "height": 38
+    },
+    {
+      "x": 998,
+      "y": 210,
+      "width": 262,
+      "height": 38
+    },
+    {
+      "x": 1298,
+      "y": 490,
+      "width": 262,
+      "height": 38
+    }
+  ],
+  "collectibles": [
+    {
+      "x": 470,
+      "y": 440,
+      "width": 34,
+      "height": 34
+    },
+    {
+      "x": 770,
+      "y": 150,
+      "width": 34,
+      "height": 34
+    },
+    {
+      "x": 850,
+      "y": 820,
+      "width": 34,
+      "height": 34
+    },
+    {
+      "x": 1080,
+      "y": 560,
+      "width": 34,
+      "height": 34
+    },
+    {
+      "x": 1370,
+      "y": 360,
+      "width": 34,
+      "height": 34
+    },
+    {
+      "x": 1680,
+      "y": 740,
+      "width": 34,
+      "height": 34
+    },
+    {
+      "x": 1710,
+      "y": 210,
+      "width": 34,
+      "height": 34
+    }
+  ],
+  "hazards": [
+    {
+      "bounds": {
+        "x": 230,
+        "y": 410,
+        "width": 64,
+        "height": 64
+      },
+      "velocity": {
+        "x": 0.0,
+        "y": 310.0
+      },
+      "min": 170,
+      "max": 760
+    },
+    {
+      "bounds": {
+        "x": 510,
+        "y": 500,
+        "width": 64,
+        "height": 64
+      },
+      "velocity": {
+        "x": 320.0,
+        "y": 0.0
+      },
+      "min": 430,
+      "max": 590
+    },
+    {
+      "bounds": {
+        "x": 800,
+        "y": 140,
+        "width": 64,
+        "height": 64
+      },
+      "velocity": {
+        "x": 0.0,
+        "y": 300.0
+      },
+      "min": 110,
+      "max": 220
+    },
+    {
+      "bounds": {
+        "x": 1110,
+        "y": 560,
+        "width": 64,
+        "height": 64
+      },
+      "velocity": {
+        "x": 330.0,
+        "y": 0.0
+      },
+      "min": 1040,
+      "max": 1160
+    },
+    {
+      "bounds": {
+        "x": 1400,
+        "y": 360,
+        "width": 64,
+        "height": 64
+      },
+      "velocity": {
+        "x": 0.0,
+        "y": 320.0
+      },
+      "min": 330,
+      "max": 450
+    },
+    {
+      "bounds": {
+        "x": 1680,
+        "y": 720,
+        "width": 64,
+        "height": 64
+      },
+      "velocity": {
+        "x": 0.0,
+        "y": 300.0
+      },
+      "min": 650,
+      "max": 850
+    }
+  ]
+}
