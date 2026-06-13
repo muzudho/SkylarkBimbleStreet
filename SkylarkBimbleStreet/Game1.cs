@@ -221,7 +221,22 @@ public class Game1 : Game
             return;
         }
 
-        if (!_cleared && (WasPressed(keyboard, Keys.Enter) || WasPressed(gamePad.Buttons.Start, _previousGamePad.Buttons.Start)))
+        if (_cleared)
+        {
+            if (WasPressed(keyboard, Keys.Tab)
+                || WasPressed(keyboard, Keys.Enter)
+                || WasPressed(keyboard, Keys.Space)
+                || WasPressed(gamePad.Buttons.Start, _previousGamePad.Buttons.Start)
+                || WasPressed(gamePad.Buttons.A, _previousGamePad.Buttons.A))
+            {
+                OpenStageSelect();
+            }
+            else if (WasPressed(keyboard, Keys.R))
+            {
+                ResetRun();
+            }
+        }
+        else if (WasPressed(keyboard, Keys.Enter) || WasPressed(gamePad.Buttons.Start, _previousGamePad.Buttons.Start))
         {
             OpenPauseMenu();
         }
@@ -233,7 +248,6 @@ public class Game1 : Game
         {
             ResetRun();
         }
-
         if (!_stageSelectOpen && !_paused && !_cleared)
         {
             _runElapsedSeconds += elapsed;
@@ -2269,7 +2283,7 @@ public class Game1 : Game
             }
         }
 
-        var state = _stageSelectOpen ? "STAGE SELECT - Left/Right choose - Enter/Space/Start play" : _paused ? "PAUSE - Left/Right choose - Enter/Space/Start/A select" : _cleared ? "CLEAR - Press R / Start to retry - Tab for stage select" : "Collect all gems and reach the green exit - Start/Enter pause - Tab for stage select";
+        var state = _stageSelectOpen ? "STAGE SELECT - Left/Right choose - Enter/Space/Start play" : _paused ? "PAUSE - Left/Right choose - Enter/Space/Start/A select" : _cleared ? "CLEAR - Enter/Space/Start/A stage select - R retry" : "Collect all gems and reach the green exit - Start/Enter pause - Tab for stage select";
         var stage = _stages[_currentStageIndex];
         Window.Title = $"SkylarkBimbleStreet - {stage.Name} - Palette {CurrentPalette.Name} - {state} - Gems {collected}/{_gemBounds.Length} - Hits {_deaths} - {GetStatsSummary()}";
     }
