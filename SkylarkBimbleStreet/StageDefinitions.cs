@@ -47,7 +47,7 @@ internal static class StageDefinitions
             "Stage 2",
             new Vector2(95, VirtualHeight - 155),
             new Rectangle(VirtualWidth - 150, 58, 92, 92),
-            new Rectangle(430, 690, 176, 124),
+            new Rectangle(300, 690, 176, 124),
             new Rectangle(64, 840, 176, 126),
             new Color(20, 26, 28),
             [
@@ -170,7 +170,7 @@ internal static class StageDefinitions
             "Stage 5",
             new Vector2(95, 95),
             new Rectangle(VirtualWidth - 150, VirtualHeight - 150, 92, 92),
-            new Rectangle(338, 368, 176, 124),
+            new Rectangle(180, 368, 176, 124),
             new Rectangle(64, 760, 176, 126),
             new Color(18, 25, 32),
             [
@@ -241,7 +241,7 @@ internal static class StageDefinitions
             [
                 new(1710, 720, 34, 34),
                 new(1450, 430, 34, 34),
-                new(1190, 540, 34, 34),
+                new(1270, 650, 34, 34),
                 new(920, 570, 34, 34),
                 new(650, 280, 34, 34),
                 new(390, 610, 34, 34),
@@ -250,7 +250,7 @@ internal static class StageDefinitions
             [
                 new(new Rectangle(1680, 690, 64, 64), new Vector2(0f, 290f), 620, 850),
                 new(new Rectangle(1430, 410, 64, 64), new Vector2(300f, 0f), 1380, 1520),
-                new(new Rectangle(1180, 520, 64, 64), new Vector2(0f, 310f), 460, 610),
+                new(new Rectangle(1260, 620, 64, 64), new Vector2(0f, 310f), 600, 720),
                 new(new Rectangle(910, 550, 64, 64), new Vector2(320f, 0f), 860, 990),
                 new(new Rectangle(640, 250, 64, 64), new Vector2(0f, 280f), 220, 350),
                 new(new Rectangle(380, 590, 64, 64), new Vector2(300f, 0f), 340, 460),
