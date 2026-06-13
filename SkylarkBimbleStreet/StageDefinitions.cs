@@ -219,7 +219,7 @@ internal static class StageDefinitions
             new Vector2(VirtualWidth - 160, VirtualHeight - 145),
             new Rectangle(58, 58, 92, 92),
             new Rectangle(1080, 520, 176, 124),
-            new Rectangle(1500, 830, 176, 126),
+            new Rectangle(1360, 830, 176, 126),
             new Color(23, 28, 24),
             [
                 new(0, 0, VirtualWidth, 38),
