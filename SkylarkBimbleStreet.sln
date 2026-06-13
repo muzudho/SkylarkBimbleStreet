@@ -5,6 +5,8 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SkylarkBimbleStreet", "SkylarkBimbleStreet\SkylarkBimbleStreet.csproj", "{2DDAA073-6111-4C67-BC6D-5409E423E1FA}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SkylarkBimbleStreet.Editor", "SkylarkBimbleStreet.Editor\SkylarkBimbleStreet.Editor.csproj", "{CF2BF32B-1BA4-4210-8FED-DFB1542DBC92}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,18 @@ Global
 		{2DDAA073-6111-4C67-BC6D-5409E423E1FA}.Release|x64.Build.0 = Release|Any CPU
 		{2DDAA073-6111-4C67-BC6D-5409E423E1FA}.Release|x86.ActiveCfg = Release|Any CPU
 		{2DDAA073-6111-4C67-BC6D-5409E423E1FA}.Release|x86.Build.0 = Release|Any CPU
+		{CF2BF32B-1BA4-4210-8FED-DFB1542DBC92}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CF2BF32B-1BA4-4210-8FED-DFB1542DBC92}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CF2BF32B-1BA4-4210-8FED-DFB1542DBC92}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{CF2BF32B-1BA4-4210-8FED-DFB1542DBC92}.Debug|x64.Build.0 = Debug|Any CPU
+		{CF2BF32B-1BA4-4210-8FED-DFB1542DBC92}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{CF2BF32B-1BA4-4210-8FED-DFB1542DBC92}.Debug|x86.Build.0 = Debug|Any CPU
+		{CF2BF32B-1BA4-4210-8FED-DFB1542DBC92}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CF2BF32B-1BA4-4210-8FED-DFB1542DBC92}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CF2BF32B-1BA4-4210-8FED-DFB1542DBC92}.Release|x64.ActiveCfg = Release|Any CPU
+		{CF2BF32B-1BA4-4210-8FED-DFB1542DBC92}.Release|x64.Build.0 = Release|Any CPU
+		{CF2BF32B-1BA4-4210-8FED-DFB1542DBC92}.Release|x86.ActiveCfg = Release|Any CPU
+		{CF2BF32B-1BA4-4210-8FED-DFB1542DBC92}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

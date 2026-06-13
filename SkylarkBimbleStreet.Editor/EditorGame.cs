@@ -1,0 +1,393 @@
+namespace SkylarkBimbleStreet.Editor;
+
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text.Json;
+using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Input;
+
+internal sealed class EditorGame : Game
+{
+    private const int VirtualWidth = 1920;
+    private const int VirtualHeight = 1080;
+    private const int HandleSize = 16;
+
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true,
+        WriteIndented = true,
+    };
+
+    private readonly GraphicsDeviceManager _graphics;
+    private readonly List<EditableItem> _items = [];
+    private SpriteBatch _spriteBatch = null!;
+    private Texture2D _pixel = null!;
+    private FileInfo[] _stageFiles = [];
+    private StageData _stage = null!;
+    private int _stageIndex;
+    private int _selectedIndex = -1;
+    private MouseState _previousMouse;
+    private KeyboardState _previousKeyboard;
+    private bool _dragging;
+    private Point _dragOffset;
+    private string _status = "Ready";
+
+    public EditorGame()
+    {
+        _graphics = new GraphicsDeviceManager(this);
+        _graphics.PreferredBackBufferWidth = 1280;
+        _graphics.PreferredBackBufferHeight = 720;
+        _graphics.SynchronizeWithVerticalRetrace = true;
+        Window.AllowUserResizing = true;
+        IsMouseVisible = true;
+    }
+
+    protected override void Initialize()
+    {
+        LoadStageFiles();
+        LoadStage(0);
+        base.Initialize();
+    }
+
+    protected override void LoadContent()
+    {
+        _spriteBatch = new SpriteBatch(GraphicsDevice);
+        _pixel = new Texture2D(GraphicsDevice, 1, 1);
+        _pixel.SetData([Color.White]);
+    }
+
+    protected override void UnloadContent()
+    {
+        _pixel.Dispose();
+        base.UnloadContent();
+    }
+
+    protected override void Update(GameTime gameTime)
+    {
+        var keyboard = Keyboard.GetState();
+        var mouse = Mouse.GetState();
+
+        if (keyboard.IsKeyDown(Keys.Escape))
+        {
+            Exit();
+        }
+
+        if (WasPressed(keyboard, Keys.Left))
+        {
+            LoadStage(Math.Max(0, _stageIndex - 1));
+        }
+        else if (WasPressed(keyboard, Keys.Right))
+        {
+            LoadStage(Math.Min(_stageFiles.Length - 1, _stageIndex + 1));
+        }
+        else if (WasPressed(keyboard, Keys.S))
+        {
+            SaveStage();
+        }
+        else if (WasPressed(keyboard, Keys.R))
+        {
+            LoadStage(_stageIndex);
+        }
+
+        UpdateMouse(mouse);
+        UpdateWindowTitle();
+        _previousKeyboard = keyboard;
+        _previousMouse = mouse;
+        base.Update(gameTime);
+    }
+
+    protected override void Draw(GameTime gameTime)
+    {
+        GraphicsDevice.Clear(new Color(14, 16, 20));
+        _spriteBatch.Begin(samplerState: SamplerState.PointClamp);
+
+        var map = GetMapRectangle();
+        DrawRectangle(map, new Color(22, 25, 31));
+        DrawGrid(map);
+        DrawStage(map);
+        DrawFrame(map, new Color(150, 160, 174), 2);
+
+        _spriteBatch.End();
+        base.Draw(gameTime);
+    }
+
+    private void UpdateMouse(MouseState mouse)
+    {
+        var map = GetMapRectangle();
+        var world = ScreenToWorld(mouse.Position, map);
+        var leftPressed = mouse.LeftButton == ButtonState.Pressed && _previousMouse.LeftButton == ButtonState.Released;
+        var leftReleased = mouse.LeftButton == ButtonState.Released && _previousMouse.LeftButton == ButtonState.Pressed;
+
+        if (leftPressed && map.Contains(mouse.Position))
+        {
+            _selectedIndex = FindItemAt(world);
+            if (_selectedIndex >= 0)
+            {
+                var bounds = _items[_selectedIndex].GetBounds();
+                _dragging = true;
+                _dragOffset = new Point(world.X - bounds.X, world.Y - bounds.Y);
+                _status = $"Selected {_items[_selectedIndex].Kind}";
+            }
+            else
+            {
+                _dragging = false;
+                _status = "No selection";
+            }
+        }
+
+        if (leftReleased)
+        {
+            _dragging = false;
+        }
+
+        if (!_dragging || _selectedIndex < 0 || mouse.LeftButton != ButtonState.Pressed)
+        {
+            return;
+        }
+
+        var item = _items[_selectedIndex];
+        var draggedBounds = item.GetBounds();
+        draggedBounds.X = Math.Clamp(world.X - _dragOffset.X, 0, VirtualWidth - draggedBounds.Width);
+        draggedBounds.Y = Math.Clamp(world.Y - _dragOffset.Y, 0, VirtualHeight - draggedBounds.Height);
+        item.SetBounds(draggedBounds);
+    }
+
+    private void LoadStageFiles()
+    {
+        var stagesDirectory = FindStagesDirectory();
+        _stageFiles = stagesDirectory.GetFiles("stage-*.json").OrderBy(static file => file.Name).ToArray();
+        if (_stageFiles.Length == 0)
+        {
+            throw new InvalidOperationException($"No stage-*.json files in {stagesDirectory.FullName}.");
+        }
+    }
+
+    private void LoadStage(int index)
+    {
+        _stageIndex = Math.Clamp(index, 0, _stageFiles.Length - 1);
+        var json = File.ReadAllText(_stageFiles[_stageIndex].FullName);
+        _stage = JsonSerializer.Deserialize<StageData>(json, JsonOptions)
+            ?? throw new InvalidOperationException($"JSON root is empty: {_stageFiles[_stageIndex].FullName}");
+        RebuildItems();
+        _selectedIndex = -1;
+        _dragging = false;
+        _status = "Loaded";
+    }
+
+    private void SaveStage()
+    {
+        var json = JsonSerializer.Serialize(_stage, JsonOptions).Replace("\n", "\r\n");
+        File.WriteAllText(_stageFiles[_stageIndex].FullName, json + "\r\n", new System.Text.UTF8Encoding(false));
+        _status = "Saved";
+    }
+
+    private void RebuildItems()
+    {
+        _items.Clear();
+        _items.Add(new EditableItem("player start", () => CenteredBounds(_stage.PlayerStart, 46, 46), bounds => SetCenter(_stage.PlayerStart, bounds)));
+        _items.Add(new EditableItem("exit", () => ToRectangle(_stage.ExitBounds), bounds => FromRectangle(_stage.ExitBounds, bounds)));
+        _items.Add(new EditableItem("bus stop", () => ToRectangle(_stage.BusStopBounds), bounds => FromRectangle(_stage.BusStopBounds, bounds)));
+        _items.Add(new EditableItem("hospital", () => ToRectangle(_stage.HospitalBounds), bounds => FromRectangle(_stage.HospitalBounds, bounds)));
+
+        foreach (var wall in _stage.Walls)
+        {
+            _items.Add(new EditableItem("wall", () => ToRectangle(wall), bounds => FromRectangle(wall, bounds)));
+        }
+
+        foreach (var collectible in _stage.Collectibles)
+        {
+            _items.Add(new EditableItem("collectible", () => ToRectangle(collectible), bounds => FromRectangle(collectible, bounds)));
+        }
+
+        foreach (var hazard in _stage.Hazards)
+        {
+            _items.Add(new EditableItem("hazard", () => ToRectangle(hazard.Bounds), bounds => FromRectangle(hazard.Bounds, bounds)));
+        }
+    }
+
+    private void DrawStage(Rectangle map)
+    {
+        DrawRectangle(Map(_stage.ExitBounds, map), new Color(72, 196, 112));
+        DrawFrame(Map(_stage.ExitBounds, map), Color.White, 2);
+        DrawRectangle(Map(_stage.BusStopBounds, map), new Color(70, 150, 230));
+        DrawFrame(Map(_stage.BusStopBounds, map), Color.White, 2);
+        DrawRectangle(Map(_stage.HospitalBounds, map), new Color(220, 220, 235));
+        DrawFrame(Map(_stage.HospitalBounds, map), new Color(80, 120, 220), 2);
+
+        foreach (var wall in _stage.Walls)
+        {
+            DrawRectangle(Map(wall, map), new Color(108, 116, 132));
+        }
+
+        foreach (var collectible in _stage.Collectibles)
+        {
+            var mapped = Map(collectible, map);
+            DrawRectangle(mapped, new Color(246, 202, 76));
+            DrawFrame(mapped, new Color(255, 250, 170), 2);
+        }
+
+        foreach (var hazard in _stage.Hazards)
+        {
+            var range = GetHazardRange(hazard);
+            DrawFrame(Map(range, map), new Color(180, 70, 80), 1);
+            DrawRectangle(Map(hazard.Bounds, map), new Color(220, 76, 92));
+        }
+
+        var player = Map(CenteredBounds(_stage.PlayerStart, 46, 46), map);
+        DrawRectangle(player, new Color(86, 168, 255));
+        DrawFrame(player, Color.White, 2);
+
+        if (_selectedIndex >= 0)
+        {
+            var selected = Map(_items[_selectedIndex].GetBounds(), map);
+            DrawFrame(Inflate(selected, 4), new Color(255, 255, 255), 3);
+            DrawRectangle(new Rectangle(selected.Right - HandleSize / 2, selected.Bottom - HandleSize / 2, HandleSize, HandleSize), Color.White);
+        }
+    }
+
+    private void DrawGrid(Rectangle map)
+    {
+        const int grid = 120;
+        for (var x = 0; x <= VirtualWidth; x += grid)
+        {
+            var screenX = map.X + (int)(x * map.Width / (float)VirtualWidth);
+            DrawRectangle(new Rectangle(screenX, map.Y, 1, map.Height), new Color(40, 45, 55));
+        }
+
+        for (var y = 0; y <= VirtualHeight; y += grid)
+        {
+            var screenY = map.Y + (int)(y * map.Height / (float)VirtualHeight);
+            DrawRectangle(new Rectangle(map.X, screenY, map.Width, 1), new Color(40, 45, 55));
+        }
+    }
+
+    private int FindItemAt(Point world)
+    {
+        for (var i = _items.Count - 1; i >= 0; i--)
+        {
+            if (_items[i].GetBounds().Contains(world))
+            {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
+    private void UpdateWindowTitle()
+    {
+        var selected = _selectedIndex >= 0 ? _items[_selectedIndex].Kind : "none";
+        Window.Title = $"SkylarkBimbleStreet Editor - {_stageFiles[_stageIndex].Name} - {_stage.Name} - selected {selected} - {_status} - Left/Right stage, S save, R reload";
+    }
+
+    private Rectangle GetMapRectangle()
+    {
+        var viewport = GraphicsDevice.Viewport;
+        var scale = Math.Min(viewport.Width / (float)VirtualWidth, viewport.Height / (float)VirtualHeight);
+        var width = (int)(VirtualWidth * scale);
+        var height = (int)(VirtualHeight * scale);
+        return new Rectangle((viewport.Width - width) / 2, (viewport.Height - height) / 2, width, height);
+    }
+
+    private static DirectoryInfo FindStagesDirectory()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null)
+        {
+            var candidate = Path.Combine(directory.FullName, "SkylarkBimbleStreet", "Stages");
+            if (Directory.Exists(candidate))
+            {
+                return new DirectoryInfo(candidate);
+            }
+
+            directory = directory.Parent;
+        }
+
+        throw new DirectoryNotFoundException("Could not find SkylarkBimbleStreet/Stages from the editor output directory.");
+    }
+
+    private static Rectangle ToRectangle(RectangleData data) => new(data.X, data.Y, data.Width, data.Height);
+
+    private static void FromRectangle(RectangleData data, Rectangle rectangle)
+    {
+        data.X = rectangle.X;
+        data.Y = rectangle.Y;
+        data.Width = rectangle.Width;
+        data.Height = rectangle.Height;
+    }
+
+    private static Rectangle CenteredBounds(Vector2Data center, int width, int height) => new((int)center.X, (int)center.Y, width, height);
+
+    private static void SetCenter(Vector2Data position, Rectangle bounds)
+    {
+        position.X = bounds.X;
+        position.Y = bounds.Y;
+    }
+
+    private static Rectangle GetHazardRange(HazardData hazard)
+    {
+        var bounds = ToRectangle(hazard.Bounds);
+        if (Math.Abs(hazard.Velocity.X) >= Math.Abs(hazard.Velocity.Y))
+        {
+            return new Rectangle(hazard.Min, bounds.Y, hazard.Max - hazard.Min + bounds.Width, bounds.Height);
+        }
+
+        return new Rectangle(bounds.X, hazard.Min, bounds.Width, hazard.Max - hazard.Min + bounds.Height);
+    }
+
+    private static Rectangle Map(RectangleData source, Rectangle map) => Map(ToRectangle(source), map);
+
+    private static Rectangle Map(Rectangle source, Rectangle map)
+    {
+        var scaleX = map.Width / (float)VirtualWidth;
+        var scaleY = map.Height / (float)VirtualHeight;
+        return new Rectangle(
+            map.X + (int)(source.X * scaleX),
+            map.Y + (int)(source.Y * scaleY),
+            Math.Max(1, (int)Math.Ceiling(source.Width * scaleX)),
+            Math.Max(1, (int)Math.Ceiling(source.Height * scaleY)));
+    }
+
+    private static Point ScreenToWorld(Point screen, Rectangle map)
+    {
+        var x = (screen.X - map.X) * VirtualWidth / Math.Max(1, map.Width);
+        var y = (screen.Y - map.Y) * VirtualHeight / Math.Max(1, map.Height);
+        return new Point(Math.Clamp(x, 0, VirtualWidth), Math.Clamp(y, 0, VirtualHeight));
+    }
+
+    private static Rectangle Inflate(Rectangle rectangle, int amount) => new(rectangle.X - amount, rectangle.Y - amount, rectangle.Width + amount * 2, rectangle.Height + amount * 2);
+
+    private void DrawRectangle(Rectangle rectangle, Color color) => _spriteBatch.Draw(_pixel, rectangle, color);
+
+    private void DrawFrame(Rectangle rectangle, Color color, int thickness)
+    {
+        DrawRectangle(new Rectangle(rectangle.X, rectangle.Y, rectangle.Width, thickness), color);
+        DrawRectangle(new Rectangle(rectangle.X, rectangle.Bottom - thickness, rectangle.Width, thickness), color);
+        DrawRectangle(new Rectangle(rectangle.X, rectangle.Y, thickness, rectangle.Height), color);
+        DrawRectangle(new Rectangle(rectangle.Right - thickness, rectangle.Y, thickness, rectangle.Height), color);
+    }
+
+    private bool WasPressed(KeyboardState keyboard, Keys key) => keyboard.IsKeyDown(key) && !_previousKeyboard.IsKeyDown(key);
+
+    private sealed class EditableItem
+    {
+        private readonly Func<Rectangle> _getBounds;
+        private readonly Action<Rectangle> _setBounds;
+
+        public EditableItem(string kind, Func<Rectangle> getBounds, Action<Rectangle> setBounds)
+        {
+            Kind = kind;
+            _getBounds = getBounds;
+            _setBounds = setBounds;
+        }
+
+        public string Kind { get; }
+
+        public Rectangle GetBounds() => _getBounds();
+
+        public void SetBounds(Rectangle bounds) => _setBounds(bounds);
+    }
+}

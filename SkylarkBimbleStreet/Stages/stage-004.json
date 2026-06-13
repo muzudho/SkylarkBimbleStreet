@@ -1,271 +1,271 @@
-{
-  "version": 1,
-  "name": "Stage 4",
-  "playerStart": {
-    "x": 95.0,
-    "y": 95.0
-  },
-  "exitBounds": {
-    "x": 1770,
-    "y": 930,
-    "width": 92,
-    "height": 92
-  },
-  "busStopBounds": {
-    "x": 408,
-    "y": 382,
-    "width": 176,
-    "height": 124
-  },
-  "hospitalBounds": {
-    "x": 64,
-    "y": 64,
-    "width": 176,
-    "height": 126
-  },
-  "backgroundColor": {
-    "r": 22,
-    "g": 20,
-    "b": 28
-  },
-  "walls": [
-    {
-      "x": 0,
-      "y": 0,
-      "width": 1920,
-      "height": 38
-    },
-    {
-      "x": 0,
-      "y": 1042,
-      "width": 1920,
-      "height": 38
-    },
-    {
-      "x": 0,
-      "y": 0,
-      "width": 38,
-      "height": 1080
-    },
-    {
-      "x": 1882,
-      "y": 0,
-      "width": 38,
-      "height": 1080
-    },
-    {
-      "x": 360,
-      "y": 38,
-      "width": 38,
-      "height": 300
-    },
-    {
-      "x": 360,
-      "y": 520,
-      "width": 38,
-      "height": 522
-    },
-    {
-      "x": 660,
-      "y": 250,
-      "width": 38,
-      "height": 250
-    },
-    {
-      "x": 660,
-      "y": 760,
-      "width": 38,
-      "height": 282
-    },
-    {
-      "x": 960,
-      "y": 38,
-      "width": 38,
-      "height": 430
-    },
-    {
-      "x": 960,
-      "y": 690,
-      "width": 38,
-      "height": 352
-    },
-    {
-      "x": 1260,
-      "y": 250,
-      "width": 38,
-      "height": 250
-    },
-    {
-      "x": 1260,
-      "y": 760,
-      "width": 38,
-      "height": 282
-    },
-    {
-      "x": 1560,
-      "y": 38,
-      "width": 38,
-      "height": 240
-    },
-    {
-      "x": 1560,
-      "y": 650,
-      "width": 38,
-      "height": 392
-    },
-    {
-      "x": 398,
-      "y": 330,
-      "width": 262,
-      "height": 38
-    },
-    {
-      "x": 698,
-      "y": 650,
-      "width": 262,
-      "height": 38
-    },
-    {
-      "x": 998,
-      "y": 210,
-      "width": 262,
-      "height": 38
-    },
-    {
-      "x": 1298,
-      "y": 490,
-      "width": 262,
-      "height": 38
-    }
-  ],
-  "collectibles": [
-    {
-      "x": 470,
-      "y": 440,
-      "width": 34,
-      "height": 34
-    },
-    {
-      "x": 770,
-      "y": 150,
-      "width": 34,
-      "height": 34
-    },
-    {
-      "x": 850,
-      "y": 820,
-      "width": 34,
-      "height": 34
-    },
-    {
-      "x": 1080,
-      "y": 560,
-      "width": 34,
-      "height": 34
-    },
-    {
-      "x": 1370,
-      "y": 360,
-      "width": 34,
-      "height": 34
-    },
-    {
-      "x": 1680,
-      "y": 740,
-      "width": 34,
-      "height": 34
-    },
-    {
-      "x": 1710,
-      "y": 210,
-      "width": 34,
-      "height": 34
-    }
-  ],
-  "hazards": [
-    {
-      "bounds": {
-        "x": 230,
-        "y": 410,
-        "width": 64,
-        "height": 64
-      },
-      "velocity": {
-        "x": 0.0,
-        "y": 310.0
-      },
-      "min": 170,
-      "max": 760
-    },
-    {
-      "bounds": {
-        "x": 510,
-        "y": 500,
-        "width": 64,
-        "height": 64
-      },
-      "velocity": {
-        "x": 320.0,
-        "y": 0.0
-      },
-      "min": 430,
-      "max": 590
-    },
-    {
-      "bounds": {
-        "x": 800,
-        "y": 140,
-        "width": 64,
-        "height": 64
-      },
-      "velocity": {
-        "x": 0.0,
-        "y": 300.0
-      },
-      "min": 110,
-      "max": 220
-    },
-    {
-      "bounds": {
-        "x": 1110,
-        "y": 560,
-        "width": 64,
-        "height": 64
-      },
-      "velocity": {
-        "x": 330.0,
-        "y": 0.0
-      },
-      "min": 1040,
-      "max": 1160
-    },
-    {
-      "bounds": {
-        "x": 1400,
-        "y": 360,
-        "width": 64,
-        "height": 64
-      },
-      "velocity": {
-        "x": 0.0,
-        "y": 320.0
-      },
-      "min": 330,
-      "max": 450
-    },
-    {
-      "bounds": {
-        "x": 1680,
-        "y": 720,
-        "width": 64,
-        "height": 64
-      },
-      "velocity": {
-        "x": 0.0,
-        "y": 300.0
-      },
-      "min": 650,
-      "max": 850
-    }
-  ]
+{
+  "Version": 1,
+  "Name": "Stage 4",
+  "PlayerStart": {
+    "X": 95,
+    "Y": 95
+  },
+  "ExitBounds": {
+    "X": 1770,
+    "Y": 930,
+    "Width": 92,
+    "Height": 92
+  },
+  "BusStopBounds": {
+    "X": 408,
+    "Y": 382,
+    "Width": 176,
+    "Height": 124
+  },
+  "HospitalBounds": {
+    "X": 422,
+    "Y": 141,
+    "Width": 176,
+    "Height": 126
+  },
+  "BackgroundColor": {
+    "R": 22,
+    "G": 20,
+    "B": 28
+  },
+  "Walls": [
+    {
+      "X": 0,
+      "Y": 0,
+      "Width": 1920,
+      "Height": 38
+    },
+    {
+      "X": 0,
+      "Y": 1042,
+      "Width": 1920,
+      "Height": 38
+    },
+    {
+      "X": 0,
+      "Y": 0,
+      "Width": 38,
+      "Height": 1080
+    },
+    {
+      "X": 1882,
+      "Y": 0,
+      "Width": 38,
+      "Height": 1080
+    },
+    {
+      "X": 360,
+      "Y": 38,
+      "Width": 38,
+      "Height": 300
+    },
+    {
+      "X": 360,
+      "Y": 520,
+      "Width": 38,
+      "Height": 522
+    },
+    {
+      "X": 660,
+      "Y": 250,
+      "Width": 38,
+      "Height": 250
+    },
+    {
+      "X": 660,
+      "Y": 760,
+      "Width": 38,
+      "Height": 282
+    },
+    {
+      "X": 960,
+      "Y": 38,
+      "Width": 38,
+      "Height": 430
+    },
+    {
+      "X": 960,
+      "Y": 690,
+      "Width": 38,
+      "Height": 352
+    },
+    {
+      "X": 1260,
+      "Y": 250,
+      "Width": 38,
+      "Height": 250
+    },
+    {
+      "X": 1260,
+      "Y": 760,
+      "Width": 38,
+      "Height": 282
+    },
+    {
+      "X": 1560,
+      "Y": 38,
+      "Width": 38,
+      "Height": 240
+    },
+    {
+      "X": 1560,
+      "Y": 650,
+      "Width": 38,
+      "Height": 392
+    },
+    {
+      "X": 398,
+      "Y": 330,
+      "Width": 262,
+      "Height": 38
+    },
+    {
+      "X": 698,
+      "Y": 650,
+      "Width": 262,
+      "Height": 38
+    },
+    {
+      "X": 998,
+      "Y": 210,
+      "Width": 262,
+      "Height": 38
+    },
+    {
+      "X": 1298,
+      "Y": 490,
+      "Width": 262,
+      "Height": 38
+    }
+  ],
+  "Collectibles": [
+    {
+      "X": 470,
+      "Y": 440,
+      "Width": 34,
+      "Height": 34
+    },
+    {
+      "X": 770,
+      "Y": 150,
+      "Width": 34,
+      "Height": 34
+    },
+    {
+      "X": 850,
+      "Y": 820,
+      "Width": 34,
+      "Height": 34
+    },
+    {
+      "X": 1080,
+      "Y": 560,
+      "Width": 34,
+      "Height": 34
+    },
+    {
+      "X": 1370,
+      "Y": 360,
+      "Width": 34,
+      "Height": 34
+    },
+    {
+      "X": 1680,
+      "Y": 740,
+      "Width": 34,
+      "Height": 34
+    },
+    {
+      "X": 1710,
+      "Y": 210,
+      "Width": 34,
+      "Height": 34
+    }
+  ],
+  "Hazards": [
+    {
+      "Bounds": {
+        "X": 230,
+        "Y": 410,
+        "Width": 64,
+        "Height": 64
+      },
+      "Velocity": {
+        "X": 0,
+        "Y": 310
+      },
+      "Min": 170,
+      "Max": 760
+    },
+    {
+      "Bounds": {
+        "X": 510,
+        "Y": 500,
+        "Width": 64,
+        "Height": 64
+      },
+      "Velocity": {
+        "X": 320,
+        "Y": 0
+      },
+      "Min": 430,
+      "Max": 590
+    },
+    {
+      "Bounds": {
+        "X": 800,
+        "Y": 140,
+        "Width": 64,
+        "Height": 64
+      },
+      "Velocity": {
+        "X": 0,
+        "Y": 300
+      },
+      "Min": 110,
+      "Max": 220
+    },
+    {
+      "Bounds": {
+        "X": 1110,
+        "Y": 560,
+        "Width": 64,
+        "Height": 64
+      },
+      "Velocity": {
+        "X": 330,
+        "Y": 0
+      },
+      "Min": 1040,
+      "Max": 1160
+    },
+    {
+      "Bounds": {
+        "X": 1400,
+        "Y": 360,
+        "Width": 64,
+        "Height": 64
+      },
+      "Velocity": {
+        "X": 0,
+        "Y": 320
+      },
+      "Min": 330,
+      "Max": 450
+    },
+    {
+      "Bounds": {
+        "X": 1680,
+        "Y": 720,
+        "Width": 64,
+        "Height": 64
+      },
+      "Velocity": {
+        "X": 0,
+        "Y": 300
+      },
+      "Min": 650,
+      "Max": 850
+    }
+  ]
 }

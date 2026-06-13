@@ -1,195 +1,195 @@
-{
-  "version": 1,
-  "name": "Stage 1",
-  "playerStart": {
-    "x": 95.0,
-    "y": 95.0
-  },
-  "exitBounds": {
-    "x": 1770,
-    "y": 930,
-    "width": 92,
-    "height": 92
-  },
-  "busStopBounds": {
-    "x": 64,
-    "y": 210,
-    "width": 176,
-    "height": 124
-  },
-  "hospitalBounds": {
-    "x": 64,
-    "y": 64,
-    "width": 176,
-    "height": 126
-  },
-  "backgroundColor": {
-    "r": 18,
-    "g": 22,
-    "b": 31
-  },
-  "walls": [
-    {
-      "x": 0,
-      "y": 0,
-      "width": 1920,
-      "height": 38
-    },
-    {
-      "x": 0,
-      "y": 1042,
-      "width": 1920,
-      "height": 38
-    },
-    {
-      "x": 0,
-      "y": 0,
-      "width": 38,
-      "height": 1080
-    },
-    {
-      "x": 1882,
-      "y": 0,
-      "width": 38,
-      "height": 1080
-    },
-    {
-      "x": 260,
-      "y": 190,
-      "width": 38,
-      "height": 700
-    },
-    {
-      "x": 520,
-      "y": 150,
-      "width": 38,
-      "height": 620
-    },
-    {
-      "x": 780,
-      "y": 310,
-      "width": 38,
-      "height": 700
-    },
-    {
-      "x": 1040,
-      "y": 140,
-      "width": 38,
-      "height": 660
-    },
-    {
-      "x": 1300,
-      "y": 280,
-      "width": 38,
-      "height": 650
-    },
-    {
-      "x": 1560,
-      "y": 150,
-      "width": 38,
-      "height": 560
-    },
-    {
-      "x": 300,
-      "y": 850,
-      "width": 520,
-      "height": 38
-    },
-    {
-      "x": 1080,
-      "y": 820,
-      "width": 520,
-      "height": 38
-    }
-  ],
-  "collectibles": [
-    {
-      "x": 390,
-      "y": 250,
-      "width": 34,
-      "height": 34
-    },
-    {
-      "x": 660,
-      "y": 820,
-      "width": 34,
-      "height": 34
-    },
-    {
-      "x": 920,
-      "y": 230,
-      "width": 34,
-      "height": 34
-    },
-    {
-      "x": 1190,
-      "y": 760,
-      "width": 34,
-      "height": 34
-    },
-    {
-      "x": 1450,
-      "y": 230,
-      "width": 34,
-      "height": 34
-    }
-  ],
-  "hazards": [
-    {
-      "bounds": {
-        "x": 340,
-        "y": 500,
-        "width": 64,
-        "height": 64
-      },
-      "velocity": {
-        "x": 0.0,
-        "y": 250.0
-      },
-      "min": 410,
-      "max": 760
-    },
-    {
-      "bounds": {
-        "x": 870,
-        "y": 460,
-        "width": 64,
-        "height": 64
-      },
-      "velocity": {
-        "x": 0.0,
-        "y": -310.0
-      },
-      "min": 330,
-      "max": 720
-    },
-    {
-      "bounds": {
-        "x": 1160,
-        "y": 410,
-        "width": 64,
-        "height": 64
-      },
-      "velocity": {
-        "x": 0.0,
-        "y": 280.0
-      },
-      "min": 330,
-      "max": 720
-    },
-    {
-      "bounds": {
-        "x": 1400,
-        "y": 720,
-        "width": 64,
-        "height": 64
-      },
-      "velocity": {
-        "x": 300.0,
-        "y": 0.0
-      },
-      "min": 1360,
-      "max": 1510
-    }
-  ]
+{
+  "Version": 1,
+  "Name": "Stage 1",
+  "PlayerStart": {
+    "X": 95,
+    "Y": 95
+  },
+  "ExitBounds": {
+    "X": 1770,
+    "Y": 930,
+    "Width": 92,
+    "Height": 92
+  },
+  "BusStopBounds": {
+    "X": 62,
+    "Y": 730,
+    "Width": 176,
+    "Height": 124
+  },
+  "HospitalBounds": {
+    "X": 64,
+    "Y": 492,
+    "Width": 176,
+    "Height": 126
+  },
+  "BackgroundColor": {
+    "R": 18,
+    "G": 22,
+    "B": 31
+  },
+  "Walls": [
+    {
+      "X": 0,
+      "Y": 0,
+      "Width": 1920,
+      "Height": 38
+    },
+    {
+      "X": 0,
+      "Y": 1042,
+      "Width": 1920,
+      "Height": 38
+    },
+    {
+      "X": 0,
+      "Y": 0,
+      "Width": 38,
+      "Height": 1080
+    },
+    {
+      "X": 1882,
+      "Y": 0,
+      "Width": 38,
+      "Height": 1080
+    },
+    {
+      "X": 260,
+      "Y": 190,
+      "Width": 38,
+      "Height": 700
+    },
+    {
+      "X": 520,
+      "Y": 150,
+      "Width": 38,
+      "Height": 620
+    },
+    {
+      "X": 780,
+      "Y": 310,
+      "Width": 38,
+      "Height": 700
+    },
+    {
+      "X": 1040,
+      "Y": 140,
+      "Width": 38,
+      "Height": 660
+    },
+    {
+      "X": 1300,
+      "Y": 280,
+      "Width": 38,
+      "Height": 650
+    },
+    {
+      "X": 1560,
+      "Y": 150,
+      "Width": 38,
+      "Height": 560
+    },
+    {
+      "X": 300,
+      "Y": 850,
+      "Width": 520,
+      "Height": 38
+    },
+    {
+      "X": 1080,
+      "Y": 820,
+      "Width": 520,
+      "Height": 38
+    }
+  ],
+  "Collectibles": [
+    {
+      "X": 390,
+      "Y": 250,
+      "Width": 34,
+      "Height": 34
+    },
+    {
+      "X": 660,
+      "Y": 820,
+      "Width": 34,
+      "Height": 34
+    },
+    {
+      "X": 920,
+      "Y": 230,
+      "Width": 34,
+      "Height": 34
+    },
+    {
+      "X": 1190,
+      "Y": 760,
+      "Width": 34,
+      "Height": 34
+    },
+    {
+      "X": 1450,
+      "Y": 230,
+      "Width": 34,
+      "Height": 34
+    }
+  ],
+  "Hazards": [
+    {
+      "Bounds": {
+        "X": 340,
+        "Y": 500,
+        "Width": 64,
+        "Height": 64
+      },
+      "Velocity": {
+        "X": 0,
+        "Y": 250
+      },
+      "Min": 410,
+      "Max": 760
+    },
+    {
+      "Bounds": {
+        "X": 870,
+        "Y": 460,
+        "Width": 64,
+        "Height": 64
+      },
+      "Velocity": {
+        "X": 0,
+        "Y": -310
+      },
+      "Min": 330,
+      "Max": 720
+    },
+    {
+      "Bounds": {
+        "X": 1160,
+        "Y": 410,
+        "Width": 64,
+        "Height": 64
+      },
+      "Velocity": {
+        "X": 0,
+        "Y": 280
+      },
+      "Min": 330,
+      "Max": 720
+    },
+    {
+      "Bounds": {
+        "X": 1400,
+        "Y": 720,
+        "Width": 64,
+        "Height": 64
+      },
+      "Velocity": {
+        "X": 300,
+        "Y": 0
+      },
+      "Min": 1360,
+      "Max": 1510
+    }
+  ]
 }
