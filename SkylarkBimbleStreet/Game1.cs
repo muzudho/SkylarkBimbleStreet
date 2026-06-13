@@ -725,6 +725,7 @@ public class Game1 : Game
             map.Y + (int)(stage.PlayerStart.Y * scale) - playerSize / 2,
             playerSize,
             playerSize);
+        DrawFrame(new Rectangle(player.X - 3, player.Y - 3, player.Width + 6, player.Height + 6), CurrentPalette.GemShine, Math.Max(2, playerSize / 6));
         DrawRectangle(player, CurrentPalette.Player);
         DrawRectangle(Inset(player, Math.Max(2, playerSize / 4)), CurrentPalette.PlayerInner);
     }
