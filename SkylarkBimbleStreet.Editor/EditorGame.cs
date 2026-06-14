@@ -124,6 +124,22 @@ internal sealed class EditorGame : Game
         {
             AddHazard(mouse.Position);
         }
+        else if (WasPressed(keyboard, Keys.OemOpenBrackets))
+        {
+            AdjustSelectedHazardRangeStart(-EditStep());
+        }
+        else if (WasPressed(keyboard, Keys.OemCloseBrackets))
+        {
+            AdjustSelectedHazardRangeStart(EditStep());
+        }
+        else if (WasPressed(keyboard, Keys.OemSemicolon))
+        {
+            AdjustSelectedHazardRangeEnd(-EditStep());
+        }
+        else if (WasPressed(keyboard, Keys.OemQuotes))
+        {
+            AdjustSelectedHazardRangeEnd(EditStep());
+        }
 
         UpdateMouse(mouse);
         UpdateWindowTitle();
@@ -347,6 +363,56 @@ internal sealed class EditorGame : Game
         _status = "Added hazard";
     }
 
+    private void AdjustSelectedHazardRangeStart(int delta)
+    {
+        var hazard = GetSelectedHazard();
+        if (hazard is null)
+        {
+            _status = "Select hazard first";
+            return;
+        }
+
+        var bounds = ToRectangle(hazard.Bounds);
+        var limit = GetHazardRangeLimit(hazard, bounds);
+        hazard.Min = Math.Clamp(hazard.Min + delta, 0, Math.Min(hazard.Max, limit));
+        _status = $"Hazard range min {hazard.Min}";
+    }
+
+    private void AdjustSelectedHazardRangeEnd(int delta)
+    {
+        var hazard = GetSelectedHazard();
+        if (hazard is null)
+        {
+            _status = "Select hazard first";
+            return;
+        }
+
+        var bounds = ToRectangle(hazard.Bounds);
+        var limit = GetHazardRangeLimit(hazard, bounds);
+        hazard.Max = Math.Clamp(hazard.Max + delta, Math.Max(0, hazard.Min), limit);
+        _status = $"Hazard range max {hazard.Max}";
+    }
+
+    private HazardData GetSelectedHazard()
+    {
+        if (_selectedIndex < 0 || _selectedIndex >= _items.Count || _items[_selectedIndex].Kind != "hazard")
+        {
+            return null;
+        }
+
+        var hazardIndex = _selectedIndex - 4 - _stage.Walls.Length - _stage.Items.Length;
+        if (hazardIndex < 0 || hazardIndex >= _stage.Hazards.Length)
+        {
+            return null;
+        }
+
+        return _stage.Hazards[hazardIndex];
+    }
+
+    private int EditStep() => _snapToGrid ? SnapGridSize : 10;
+
+    private static int GetHazardRangeLimit(HazardData hazard, Rectangle bounds) => IsHorizontalHazard(hazard) ? VirtualWidth - bounds.Width : VirtualHeight - bounds.Height;
+
     private Rectangle NewBounds(Point screenPosition, int width, int height)
     {
         var map = GetMapRectangle();
@@ -506,7 +572,7 @@ internal sealed class EditorGame : Game
         var snap = _snapToGrid ? $"snap {SnapGridSize}px" : "snap off";
         var overlaps = CountOverlaps();
         var overlapStatus = overlaps > 0 ? $" - overlaps {overlaps}" : string.Empty;
-        Window.Title = $"SkylarkBimbleStreet Editor - {_stageFiles[_stageIndex].Name} - {_stage.Name} - selected {selected} - {snap}{overlapStatus} - {_status} - PageUp/PageDown stage, S save, R reload, G snap, T kind, 1 wall, 2 gem, 3 ticket, 4 hazard, Delete remove";
+        Window.Title = $"SkylarkBimbleStreet Editor - {_stageFiles[_stageIndex].Name} - {_stage.Name} - selected {selected} - {snap}{overlapStatus} - {_status} - PageUp/PageDown stage, S save, R reload, G snap, T kind, 1 wall, 2 gem, 3 ticket, 4 hazard, [ ] min, ; ' max, Delete remove";
     }
 
     private int CountOverlaps()
@@ -604,6 +670,8 @@ internal sealed class EditorGame : Game
         position.Y = bounds.Y;
     }
 
+    private static bool IsHorizontalHazard(HazardData hazard) => Math.Abs(hazard.Velocity.X) >= Math.Abs(hazard.Velocity.Y);
+
     private static void MoveHazard(HazardData hazard, Rectangle bounds)
     {
         var currentBounds = ToRectangle(hazard.Bounds);
@@ -611,7 +679,7 @@ internal sealed class EditorGame : Game
         var deltaY = bounds.Y - currentBounds.Y;
         FromRectangle(hazard.Bounds, bounds);
 
-        if (Math.Abs(hazard.Velocity.X) >= Math.Abs(hazard.Velocity.Y))
+        if (IsHorizontalHazard(hazard))
         {
             hazard.Min = Math.Clamp(hazard.Min + deltaX, 0, VirtualWidth - bounds.Width);
             hazard.Max = Math.Clamp(hazard.Max + deltaX, hazard.Min, VirtualWidth - bounds.Width);
@@ -625,7 +693,7 @@ internal sealed class EditorGame : Game
     private static Rectangle GetHazardRange(HazardData hazard)
     {
         var bounds = ToRectangle(hazard.Bounds);
-        if (Math.Abs(hazard.Velocity.X) >= Math.Abs(hazard.Velocity.Y))
+        if (IsHorizontalHazard(hazard))
         {
             return new Rectangle(hazard.Min, bounds.Y, hazard.Max - hazard.Min + bounds.Width, bounds.Height);
         }
@@ -710,3 +778,4 @@ internal sealed class EditorGame : Game
         }
     }
 }
+
