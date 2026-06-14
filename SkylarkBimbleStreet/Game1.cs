@@ -18,6 +18,8 @@ public class Game1 : Game
     private const float ExitOpenDelaySeconds = 0.32f;
     private const float ExitOpenFlashSeconds = 0.55f;
     private const float GemCollectEffectSeconds = 0.34f;
+    private const float GemBagFullNudgeSeconds = 0.22f;
+    private const float GemBagFullSoundCooldownSeconds = 0.36f;
     private const float DeathEffectSeconds = 3.0f;
     private const float BusStopWaitSeconds = 2.0f;
     private const float BusPassageSeconds = 1.6f;
@@ -49,6 +51,7 @@ public class Game1 : Game
     private Texture2D _pixel = null!;
     private RenderTarget2D _scene = null!;
     private SoundEffect _gemSound = null!;
+    private SoundEffect _gemBagFullSound = null!;
     private SoundEffect _deathSound = null!;
     private SoundEffect _clearSound = null!;
     private SoundEffect _exitOpenSound = null!;
@@ -138,6 +141,8 @@ public class Game1 : Game
     private float _exitOpenDelayRemaining;
     private float _exitOpenFlashRemaining;
     private float _busStopWaitProgress;
+    private float _gemBagFullNudgeRemaining;
+    private float _gemBagFullSoundCooldownRemaining;
     private float _busPassageTimeRemaining;
     private float _busArrivalTimeRemaining;
     private Vector2 _lastMoveDirection = Vector2.UnitX;
@@ -258,6 +263,8 @@ public class Game1 : Game
             _stageElapsedSeconds[_currentStageIndex] += elapsed;
             _invincibleTimeRemaining = Math.Max(0f, _invincibleTimeRemaining - elapsed);
             _exitOpenFlashRemaining = Math.Max(0f, _exitOpenFlashRemaining - elapsed);
+            _gemBagFullNudgeRemaining = Math.Max(0f, _gemBagFullNudgeRemaining - elapsed);
+            _gemBagFullSoundCooldownRemaining = Math.Max(0f, _gemBagFullSoundCooldownRemaining - elapsed);
             UpdateGemCollectEffects(elapsed);
             UpdateBadgeAwardEffects(elapsed);
             UpdateDeathEffects(elapsed);
@@ -587,6 +594,13 @@ public class Game1 : Game
 
     private void DrawGemBag(Rectangle bounds, int collectedShards, int capacity, bool showEmpty)
     {
+        if (showEmpty && _gemBagFullNudgeRemaining > 0f)
+        {
+            var progress = 1f - _gemBagFullNudgeRemaining / GemBagFullNudgeSeconds;
+            var wobble = (int)(MathF.Sin(progress * MathF.PI * 6f) * (1f - progress) * 8f);
+            bounds.Offset(wobble, 0);
+        }
+
         if (capacity <= 0 || (!showEmpty && collectedShards <= 0))
         {
             return;
@@ -1668,21 +1682,43 @@ public class Game1 : Game
 
         for (var i = 0; i < _gemBounds.Length; i++)
         {
-            if (!_gemsCollected[i] && player.Intersects(_gemBounds[i]))
+            if (_gemsCollected[i] || !player.Intersects(_gemBounds[i]))
             {
-                _gemsCollected[i] = true;
-                var shardValue = GetGemShardValue(_gemBounds[i]);
-                _stageGemCounts[_currentStageIndex] += shardValue;
-                if (_stageBestGemCounts.Length > _currentStageIndex)
-                {
-                    _stageBestGemCounts[_currentStageIndex] = Math.Max(_stageBestGemCounts[_currentStageIndex], CountCollectedGemShards());
-                }
-
-                LogPlayEvent(PlayEventKind.Gem, _currentStageIndex, _gemBounds[i].Center.ToVector2(), _currentStageElapsedSeconds, shardValue);
-                PlaySound(_gemSound);
-                AddGemCollectEffect(_gemBounds[i].Center.ToVector2(), i + _ticketPieceBounds.Length);
+                continue;
             }
+
+            if (IsGemBagFull())
+            {
+                ReactToFullGemBag();
+                return;
+            }
+
+            _gemsCollected[i] = true;
+            var shardValue = GetGemShardValue(_gemBounds[i]);
+            _stageGemCounts[_currentStageIndex] += shardValue;
+            if (_stageBestGemCounts.Length > _currentStageIndex)
+            {
+                _stageBestGemCounts[_currentStageIndex] = Math.Max(_stageBestGemCounts[_currentStageIndex], CountCollectedGemShards());
+            }
+
+            LogPlayEvent(PlayEventKind.Gem, _currentStageIndex, _gemBounds[i].Center.ToVector2(), _currentStageElapsedSeconds, shardValue);
+            PlaySound(_gemSound);
+            AddGemCollectEffect(_gemBounds[i].Center.ToVector2(), i + _ticketPieceBounds.Length);
         }
+    }
+
+    private bool IsGemBagFull() => CountCollectedGemShards() >= GetCurrentGemBagCapacity();
+
+    private void ReactToFullGemBag()
+    {
+        _gemBagFullNudgeRemaining = GemBagFullNudgeSeconds;
+        if (_gemBagFullSoundCooldownRemaining > 0f)
+        {
+            return;
+        }
+
+        PlaySound(_gemBagFullSound, 0.62f);
+        _gemBagFullSoundCooldownRemaining = GemBagFullSoundCooldownSeconds;
     }
 
     private void StartExitOpenDelayIfReady()
@@ -2346,6 +2382,8 @@ public class Game1 : Game
         _ticketPiecesCollected = new bool[_ticketPieceBounds.Length];
         _gemsCollected = new bool[_gemBounds.Length];
         _gemCollectEffects.Clear();
+        _gemBagFullNudgeRemaining = 0f;
+        _gemBagFullSoundCooldownRemaining = 0f;
         _deathEffects.Clear();
         _deathStopLines.Clear();
         _deathRespawnPending = false;
@@ -2572,6 +2610,7 @@ public class Game1 : Game
     private void CreateSoundEffects()
     {
         _gemSound = CreateGemCollectSound();
+        _gemBagFullSound = CreateTone(260f, 190f, 0.11f, 0.16f, WaveShape.Triangle);
         _deathSound = CreateTone(170f, 74f, 0.18f, 0.34f, WaveShape.Square);
         _clearSound = CreateArpeggio([660f, 880f, 1175f, 1568f], 0.07f, 0.28f);
         _exitOpenSound = CreateArpeggio([523f, 659f, 784f, 1047f, 1319f], 0.055f, 0.24f);
@@ -2592,6 +2631,7 @@ public class Game1 : Game
     private void DisposeSoundEffects()
     {
         _gemSound.Dispose();
+        _gemBagFullSound.Dispose();
         _deathSound.Dispose();
         _clearSound.Dispose();
         _exitOpenSound.Dispose();
