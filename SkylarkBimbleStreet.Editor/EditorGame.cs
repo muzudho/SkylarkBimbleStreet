@@ -104,6 +104,26 @@ internal sealed class EditorGame : Game
         {
             DeleteSelectedItem();
         }
+        else if (WasPressed(keyboard, Keys.T))
+        {
+            ToggleSelectedItemKind();
+        }
+        else if (WasPressed(keyboard, Keys.D1))
+        {
+            AddWall(mouse.Position);
+        }
+        else if (WasPressed(keyboard, Keys.D2))
+        {
+            AddItem(mouse.Position, "gem");
+        }
+        else if (WasPressed(keyboard, Keys.D3))
+        {
+            AddItem(mouse.Position, "ticketPiece");
+        }
+        else if (WasPressed(keyboard, Keys.D4))
+        {
+            AddHazard(mouse.Position);
+        }
 
         UpdateMouse(mouse);
         UpdateWindowTitle();
@@ -262,6 +282,90 @@ internal sealed class EditorGame : Game
         _status = $"Deleted {item.Kind}";
     }
 
+    private void ToggleSelectedItemKind()
+    {
+        if (_selectedIndex < 0)
+        {
+            _status = "No selection";
+            return;
+        }
+
+        var item = _items[_selectedIndex];
+        if (!item.CanToggleKind)
+        {
+            _status = $"Cannot change {item.Kind}";
+            return;
+        }
+
+        item.ToggleKind();
+        RebuildItems();
+        _selectedIndex = Math.Clamp(_selectedIndex, -1, _items.Count - 1);
+        _dragging = false;
+        _status = $"Changed to {_items[_selectedIndex].Kind}";
+    }
+
+    private void AddWall(Point screenPosition)
+    {
+        var bounds = NewBounds(screenPosition, 160, 38);
+        _stage.Walls = AppendItem(_stage.Walls, FromRectangle(bounds));
+        RebuildItems();
+        _selectedIndex = 4 + _stage.Walls.Length - 1;
+        _status = "Added wall";
+    }
+
+    private void AddItem(Point screenPosition, string kind)
+    {
+        var item = new ItemData
+        {
+            Kind = kind,
+            Bounds = FromRectangle(NewBounds(screenPosition, 34, 34)),
+        };
+        _stage.Items = AppendItem(_stage.Items, item);
+        RebuildItems();
+        _selectedIndex = 4 + _stage.Walls.Length + _stage.Items.Length - 1;
+        _status = $"Added {GetItemDisplayName(item)}";
+    }
+
+    private void AddHazard(Point screenPosition)
+    {
+        var bounds = NewBounds(screenPosition, 64, 64);
+        var hazard = new HazardData
+        {
+            Bounds = FromRectangle(bounds),
+            Velocity = new Vector2Data { X = 0, Y = 250 },
+            Min = Math.Clamp(bounds.Y - 120, 0, VirtualHeight - bounds.Height),
+            Max = Math.Clamp(bounds.Y + 120, 0, VirtualHeight - bounds.Height),
+        };
+        if (hazard.Max < hazard.Min)
+        {
+            hazard.Max = hazard.Min;
+        }
+
+        _stage.Hazards = AppendItem(_stage.Hazards, hazard);
+        RebuildItems();
+        _selectedIndex = 4 + _stage.Walls.Length + _stage.Items.Length + _stage.Hazards.Length - 1;
+        _status = "Added hazard";
+    }
+
+    private Rectangle NewBounds(Point screenPosition, int width, int height)
+    {
+        var map = GetMapRectangle();
+        var world = map.Contains(screenPosition) ? ScreenToWorld(screenPosition, map) : new Point(VirtualWidth / 2, VirtualHeight / 2);
+        var x = world.X - width / 2;
+        var y = world.Y - height / 2;
+        if (_snapToGrid)
+        {
+            x = Snap(x);
+            y = Snap(y);
+        }
+
+        return new Rectangle(
+            Math.Clamp(x, 0, VirtualWidth - width),
+            Math.Clamp(y, 0, VirtualHeight - height),
+            width,
+            height);
+    }
+
     private void RebuildItems()
     {
         _items.Clear();
@@ -277,7 +381,12 @@ internal sealed class EditorGame : Game
 
         foreach (var item in _stage.Items)
         {
-            _items.Add(new EditableItem(GetItemDisplayName(item), () => ToRectangle(item.Bounds), bounds => FromRectangle(item.Bounds, bounds), () => _stage.Items = RemoveItem(_stage.Items, item)));
+            _items.Add(new EditableItem(
+                GetItemDisplayName(item),
+                () => ToRectangle(item.Bounds),
+                bounds => FromRectangle(item.Bounds, bounds),
+                () => _stage.Items = RemoveItem(_stage.Items, item),
+                () => item.Kind = IsTicketPiece(item) ? "gem" : "ticketPiece"));
         }
 
         foreach (var hazard in _stage.Hazards)
@@ -367,7 +476,7 @@ internal sealed class EditorGame : Game
     {
         var selected = _selectedIndex >= 0 ? _items[_selectedIndex].Kind : "none";
         var snap = _snapToGrid ? $"snap {SnapGridSize}px" : "snap off";
-        Window.Title = $"SkylarkBimbleStreet Editor - {_stageFiles[_stageIndex].Name} - {_stage.Name} - selected {selected} - {snap} - {_status} - PageUp/PageDown stage, S save, R reload, G snap, Delete remove";
+        Window.Title = $"SkylarkBimbleStreet Editor - {_stageFiles[_stageIndex].Name} - {_stage.Name} - selected {selected} - {snap} - {_status} - PageUp/PageDown stage, S save, R reload, G snap, T kind, 1 wall, 2 gem, 3 ticket, 4 hazard, Delete remove";
     }
 
     private Rectangle GetMapRectangle()
@@ -422,6 +531,14 @@ internal sealed class EditorGame : Game
 
         return [0, collectibleCount / 2, collectibleCount - 1];
     }
+
+    private static RectangleData FromRectangle(Rectangle rectangle) => new()
+    {
+        X = rectangle.X,
+        Y = rectangle.Y,
+        Width = rectangle.Width,
+        Height = rectangle.Height,
+    };
 
     private static void FromRectangle(RectangleData data, Rectangle rectangle)
     {
@@ -494,6 +611,8 @@ internal sealed class EditorGame : Game
 
     private static T[] RemoveItem<T>(T[] items, T item) where T : class => items.Where(candidate => !ReferenceEquals(candidate, item)).ToArray();
 
+    private static T[] AppendItem<T>(T[] items, T item) => [.. items, item];
+
     private void DrawRectangle(Rectangle rectangle, Color color) => _spriteBatch.Draw(_pixel, rectangle, color);
 
     private void DrawFrame(Rectangle rectangle, Color color, int thickness)
@@ -511,19 +630,24 @@ internal sealed class EditorGame : Game
         private readonly Func<Rectangle> _getBounds;
         private readonly Action<Rectangle> _setBounds;
         private readonly Action _delete;
+        private readonly Action _toggleKind;
 
-        public EditableItem(string kind, Func<Rectangle> getBounds, Action<Rectangle> setBounds, Action delete = null)
+        public EditableItem(string kind, Func<Rectangle> getBounds, Action<Rectangle> setBounds, Action delete = null, Action toggleKind = null)
         {
             Kind = kind;
             _getBounds = getBounds;
             _setBounds = setBounds;
-            _delete = delete ?? NoDelete;
+            _delete = delete ?? NoOp;
+            _toggleKind = toggleKind ?? NoOp;
             CanDelete = delete is not null;
+            CanToggleKind = toggleKind is not null;
         }
 
         public string Kind { get; }
 
         public bool CanDelete { get; }
+
+        public bool CanToggleKind { get; }
 
         public Rectangle GetBounds() => _getBounds();
 
@@ -531,7 +655,9 @@ internal sealed class EditorGame : Game
 
         public void Delete() => _delete();
 
-        private static void NoDelete()
+        public void ToggleKind() => _toggleKind();
+
+        private static void NoOp()
         {
         }
     }
