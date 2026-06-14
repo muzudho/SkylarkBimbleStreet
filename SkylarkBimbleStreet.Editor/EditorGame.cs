@@ -14,6 +14,7 @@ internal sealed class EditorGame : Game
     private const int VirtualWidth = 1920;
     private const int VirtualHeight = 1080;
     private const int HandleSize = 16;
+    private const int SnapGridSize = 40;
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -32,6 +33,7 @@ internal sealed class EditorGame : Game
     private MouseState _previousMouse;
     private KeyboardState _previousKeyboard;
     private bool _dragging;
+    private bool _snapToGrid;
     private Point _dragOffset;
     private string _status = "Ready";
 
@@ -90,6 +92,15 @@ internal sealed class EditorGame : Game
         else if (WasPressed(keyboard, Keys.R))
         {
             LoadStage(_stageIndex);
+        }
+        else if (WasPressed(keyboard, Keys.G))
+        {
+            _snapToGrid = !_snapToGrid;
+            _status = _snapToGrid ? $"Snap {SnapGridSize}px on" : "Snap off";
+        }
+        else if (WasPressed(keyboard, Keys.Delete))
+        {
+            DeleteSelectedItem();
         }
 
         UpdateMouse(mouse);
@@ -152,6 +163,12 @@ internal sealed class EditorGame : Game
         var draggedBounds = item.GetBounds();
         draggedBounds.X = Math.Clamp(world.X - _dragOffset.X, 0, VirtualWidth - draggedBounds.Width);
         draggedBounds.Y = Math.Clamp(world.Y - _dragOffset.Y, 0, VirtualHeight - draggedBounds.Height);
+        if (_snapToGrid)
+        {
+            draggedBounds.X = Math.Clamp(Snap(draggedBounds.X), 0, VirtualWidth - draggedBounds.Width);
+            draggedBounds.Y = Math.Clamp(Snap(draggedBounds.Y), 0, VirtualHeight - draggedBounds.Height);
+        }
+
         item.SetBounds(draggedBounds);
     }
 
@@ -179,9 +196,44 @@ internal sealed class EditorGame : Game
 
     private void SaveStage()
     {
+        CreateBackup();
         var json = JsonSerializer.Serialize(_stage, JsonOptions).Replace("\n", "\r\n");
         File.WriteAllText(_stageFiles[_stageIndex].FullName, json + "\r\n", new System.Text.UTF8Encoding(false));
         _status = "Saved";
+    }
+
+    private void CreateBackup()
+    {
+        var stageFile = _stageFiles[_stageIndex];
+        var backupDirectory = Path.Combine(stageFile.DirectoryName ?? ".", "Backups");
+        Directory.CreateDirectory(backupDirectory);
+
+        var timestamp = DateTime.Now.ToString("yyyyMMdd-HHmmss-fff");
+        var backupFile = Path.Combine(backupDirectory, $"{Path.GetFileNameWithoutExtension(stageFile.Name)}-{timestamp}.json");
+        File.Copy(stageFile.FullName, backupFile, overwrite: false);
+    }
+
+    private void DeleteSelectedItem()
+    {
+        if (_selectedIndex < 0)
+        {
+            _status = "No selection";
+            return;
+        }
+
+        var item = _items[_selectedIndex];
+        if (!item.CanDelete)
+        {
+            _status = $"Cannot delete {item.Kind}";
+            return;
+        }
+
+        var nextSelection = Math.Min(_selectedIndex, _items.Count - 2);
+        item.Delete();
+        RebuildItems();
+        _selectedIndex = Math.Clamp(nextSelection, -1, _items.Count - 1);
+        _dragging = false;
+        _status = $"Deleted {item.Kind}";
     }
 
     private void RebuildItems()
@@ -194,17 +246,17 @@ internal sealed class EditorGame : Game
 
         foreach (var wall in _stage.Walls)
         {
-            _items.Add(new EditableItem("wall", () => ToRectangle(wall), bounds => FromRectangle(wall, bounds)));
+            _items.Add(new EditableItem("wall", () => ToRectangle(wall), bounds => FromRectangle(wall, bounds), () => _stage.Walls = RemoveItem(_stage.Walls, wall)));
         }
 
         foreach (var collectible in _stage.Collectibles)
         {
-            _items.Add(new EditableItem("collectible", () => ToRectangle(collectible), bounds => FromRectangle(collectible, bounds)));
+            _items.Add(new EditableItem("collectible", () => ToRectangle(collectible), bounds => FromRectangle(collectible, bounds), () => _stage.Collectibles = RemoveItem(_stage.Collectibles, collectible)));
         }
 
         foreach (var hazard in _stage.Hazards)
         {
-            _items.Add(new EditableItem("hazard", () => ToRectangle(hazard.Bounds), bounds => FromRectangle(hazard.Bounds, bounds)));
+            _items.Add(new EditableItem("hazard", () => ToRectangle(hazard.Bounds), bounds => FromRectangle(hazard.Bounds, bounds), () => _stage.Hazards = RemoveItem(_stage.Hazards, hazard)));
         }
     }
 
@@ -250,17 +302,18 @@ internal sealed class EditorGame : Game
 
     private void DrawGrid(Rectangle map)
     {
-        const int grid = 120;
-        for (var x = 0; x <= VirtualWidth; x += grid)
+        for (var x = 0; x <= VirtualWidth; x += SnapGridSize)
         {
             var screenX = map.X + (int)(x * map.Width / (float)VirtualWidth);
-            DrawRectangle(new Rectangle(screenX, map.Y, 1, map.Height), new Color(40, 45, 55));
+            var color = x % 120 == 0 ? new Color(44, 50, 62) : new Color(32, 36, 44);
+            DrawRectangle(new Rectangle(screenX, map.Y, 1, map.Height), color);
         }
 
-        for (var y = 0; y <= VirtualHeight; y += grid)
+        for (var y = 0; y <= VirtualHeight; y += SnapGridSize)
         {
             var screenY = map.Y + (int)(y * map.Height / (float)VirtualHeight);
-            DrawRectangle(new Rectangle(map.X, screenY, map.Width, 1), new Color(40, 45, 55));
+            var color = y % 120 == 0 ? new Color(44, 50, 62) : new Color(32, 36, 44);
+            DrawRectangle(new Rectangle(map.X, screenY, map.Width, 1), color);
         }
     }
 
@@ -280,7 +333,8 @@ internal sealed class EditorGame : Game
     private void UpdateWindowTitle()
     {
         var selected = _selectedIndex >= 0 ? _items[_selectedIndex].Kind : "none";
-        Window.Title = $"SkylarkBimbleStreet Editor - {_stageFiles[_stageIndex].Name} - {_stage.Name} - selected {selected} - {_status} - Left/Right stage, S save, R reload";
+        var snap = _snapToGrid ? $"snap {SnapGridSize}px" : "snap off";
+        Window.Title = $"SkylarkBimbleStreet Editor - {_stageFiles[_stageIndex].Name} - {_stage.Name} - selected {selected} - {snap} - {_status} - Left/Right stage, S save, R reload, G snap, Delete remove";
     }
 
     private Rectangle GetMapRectangle()
@@ -360,6 +414,10 @@ internal sealed class EditorGame : Game
 
     private static Rectangle Inflate(Rectangle rectangle, int amount) => new(rectangle.X - amount, rectangle.Y - amount, rectangle.Width + amount * 2, rectangle.Height + amount * 2);
 
+    private static int Snap(int value) => (int)Math.Round(value / (double)SnapGridSize) * SnapGridSize;
+
+    private static T[] RemoveItem<T>(T[] items, T item) where T : class => items.Where(candidate => !ReferenceEquals(candidate, item)).ToArray();
+
     private void DrawRectangle(Rectangle rectangle, Color color) => _spriteBatch.Draw(_pixel, rectangle, color);
 
     private void DrawFrame(Rectangle rectangle, Color color, int thickness)
@@ -376,18 +434,30 @@ internal sealed class EditorGame : Game
     {
         private readonly Func<Rectangle> _getBounds;
         private readonly Action<Rectangle> _setBounds;
+        private readonly Action _delete;
 
-        public EditableItem(string kind, Func<Rectangle> getBounds, Action<Rectangle> setBounds)
+        public EditableItem(string kind, Func<Rectangle> getBounds, Action<Rectangle> setBounds, Action delete = null)
         {
             Kind = kind;
             _getBounds = getBounds;
             _setBounds = setBounds;
+            _delete = delete ?? NoDelete;
+            CanDelete = delete is not null;
         }
 
         public string Kind { get; }
 
+        public bool CanDelete { get; }
+
         public Rectangle GetBounds() => _getBounds();
 
         public void SetBounds(Rectangle bounds) => _setBounds(bounds);
+
+        public void Delete() => _delete();
+
+        private static void NoDelete()
+        {
+        }
     }
 }
+
