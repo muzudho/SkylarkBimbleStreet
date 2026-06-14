@@ -2,31 +2,31 @@
   "Version": 1,
   "Name": "Stage 6",
   "PlayerStart": {
-    "X": 1760,
-    "Y": 935
+    "X": 95,
+    "Y": 95
   },
   "ExitBounds": {
-    "X": 58,
-    "Y": 58,
+    "X": 1770,
+    "Y": 930,
     "Width": 92,
     "Height": 92
   },
   "BusStopBounds": {
-    "X": 1105,
-    "Y": 527,
+    "X": 180,
+    "Y": 368,
     "Width": 176,
     "Height": 124
   },
   "HospitalBounds": {
-    "X": 1360,
-    "Y": 830,
+    "X": 64,
+    "Y": 760,
     "Width": 176,
     "Height": 126
   },
   "BackgroundColor": {
-    "R": 23,
-    "G": 28,
-    "B": 24
+    "R": 18,
+    "G": 25,
+    "B": 32
   },
   "Walls": [
     {
@@ -54,69 +54,105 @@
       "Height": 1080
     },
     {
-      "X": 780,
-      "Y": 220,
+      "X": 300,
+      "Y": 38,
+      "Width": 38,
+      "Height": 240
+    },
+    {
+      "X": 300,
+      "Y": 500,
+      "Width": 38,
+      "Height": 542
+    },
+    {
+      "X": 560,
+      "Y": 250,
+      "Width": 38,
+      "Height": 360
+    },
+    {
+      "X": 560,
+      "Y": 820,
+      "Width": 38,
+      "Height": 222
+    },
+    {
+      "X": 820,
+      "Y": 38,
       "Width": 38,
       "Height": 520
     },
     {
-      "X": 1040,
+      "X": 820,
+      "Y": 760,
+      "Width": 38,
+      "Height": 282
+    },
+    {
+      "X": 1080,
       "Y": 38,
       "Width": 38,
-      "Height": 360
+      "Height": 280
     },
     {
-      "X": 1040,
-      "Y": 620,
+      "X": 1080,
+      "Y": 500,
       "Width": 38,
-      "Height": 422
+      "Height": 542
     },
     {
-      "X": 1300,
-      "Y": 200,
-      "Width": 38,
-      "Height": 560
-    },
-    {
-      "X": 1560,
+      "X": 1340,
       "Y": 38,
       "Width": 38,
-      "Height": 300
+      "Height": 640
     },
     {
-      "X": 1560,
-      "Y": 560,
+      "X": 1340,
+      "Y": 860,
       "Width": 38,
-      "Height": 360
+      "Height": 182
     },
     {
-      "X": 300,
-      "Y": 520,
-      "Width": 220,
+      "X": 1600,
+      "Y": 38,
+      "Width": 38,
+      "Height": 350
+    },
+    {
+      "X": 1600,
+      "Y": 760,
+      "Width": 38,
+      "Height": 282
+    },
+    {
+      "X": 338,
+      "Y": 500,
+      "Width": 150,
       "Height": 38
     },
     {
-      "X": 558,
-      "Y": 360,
-      "Width": 222,
+      "X": 598,
+      "Y": 610,
+      "Width": 150,
       "Height": 38
     },
     {
-      "X": 818,
-      "Y": 620,
-      "Width": 222,
+      "X": 858,
+      "Y": 318,
+      "Width": 150,
       "Height": 38
     },
     {
-      "X": 1078,
-      "Y": 470,
-      "Width": 222,
+      "X": 1118,
+      "Y": 678,
+      "Width": 150,
       "Height": 38
     },
     {
-      "X": 1338,
-      "Y": 360,
-      "Width": 222,
+      "X": 1378,
+      "Y": 388,
+      "Width": 150,
       "Height": 38
     }
   ],
@@ -124,62 +160,62 @@
     {
       "Kind": "ticketPiece",
       "Bounds": {
+        "X": 190,
+        "Y": 350,
+        "Width": 34,
+        "Height": 34
+      }
+    },
+    {
+      "Kind": "gem",
+      "Bounds": {
+        "X": 430,
+        "Y": 160,
+        "Width": 34,
+        "Height": 34
+      }
+    },
+    {
+      "Kind": "gem",
+      "Bounds": {
+        "X": 690,
+        "Y": 660,
+        "Width": 34,
+        "Height": 34
+      }
+    },
+    {
+      "Kind": "ticketPiece",
+      "Bounds": {
+        "X": 950,
+        "Y": 380,
+        "Width": 34,
+        "Height": 34
+      }
+    },
+    {
+      "Kind": "gem",
+      "Bounds": {
+        "X": 1210,
+        "Y": 760,
+        "Width": 34,
+        "Height": 34
+      }
+    },
+    {
+      "Kind": "gem",
+      "Bounds": {
+        "X": 1470,
+        "Y": 470,
+        "Width": 34,
+        "Height": 34
+      }
+    },
+    {
+      "Kind": "ticketPiece",
+      "Bounds": {
         "X": 1710,
-        "Y": 720,
-        "Width": 34,
-        "Height": 34
-      }
-    },
-    {
-      "Kind": "gem",
-      "Bounds": {
-        "X": 1450,
-        "Y": 430,
-        "Width": 34,
-        "Height": 34
-      }
-    },
-    {
-      "Kind": "gem",
-      "Bounds": {
-        "X": 1270,
-        "Y": 650,
-        "Width": 34,
-        "Height": 34
-      }
-    },
-    {
-      "Kind": "ticketPiece",
-      "Bounds": {
-        "X": 920,
-        "Y": 570,
-        "Width": 34,
-        "Height": 34
-      }
-    },
-    {
-      "Kind": "gem",
-      "Bounds": {
-        "X": 650,
-        "Y": 280,
-        "Width": 34,
-        "Height": 34
-      }
-    },
-    {
-      "Kind": "gem",
-      "Bounds": {
-        "X": 390,
-        "Y": 610,
-        "Width": 34,
-        "Height": 34
-      }
-    },
-    {
-      "Kind": "ticketPiece",
-      "Bounds": {
-        "X": 180,
-        "Y": 220,
+        "Y": 890,
         "Width": 34,
         "Height": 34
       }
@@ -188,50 +224,22 @@
   "Hazards": [
     {
       "Bounds": {
-        "X": 1680,
-        "Y": 690,
+        "X": 180,
+        "Y": 320,
         "Width": 64,
         "Height": 64
       },
       "Velocity": {
         "X": 0,
-        "Y": 290
+        "Y": 300
       },
-      "Min": 620,
-      "Max": 850
+      "Min": 260,
+      "Max": 430
     },
     {
       "Bounds": {
-        "X": 1430,
-        "Y": 410,
-        "Width": 64,
-        "Height": 64
-      },
-      "Velocity": {
-        "X": 300,
-        "Y": 0
-      },
-      "Min": 1380,
-      "Max": 1520
-    },
-    {
-      "Bounds": {
-        "X": 1260,
-        "Y": 620,
-        "Width": 64,
-        "Height": 64
-      },
-      "Velocity": {
-        "X": 0,
-        "Y": 310
-      },
-      "Min": 600,
-      "Max": 720
-    },
-    {
-      "Bounds": {
-        "X": 910,
-        "Y": 550,
+        "X": 420,
+        "Y": 250,
         "Width": 64,
         "Height": 64
       },
@@ -239,13 +247,69 @@
         "X": 320,
         "Y": 0
       },
-      "Min": 860,
-      "Max": 990
+      "Min": 370,
+      "Max": 500
     },
     {
       "Bounds": {
-        "X": 640,
-        "Y": 250,
+        "X": 686,
+        "Y": 632,
+        "Width": 64,
+        "Height": 64
+      },
+      "Velocity": {
+        "X": 0,
+        "Y": 300
+      },
+      "Min": 602,
+      "Max": 732
+    },
+    {
+      "Bounds": {
+        "X": 950,
+        "Y": 370,
+        "Width": 64,
+        "Height": 64
+      },
+      "Velocity": {
+        "X": 330,
+        "Y": 0
+      },
+      "Min": 900,
+      "Max": 1020
+    },
+    {
+      "Bounds": {
+        "X": 1210,
+        "Y": 730,
+        "Width": 64,
+        "Height": 64
+      },
+      "Velocity": {
+        "X": 0,
+        "Y": 310
+      },
+      "Min": 700,
+      "Max": 810
+    },
+    {
+      "Bounds": {
+        "X": 1470,
+        "Y": 460,
+        "Width": 64,
+        "Height": 64
+      },
+      "Velocity": {
+        "X": 330,
+        "Y": 0
+      },
+      "Min": 1420,
+      "Max": 1540
+    },
+    {
+      "Bounds": {
+        "X": 1700,
+        "Y": 800,
         "Width": 64,
         "Height": 64
       },
@@ -253,36 +317,8 @@
         "X": 0,
         "Y": 280
       },
-      "Min": 220,
-      "Max": 350
-    },
-    {
-      "Bounds": {
-        "X": 380,
-        "Y": 590,
-        "Width": 64,
-        "Height": 64
-      },
-      "Velocity": {
-        "X": 300,
-        "Y": 0
-      },
-      "Min": 340,
-      "Max": 460
-    },
-    {
-      "Bounds": {
-        "X": 170,
-        "Y": 200,
-        "Width": 64,
-        "Height": 64
-      },
-      "Velocity": {
-        "X": 0,
-        "Y": 270
-      },
-      "Min": 170,
-      "Max": 280
+      "Min": 760,
+      "Max": 910
     }
   ]
 }
