@@ -16,6 +16,8 @@ internal sealed class EditorGame : Game
     private const int VirtualHeight = 1080;
     private const int HandleSize = 16;
     private const int MinItemSize = 8;
+    private const int ToolButtonSize = 30;
+    private const int ToolButtonGap = 8;
     private const int SnapGridSize = 40;
 
     private static readonly JsonSerializerOptions JsonOptions = new()
@@ -38,6 +40,7 @@ internal sealed class EditorGame : Game
     private bool _dragging;
     private bool _snapToGrid;
     private DragMode _dragMode;
+    private AddTool _addTool = AddTool.None;
     private Point _dragOffset;
     private string _status = "Ready";
 
@@ -159,6 +162,7 @@ internal sealed class EditorGame : Game
         DrawRectangle(map, new Color(22, 25, 31));
         DrawGrid(map);
         DrawStage(map);
+        DrawAddToolbar(map);
         DrawFrame(map, new Color(150, 160, 174), 2);
 
         _spriteBatch.End();
@@ -172,12 +176,23 @@ internal sealed class EditorGame : Game
         var leftPressed = mouse.LeftButton == ButtonState.Pressed && _previousMouse.LeftButton == ButtonState.Released;
         var leftReleased = mouse.LeftButton == ButtonState.Released && _previousMouse.LeftButton == ButtonState.Pressed;
 
+        if (leftPressed && TrySelectAddTool(mouse.Position, map))
+        {
+            return;
+        }
+
         if (leftPressed && map.Contains(mouse.Position))
         {
             var resizeHandlePressed = IsSelectedResizeHandle(mouse.Position, map);
             if (!resizeHandlePressed)
             {
                 _selectedIndex = FindItemAt(world);
+            }
+
+            if (_selectedIndex < 0 && _addTool != AddTool.None)
+            {
+                AddSelectedTool(mouse.Position);
+                return;
             }
 
             if (_selectedIndex >= 0)
@@ -353,6 +368,27 @@ internal sealed class EditorGame : Game
         _status = $"Changed to {_items[_selectedIndex].Kind}";
     }
 
+
+    private void AddSelectedTool(Point screenPosition)
+    {
+        switch (_addTool)
+        {
+            case AddTool.Wall:
+                AddWall(screenPosition);
+                return;
+            case AddTool.Gem:
+                AddItem(screenPosition, "gem");
+                return;
+            case AddTool.TicketPiece:
+                AddItem(screenPosition, "ticketPiece");
+                return;
+            case AddTool.Hazard:
+                AddHazard(screenPosition);
+                return;
+            default:
+                return;
+        }
+    }
     private void AddWall(Point screenPosition)
     {
         var bounds = NewBounds(screenPosition, 160, 38);
@@ -544,6 +580,16 @@ internal sealed class EditorGame : Game
         }
     }
 
+
+    private void DrawAddToolbar(Rectangle map)
+    {
+        foreach (var button in GetAddToolButtons(map))
+        {
+            DrawRectangle(button.Bounds, new Color(24, 28, 34, 230));
+            DrawRectangle(Inflate(button.Bounds, -5), GetToolColor(button.Tool));
+            DrawFrame(button.Bounds, button.Tool == _addTool ? Color.White : new Color(96, 106, 124), button.Tool == _addTool ? 3 : 2);
+        }
+    }
     private void DrawOverlapWarnings(Rectangle map)
     {
         var overlappedIndexes = new HashSet<int>();
@@ -632,13 +678,61 @@ internal sealed class EditorGame : Game
         return handle.Contains(screenPosition);
     }
 
+
+    private bool TrySelectAddTool(Point screenPosition, Rectangle map)
+    {
+        foreach (var button in GetAddToolButtons(map))
+        {
+            if (!button.Bounds.Contains(screenPosition))
+            {
+                continue;
+            }
+
+            _addTool = _addTool == button.Tool ? AddTool.None : button.Tool;
+            _dragging = false;
+            _dragMode = DragMode.None;
+            _status = _addTool == AddTool.None ? "Add tool off" : $"Add {GetToolName(_addTool)}";
+            return true;
+        }
+
+        return false;
+    }
+
+    private IEnumerable<ToolButton> GetAddToolButtons(Rectangle map)
+    {
+        var x = map.X + 12;
+        var y = map.Y + 12;
+        yield return new ToolButton(AddTool.Wall, new Rectangle(x, y, ToolButtonSize, ToolButtonSize));
+        yield return new ToolButton(AddTool.Gem, new Rectangle(x + (ToolButtonSize + ToolButtonGap), y, ToolButtonSize, ToolButtonSize));
+        yield return new ToolButton(AddTool.TicketPiece, new Rectangle(x + (ToolButtonSize + ToolButtonGap) * 2, y, ToolButtonSize, ToolButtonSize));
+        yield return new ToolButton(AddTool.Hazard, new Rectangle(x + (ToolButtonSize + ToolButtonGap) * 3, y, ToolButtonSize, ToolButtonSize));
+    }
+
+    private static Color GetToolColor(AddTool tool) => tool switch
+    {
+        AddTool.Wall => new Color(108, 116, 132),
+        AddTool.Gem => new Color(246, 202, 76),
+        AddTool.TicketPiece => new Color(172, 116, 255),
+        AddTool.Hazard => new Color(220, 76, 92),
+        _ => new Color(70, 76, 88),
+    };
+
+    private static string GetToolName(AddTool tool) => tool switch
+    {
+        AddTool.Wall => "wall",
+        AddTool.Gem => "gem",
+        AddTool.TicketPiece => "ticket piece",
+        AddTool.Hazard => "hazard",
+        _ => "none",
+    };
     private void UpdateWindowTitle()
     {
         var selected = _selectedIndex >= 0 ? _items[_selectedIndex].Kind : "none";
         var snap = _snapToGrid ? $"snap {SnapGridSize}px" : "snap off";
         var overlaps = CountOverlaps();
         var overlapStatus = overlaps > 0 ? $" - overlaps {overlaps}" : string.Empty;
-        Window.Title = $"SkylarkBimbleStreet Editor - {_stageFiles[_stageIndex].Name} - {_stage.Name} - selected {selected} - {snap}{overlapStatus} - {_status} - drag handle resize, PageUp/PageDown stage, S save, R reload, G snap, T kind, 1 wall, 2 gem, 3 ticket, 4 hazard, A/D min, J/L max, Delete remove";
+        var addTool = _addTool == AddTool.None ? "add off" : $"add {GetToolName(_addTool)}";
+        Window.Title = $"SkylarkBimbleStreet Editor - {_stageFiles[_stageIndex].Name} - {_stage.Name} - selected {selected} - {addTool} - {snap}{overlapStatus} - {_status} - toolbar choose/add, drag handle resize, PageUp/PageDown stage, S save, R reload, G snap, T kind, 1 wall, 2 gem, 3 ticket, 4 hazard, A/D min, J/L max, Delete remove";
     }
 
     private int CountOverlaps()
@@ -807,6 +901,17 @@ internal sealed class EditorGame : Game
 
     private bool WasPressed(KeyboardState keyboard, Keys key) => keyboard.IsKeyDown(key) && !_previousKeyboard.IsKeyDown(key);
 
+
+    private enum AddTool
+    {
+        None,
+        Wall,
+        Gem,
+        TicketPiece,
+        Hazard,
+    }
+
+    private readonly record struct ToolButton(AddTool Tool, Rectangle Bounds);
     private enum DragMode
     {
         None,
