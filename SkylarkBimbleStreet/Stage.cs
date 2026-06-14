@@ -1,6 +1,5 @@
 namespace SkylarkBimbleStreet;
 
-using System;
 using Microsoft.Xna.Framework;
 
 internal sealed class Stage
@@ -24,7 +23,8 @@ internal sealed class Stage
         Rectangle hospitalBounds,
         Color backgroundColor,
         Rectangle[] walls,
-        Rectangle[] collectibles,
+        Rectangle[] ticketPieces,
+        Rectangle[] gems,
         Hazard[] hazards)
     {
         Name = name;
@@ -34,45 +34,8 @@ internal sealed class Stage
         HospitalBounds = hospitalBounds;
         BackgroundColor = backgroundColor;
         Walls = walls;
-        var ticketPieceIndexes = ChooseTicketPieceIndexes(collectibles.Length);
-        TicketPieces = new Rectangle[ticketPieceIndexes.Length];
-        Gems = new Rectangle[collectibles.Length - ticketPieceIndexes.Length];
-
-        var ticketPieceIndex = 0;
-        var gemIndex = 0;
-        for (var i = 0; i < collectibles.Length; i++)
-        {
-            if (ticketPieceIndex < ticketPieceIndexes.Length && i == ticketPieceIndexes[ticketPieceIndex])
-            {
-                TicketPieces[ticketPieceIndex] = collectibles[i];
-                ticketPieceIndex++;
-                continue;
-            }
-
-            Gems[gemIndex] = collectibles[i];
-            gemIndex++;
-        }
+        TicketPieces = ticketPieces;
+        Gems = gems;
         Hazards = hazards;
-    }
-
-    private static int[] ChooseTicketPieceIndexes(int collectibleCount)
-    {
-        var ticketPieceCount = Math.Min(3, collectibleCount);
-        if (ticketPieceCount == 0)
-        {
-            return [];
-        }
-
-        if (ticketPieceCount == 1)
-        {
-            return [0];
-        }
-
-        if (ticketPieceCount == 2)
-        {
-            return [0, collectibleCount - 1];
-        }
-
-        return [0, collectibleCount / 2, collectibleCount - 1];
     }
 }

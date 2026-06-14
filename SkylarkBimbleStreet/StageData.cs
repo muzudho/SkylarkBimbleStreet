@@ -10,8 +10,15 @@ internal sealed class StageData
     public RectangleData HospitalBounds { get; set; } = null!;
     public ColorData BackgroundColor { get; set; } = null!;
     public RectangleData[] Walls { get; set; } = null!;
+    public ItemData[] Items { get; set; } = null!;
     public RectangleData[] Collectibles { get; set; } = null!;
     public HazardData[] Hazards { get; set; } = null!;
+}
+
+internal sealed class ItemData
+{
+    public string Kind { get; set; } = null!;
+    public RectangleData Bounds { get; set; } = null!;
 }
 
 internal sealed class RectangleData

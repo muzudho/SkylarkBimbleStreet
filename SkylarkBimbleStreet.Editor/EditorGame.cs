@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -20,6 +21,7 @@ internal sealed class EditorGame : Game
     {
         PropertyNameCaseInsensitive = true,
         WriteIndented = true,
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
     };
 
     private readonly GraphicsDeviceManager _graphics;
@@ -188,10 +190,34 @@ internal sealed class EditorGame : Game
         var json = File.ReadAllText(_stageFiles[_stageIndex].FullName);
         _stage = JsonSerializer.Deserialize<StageData>(json, JsonOptions)
             ?? throw new InvalidOperationException($"JSON root is empty: {_stageFiles[_stageIndex].FullName}");
+        NormalizeItems();
         RebuildItems();
         _selectedIndex = -1;
         _dragging = false;
         _status = "Loaded";
+    }
+
+    private void NormalizeItems()
+    {
+        if (_stage.Items is not null)
+        {
+            _stage.Collectibles = null!;
+            return;
+        }
+
+        var collectibles = _stage.Collectibles ?? [];
+        var ticketPieceIndexes = ChooseTicketPieceIndexes(collectibles.Length);
+        _stage.Items = new ItemData[collectibles.Length];
+        for (var i = 0; i < collectibles.Length; i++)
+        {
+            _stage.Items[i] = new ItemData
+            {
+                Kind = ticketPieceIndexes.Contains(i) ? "ticketPiece" : "gem",
+                Bounds = collectibles[i],
+            };
+        }
+
+        _stage.Collectibles = null!;
     }
 
     private void SaveStage()
@@ -249,12 +275,9 @@ internal sealed class EditorGame : Game
             _items.Add(new EditableItem("wall", () => ToRectangle(wall), bounds => FromRectangle(wall, bounds), () => _stage.Walls = RemoveItem(_stage.Walls, wall)));
         }
 
-        var ticketPieceIndexes = ChooseTicketPieceIndexes(_stage.Collectibles.Length);
-        for (var i = 0; i < _stage.Collectibles.Length; i++)
+        foreach (var item in _stage.Items)
         {
-            var collectible = _stage.Collectibles[i];
-            var kind = ticketPieceIndexes.Contains(i) ? "ticket piece" : "gem";
-            _items.Add(new EditableItem(kind, () => ToRectangle(collectible), bounds => FromRectangle(collectible, bounds), () => _stage.Collectibles = RemoveItem(_stage.Collectibles, collectible)));
+            _items.Add(new EditableItem(GetItemDisplayName(item), () => ToRectangle(item.Bounds), bounds => FromRectangle(item.Bounds, bounds), () => _stage.Items = RemoveItem(_stage.Items, item)));
         }
 
         foreach (var hazard in _stage.Hazards)
@@ -277,11 +300,10 @@ internal sealed class EditorGame : Game
             DrawRectangle(Map(wall, map), new Color(108, 116, 132));
         }
 
-        var ticketPieceIndexes = ChooseTicketPieceIndexes(_stage.Collectibles.Length);
-        for (var i = 0; i < _stage.Collectibles.Length; i++)
+        foreach (var item in _stage.Items)
         {
-            var mapped = Map(_stage.Collectibles[i], map);
-            if (ticketPieceIndexes.Contains(i))
+            var mapped = Map(item.Bounds, map);
+            if (IsTicketPiece(item))
             {
                 DrawRectangle(mapped, new Color(172, 116, 255));
                 DrawFrame(mapped, new Color(230, 210, 255), 2);
@@ -375,6 +397,10 @@ internal sealed class EditorGame : Game
     }
 
     private static Rectangle ToRectangle(RectangleData data) => new(data.X, data.Y, data.Width, data.Height);
+
+    private static string GetItemDisplayName(ItemData item) => IsTicketPiece(item) ? "ticket piece" : item.Kind;
+
+    private static bool IsTicketPiece(ItemData item) => item.Kind is "ticketPiece" or "ticket piece";
 
     private static int[] ChooseTicketPieceIndexes(int collectibleCount)
     {

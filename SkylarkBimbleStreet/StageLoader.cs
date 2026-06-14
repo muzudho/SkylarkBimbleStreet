@@ -58,16 +58,73 @@ internal static class StageLoader
         }
     }
 
-    private static Stage ToStage(StageData data, string stageFile) => new(
-        name: Require(data.Name, stageFile, "name"),
-        playerStart: ToVector2(Require(data.PlayerStart, stageFile, "playerStart")),
-        exitBounds: ToRectangle(Require(data.ExitBounds, stageFile, "exitBounds")),
-        busStopBounds: ToRectangle(Require(data.BusStopBounds, stageFile, "busStopBounds")),
-        hospitalBounds: ToRectangle(Require(data.HospitalBounds, stageFile, "hospitalBounds")),
-        backgroundColor: ToColor(Require(data.BackgroundColor, stageFile, "backgroundColor")),
-        walls: Require(data.Walls, stageFile, "walls").Select(ToRectangle).ToArray(),
-        collectibles: Require(data.Collectibles, stageFile, "collectibles").Select(ToRectangle).ToArray(),
-        hazards: Require(data.Hazards, stageFile, "hazards").Select(hazard => ToHazard(hazard, stageFile)).ToArray());
+    private static Stage ToStage(StageData data, string stageFile)
+    {
+        var items = LoadItems(data, stageFile);
+        return new Stage(
+            name: Require(data.Name, stageFile, "name"),
+            playerStart: ToVector2(Require(data.PlayerStart, stageFile, "playerStart")),
+            exitBounds: ToRectangle(Require(data.ExitBounds, stageFile, "exitBounds")),
+            busStopBounds: ToRectangle(Require(data.BusStopBounds, stageFile, "busStopBounds")),
+            hospitalBounds: ToRectangle(Require(data.HospitalBounds, stageFile, "hospitalBounds")),
+            backgroundColor: ToColor(Require(data.BackgroundColor, stageFile, "backgroundColor")),
+            walls: Require(data.Walls, stageFile, "walls").Select(ToRectangle).ToArray(),
+            ticketPieces: items.TicketPieces,
+            gems: items.Gems,
+            hazards: Require(data.Hazards, stageFile, "hazards").Select(hazard => ToHazard(hazard, stageFile)).ToArray());
+    }
+
+    private static StageItems LoadItems(StageData data, string stageFile)
+    {
+        if (data.Items is not null)
+        {
+            return LoadExplicitItems(data.Items, stageFile);
+        }
+
+        var collectibles = Require(data.Collectibles, stageFile, "items or collectibles").Select(ToRectangle).ToArray();
+        var ticketPieceIndexes = ChooseTicketPieceIndexes(collectibles.Length);
+        var ticketPieces = new List<Rectangle>(ticketPieceIndexes.Length);
+        var gems = new List<Rectangle>(Math.Max(0, collectibles.Length - ticketPieceIndexes.Length));
+
+        for (var i = 0; i < collectibles.Length; i++)
+        {
+            if (ticketPieceIndexes.Contains(i))
+            {
+                ticketPieces.Add(collectibles[i]);
+            }
+            else
+            {
+                gems.Add(collectibles[i]);
+            }
+        }
+
+        return new StageItems(ticketPieces.ToArray(), gems.ToArray());
+    }
+
+    private static StageItems LoadExplicitItems(ItemData[] items, string stageFile)
+    {
+        var ticketPieces = new List<Rectangle>();
+        var gems = new List<Rectangle>();
+        for (var i = 0; i < items.Length; i++)
+        {
+            var item = Require(items[i], stageFile, $"items[{i}]");
+            var bounds = ToRectangle(Require(item.Bounds, stageFile, $"items[{i}].bounds"));
+            switch (Require(item.Kind, stageFile, $"items[{i}].kind"))
+            {
+                case "ticketPiece":
+                case "ticket piece":
+                    ticketPieces.Add(bounds);
+                    break;
+                case "gem":
+                    gems.Add(bounds);
+                    break;
+                default:
+                    throw new InvalidOperationException($"Stage file '{stageFile}' has unknown item kind '{item.Kind}' at items[{i}].kind.");
+            }
+        }
+
+        return new StageItems(ticketPieces.ToArray(), gems.ToArray());
+    }
 
     private static int GetStageIndex(string stageFile)
     {
@@ -93,6 +150,27 @@ internal static class StageLoader
         min: data.Min,
         max: data.Max);
 
+    private static int[] ChooseTicketPieceIndexes(int collectibleCount)
+    {
+        var ticketPieceCount = Math.Min(3, collectibleCount);
+        if (ticketPieceCount == 0)
+        {
+            return [];
+        }
+
+        if (ticketPieceCount == 1)
+        {
+            return [0];
+        }
+
+        if (ticketPieceCount == 2)
+        {
+            return [0, collectibleCount - 1];
+        }
+
+        return [0, collectibleCount / 2, collectibleCount - 1];
+    }
+
     private static T Require<T>(T value, string stageFile, string propertyName)
     {
         if (value is null)
@@ -102,4 +180,6 @@ internal static class StageLoader
 
         return value;
     }
+
+    private readonly record struct StageItems(Rectangle[] TicketPieces, Rectangle[] Gems);
 }
