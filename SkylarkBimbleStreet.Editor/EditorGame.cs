@@ -15,6 +15,7 @@ internal sealed class EditorGame : Game
     private const int VirtualWidth = 1920;
     private const int VirtualHeight = 1080;
     private const int HandleSize = 16;
+    private const int MinItemSize = 8;
     private const int SnapGridSize = 40;
 
     private static readonly JsonSerializerOptions JsonOptions = new()
@@ -36,6 +37,7 @@ internal sealed class EditorGame : Game
     private KeyboardState _previousKeyboard;
     private bool _dragging;
     private bool _snapToGrid;
+    private DragMode _dragMode;
     private Point _dragOffset;
     private string _status = "Ready";
 
@@ -172,17 +174,26 @@ internal sealed class EditorGame : Game
 
         if (leftPressed && map.Contains(mouse.Position))
         {
-            _selectedIndex = FindItemAt(world);
+            var resizeHandlePressed = IsSelectedResizeHandle(mouse.Position, map);
+            if (!resizeHandlePressed)
+            {
+                _selectedIndex = FindItemAt(world);
+            }
+
             if (_selectedIndex >= 0)
             {
                 var bounds = _items[_selectedIndex].GetBounds();
                 _dragging = true;
+                _dragMode = resizeHandlePressed ? DragMode.Resize : DragMode.Move;
                 _dragOffset = new Point(world.X - bounds.X, world.Y - bounds.Y);
-                _status = $"Selected {_items[_selectedIndex].Kind}";
+                _status = _dragMode == DragMode.Resize
+                    ? $"Resizing {_items[_selectedIndex].Kind}"
+                    : $"Selected {_items[_selectedIndex].Kind}";
             }
             else
             {
                 _dragging = false;
+                _dragMode = DragMode.None;
                 _status = "No selection";
             }
         }
@@ -190,6 +201,7 @@ internal sealed class EditorGame : Game
         if (leftReleased)
         {
             _dragging = false;
+            _dragMode = DragMode.None;
         }
 
         if (!_dragging || _selectedIndex < 0 || mouse.LeftButton != ButtonState.Pressed)
@@ -199,6 +211,12 @@ internal sealed class EditorGame : Game
 
         var item = _items[_selectedIndex];
         var draggedBounds = item.GetBounds();
+        if (_dragMode == DragMode.Resize)
+        {
+            ResizeSelectedItem(item, draggedBounds, world);
+            return;
+        }
+
         draggedBounds.X = Math.Clamp(world.X - _dragOffset.X, 0, VirtualWidth - draggedBounds.Width);
         draggedBounds.Y = Math.Clamp(world.Y - _dragOffset.Y, 0, VirtualHeight - draggedBounds.Height);
         if (_snapToGrid)
@@ -208,6 +226,21 @@ internal sealed class EditorGame : Game
         }
 
         item.SetBounds(draggedBounds);
+    }
+
+    private void ResizeSelectedItem(EditableItem item, Rectangle bounds, Point world)
+    {
+        var right = Math.Clamp(world.X, bounds.X + MinItemSize, VirtualWidth);
+        var bottom = Math.Clamp(world.Y, bounds.Y + MinItemSize, VirtualHeight);
+        if (_snapToGrid)
+        {
+            right = Math.Clamp(Snap(right), bounds.X + MinItemSize, VirtualWidth);
+            bottom = Math.Clamp(Snap(bottom), bounds.Y + MinItemSize, VirtualHeight);
+        }
+
+        bounds.Width = right - bounds.X;
+        bounds.Height = bottom - bounds.Y;
+        item.SetBounds(bounds);
     }
 
     private void LoadStageFiles()
@@ -556,6 +589,7 @@ internal sealed class EditorGame : Game
         DrawFrame(Inflate(Map(minBounds, map), 2), new Color(70, 210, 255), 3);
         DrawFrame(Inflate(Map(maxBounds, map), 2), new Color(255, 90, 220), 3);
     }
+
     private void DrawGrid(Rectangle map)
     {
         for (var x = 0; x <= VirtualWidth; x += SnapGridSize)
@@ -586,13 +620,25 @@ internal sealed class EditorGame : Game
         return -1;
     }
 
+    private bool IsSelectedResizeHandle(Point screenPosition, Rectangle map)
+    {
+        if (_selectedIndex < 0 || _selectedIndex >= _items.Count)
+        {
+            return false;
+        }
+
+        var selected = Map(_items[_selectedIndex].GetBounds(), map);
+        var handle = new Rectangle(selected.Right - HandleSize / 2, selected.Bottom - HandleSize / 2, HandleSize, HandleSize);
+        return handle.Contains(screenPosition);
+    }
+
     private void UpdateWindowTitle()
     {
         var selected = _selectedIndex >= 0 ? _items[_selectedIndex].Kind : "none";
         var snap = _snapToGrid ? $"snap {SnapGridSize}px" : "snap off";
         var overlaps = CountOverlaps();
         var overlapStatus = overlaps > 0 ? $" - overlaps {overlaps}" : string.Empty;
-        Window.Title = $"SkylarkBimbleStreet Editor - {_stageFiles[_stageIndex].Name} - {_stage.Name} - selected {selected} - {snap}{overlapStatus} - {_status} - PageUp/PageDown stage, S save, R reload, G snap, T kind, 1 wall, 2 gem, 3 ticket, 4 hazard, A/D min, J/L max, Delete remove";
+        Window.Title = $"SkylarkBimbleStreet Editor - {_stageFiles[_stageIndex].Name} - {_stage.Name} - selected {selected} - {snap}{overlapStatus} - {_status} - drag handle resize, PageUp/PageDown stage, S save, R reload, G snap, T kind, 1 wall, 2 gem, 3 ticket, 4 hazard, A/D min, J/L max, Delete remove";
     }
 
     private int CountOverlaps()
@@ -761,6 +807,13 @@ internal sealed class EditorGame : Game
 
     private bool WasPressed(KeyboardState keyboard, Keys key) => keyboard.IsKeyDown(key) && !_previousKeyboard.IsKeyDown(key);
 
+    private enum DragMode
+    {
+        None,
+        Move,
+        Resize,
+    }
+
     private sealed class EditableItem
     {
         private readonly Func<Rectangle> _getBounds;
@@ -798,4 +851,3 @@ internal sealed class EditorGame : Game
         }
     }
 }
-
