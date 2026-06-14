@@ -124,19 +124,19 @@ internal sealed class EditorGame : Game
         {
             AddHazard(mouse.Position);
         }
-        else if (WasPressed(keyboard, Keys.OemOpenBrackets))
+        else if (WasPressed(keyboard, Keys.A))
         {
             AdjustSelectedHazardRangeStart(-EditStep());
         }
-        else if (WasPressed(keyboard, Keys.OemCloseBrackets))
+        else if (WasPressed(keyboard, Keys.D))
         {
             AdjustSelectedHazardRangeStart(EditStep());
         }
-        else if (WasPressed(keyboard, Keys.OemSemicolon))
+        else if (WasPressed(keyboard, Keys.J))
         {
             AdjustSelectedHazardRangeEnd(-EditStep());
         }
-        else if (WasPressed(keyboard, Keys.OemQuotes))
+        else if (WasPressed(keyboard, Keys.L))
         {
             AdjustSelectedHazardRangeEnd(EditStep());
         }
@@ -493,6 +493,7 @@ internal sealed class EditorGame : Game
         {
             var range = GetHazardRange(hazard);
             DrawFrame(Map(range, map), new Color(180, 70, 80), 1);
+            DrawHazardRangeEndpoints(hazard, map);
             DrawRectangle(Map(hazard.Bounds, map), new Color(220, 76, 92));
         }
 
@@ -536,6 +537,25 @@ internal sealed class EditorGame : Game
         }
     }
 
+    private void DrawHazardRangeEndpoints(HazardData hazard, Rectangle map)
+    {
+        var bounds = ToRectangle(hazard.Bounds);
+        Rectangle minBounds;
+        Rectangle maxBounds;
+        if (IsHorizontalHazard(hazard))
+        {
+            minBounds = new Rectangle(hazard.Min, bounds.Y, bounds.Width, bounds.Height);
+            maxBounds = new Rectangle(hazard.Max, bounds.Y, bounds.Width, bounds.Height);
+        }
+        else
+        {
+            minBounds = new Rectangle(bounds.X, hazard.Min, bounds.Width, bounds.Height);
+            maxBounds = new Rectangle(bounds.X, hazard.Max, bounds.Width, bounds.Height);
+        }
+
+        DrawFrame(Inflate(Map(minBounds, map), 2), new Color(70, 210, 255), 3);
+        DrawFrame(Inflate(Map(maxBounds, map), 2), new Color(255, 90, 220), 3);
+    }
     private void DrawGrid(Rectangle map)
     {
         for (var x = 0; x <= VirtualWidth; x += SnapGridSize)
@@ -572,7 +592,7 @@ internal sealed class EditorGame : Game
         var snap = _snapToGrid ? $"snap {SnapGridSize}px" : "snap off";
         var overlaps = CountOverlaps();
         var overlapStatus = overlaps > 0 ? $" - overlaps {overlaps}" : string.Empty;
-        Window.Title = $"SkylarkBimbleStreet Editor - {_stageFiles[_stageIndex].Name} - {_stage.Name} - selected {selected} - {snap}{overlapStatus} - {_status} - PageUp/PageDown stage, S save, R reload, G snap, T kind, 1 wall, 2 gem, 3 ticket, 4 hazard, [ ] min, ; ' max, Delete remove";
+        Window.Title = $"SkylarkBimbleStreet Editor - {_stageFiles[_stageIndex].Name} - {_stage.Name} - selected {selected} - {snap}{overlapStatus} - {_status} - PageUp/PageDown stage, S save, R reload, G snap, T kind, 1 wall, 2 gem, 3 ticket, 4 hazard, A/D min, J/L max, Delete remove";
     }
 
     private int CountOverlaps()
