@@ -77,11 +77,11 @@ internal sealed class EditorGame : Game
             Exit();
         }
 
-        if (WasPressed(keyboard, Keys.Left))
+        if (WasPressed(keyboard, Keys.PageUp))
         {
             LoadStage(Math.Max(0, _stageIndex - 1));
         }
-        else if (WasPressed(keyboard, Keys.Right))
+        else if (WasPressed(keyboard, Keys.PageDown))
         {
             LoadStage(Math.Min(_stageFiles.Length - 1, _stageIndex + 1));
         }
@@ -249,14 +249,17 @@ internal sealed class EditorGame : Game
             _items.Add(new EditableItem("wall", () => ToRectangle(wall), bounds => FromRectangle(wall, bounds), () => _stage.Walls = RemoveItem(_stage.Walls, wall)));
         }
 
-        foreach (var collectible in _stage.Collectibles)
+        var ticketPieceIndexes = ChooseTicketPieceIndexes(_stage.Collectibles.Length);
+        for (var i = 0; i < _stage.Collectibles.Length; i++)
         {
-            _items.Add(new EditableItem("collectible", () => ToRectangle(collectible), bounds => FromRectangle(collectible, bounds), () => _stage.Collectibles = RemoveItem(_stage.Collectibles, collectible)));
+            var collectible = _stage.Collectibles[i];
+            var kind = ticketPieceIndexes.Contains(i) ? "ticket piece" : "gem";
+            _items.Add(new EditableItem(kind, () => ToRectangle(collectible), bounds => FromRectangle(collectible, bounds), () => _stage.Collectibles = RemoveItem(_stage.Collectibles, collectible)));
         }
 
         foreach (var hazard in _stage.Hazards)
         {
-            _items.Add(new EditableItem("hazard", () => ToRectangle(hazard.Bounds), bounds => FromRectangle(hazard.Bounds, bounds), () => _stage.Hazards = RemoveItem(_stage.Hazards, hazard)));
+            _items.Add(new EditableItem("hazard", () => ToRectangle(hazard.Bounds), bounds => MoveHazard(hazard, bounds), () => _stage.Hazards = RemoveItem(_stage.Hazards, hazard)));
         }
     }
 
@@ -274,9 +277,17 @@ internal sealed class EditorGame : Game
             DrawRectangle(Map(wall, map), new Color(108, 116, 132));
         }
 
-        foreach (var collectible in _stage.Collectibles)
+        var ticketPieceIndexes = ChooseTicketPieceIndexes(_stage.Collectibles.Length);
+        for (var i = 0; i < _stage.Collectibles.Length; i++)
         {
-            var mapped = Map(collectible, map);
+            var mapped = Map(_stage.Collectibles[i], map);
+            if (ticketPieceIndexes.Contains(i))
+            {
+                DrawRectangle(mapped, new Color(172, 116, 255));
+                DrawFrame(mapped, new Color(230, 210, 255), 2);
+                continue;
+            }
+
             DrawRectangle(mapped, new Color(246, 202, 76));
             DrawFrame(mapped, new Color(255, 250, 170), 2);
         }
@@ -334,7 +345,7 @@ internal sealed class EditorGame : Game
     {
         var selected = _selectedIndex >= 0 ? _items[_selectedIndex].Kind : "none";
         var snap = _snapToGrid ? $"snap {SnapGridSize}px" : "snap off";
-        Window.Title = $"SkylarkBimbleStreet Editor - {_stageFiles[_stageIndex].Name} - {_stage.Name} - selected {selected} - {snap} - {_status} - Left/Right stage, S save, R reload, G snap, Delete remove";
+        Window.Title = $"SkylarkBimbleStreet Editor - {_stageFiles[_stageIndex].Name} - {_stage.Name} - selected {selected} - {snap} - {_status} - PageUp/PageDown stage, S save, R reload, G snap, Delete remove";
     }
 
     private Rectangle GetMapRectangle()
@@ -365,6 +376,27 @@ internal sealed class EditorGame : Game
 
     private static Rectangle ToRectangle(RectangleData data) => new(data.X, data.Y, data.Width, data.Height);
 
+    private static int[] ChooseTicketPieceIndexes(int collectibleCount)
+    {
+        var ticketPieceCount = Math.Min(3, collectibleCount);
+        if (ticketPieceCount == 0)
+        {
+            return [];
+        }
+
+        if (ticketPieceCount == 1)
+        {
+            return [0];
+        }
+
+        if (ticketPieceCount == 2)
+        {
+            return [0, collectibleCount - 1];
+        }
+
+        return [0, collectibleCount / 2, collectibleCount - 1];
+    }
+
     private static void FromRectangle(RectangleData data, Rectangle rectangle)
     {
         data.X = rectangle.X;
@@ -379,6 +411,24 @@ internal sealed class EditorGame : Game
     {
         position.X = bounds.X;
         position.Y = bounds.Y;
+    }
+
+    private static void MoveHazard(HazardData hazard, Rectangle bounds)
+    {
+        var currentBounds = ToRectangle(hazard.Bounds);
+        var deltaX = bounds.X - currentBounds.X;
+        var deltaY = bounds.Y - currentBounds.Y;
+        FromRectangle(hazard.Bounds, bounds);
+
+        if (Math.Abs(hazard.Velocity.X) >= Math.Abs(hazard.Velocity.Y))
+        {
+            hazard.Min = Math.Clamp(hazard.Min + deltaX, 0, VirtualWidth - bounds.Width);
+            hazard.Max = Math.Clamp(hazard.Max + deltaX, hazard.Min, VirtualWidth - bounds.Width);
+            return;
+        }
+
+        hazard.Min = Math.Clamp(hazard.Min + deltaY, 0, VirtualHeight - bounds.Height);
+        hazard.Max = Math.Clamp(hazard.Max + deltaY, hazard.Min, VirtualHeight - bounds.Height);
     }
 
     private static Rectangle GetHazardRange(HazardData hazard)
@@ -460,4 +510,3 @@ internal sealed class EditorGame : Game
         }
     }
 }
-
