@@ -127,7 +127,11 @@ internal sealed class EditorGame : Game
         }
         else if (WasPressed(keyboard, Keys.D4))
         {
-            AddHazard(mouse.Position);
+            AddHazard(mouse.Position, horizontal: false);
+        }
+        else if (WasPressed(keyboard, Keys.D5))
+        {
+            AddHazard(mouse.Position, horizontal: true);
         }
         else if (WasPressed(keyboard, Keys.A))
         {
@@ -382,13 +386,17 @@ internal sealed class EditorGame : Game
             case AddTool.TicketPiece:
                 AddItem(screenPosition, "ticketPiece");
                 return;
-            case AddTool.Hazard:
-                AddHazard(screenPosition);
+            case AddTool.HazardVertical:
+                AddHazard(screenPosition, horizontal: false);
+                return;
+            case AddTool.HazardHorizontal:
+                AddHazard(screenPosition, horizontal: true);
                 return;
             default:
                 return;
         }
     }
+
     private void AddWall(Point screenPosition)
     {
         var bounds = NewBounds(screenPosition, 160, 38);
@@ -411,15 +419,19 @@ internal sealed class EditorGame : Game
         _status = $"Added {GetItemDisplayName(item)}";
     }
 
-    private void AddHazard(Point screenPosition)
+    private void AddHazard(Point screenPosition, bool horizontal)
     {
         var bounds = NewBounds(screenPosition, 64, 64);
         var hazard = new HazardData
         {
             Bounds = FromRectangle(bounds),
-            Velocity = new Vector2Data { X = 0, Y = 250 },
-            Min = Math.Clamp(bounds.Y - 120, 0, VirtualHeight - bounds.Height),
-            Max = Math.Clamp(bounds.Y + 120, 0, VirtualHeight - bounds.Height),
+            Velocity = horizontal ? new Vector2Data { X = 250, Y = 0 } : new Vector2Data { X = 0, Y = 250 },
+            Min = horizontal
+                ? Math.Clamp(bounds.X - 120, 0, VirtualWidth - bounds.Width)
+                : Math.Clamp(bounds.Y - 120, 0, VirtualHeight - bounds.Height),
+            Max = horizontal
+                ? Math.Clamp(bounds.X + 120, 0, VirtualWidth - bounds.Width)
+                : Math.Clamp(bounds.Y + 120, 0, VirtualHeight - bounds.Height),
         };
         if (hazard.Max < hazard.Min)
         {
@@ -429,7 +441,7 @@ internal sealed class EditorGame : Game
         _stage.Hazards = AppendItem(_stage.Hazards, hazard);
         RebuildItems();
         _selectedIndex = 4 + _stage.Walls.Length + _stage.Items.Length + _stage.Hazards.Length - 1;
-        _status = "Added hazard";
+        _status = horizontal ? "Added horizontal hazard" : "Added vertical hazard";
     }
 
     private void AdjustSelectedHazardRangeStart(int delta)
@@ -587,9 +599,25 @@ internal sealed class EditorGame : Game
         {
             DrawRectangle(button.Bounds, new Color(24, 28, 34, 230));
             DrawRectangle(Inflate(button.Bounds, -5), GetToolColor(button.Tool));
+            DrawToolGlyph(button);
             DrawFrame(button.Bounds, button.Tool == _addTool ? Color.White : new Color(96, 106, 124), button.Tool == _addTool ? 3 : 2);
         }
     }
+
+    private void DrawToolGlyph(ToolButton button)
+    {
+        var inner = Inflate(button.Bounds, -8);
+        switch (button.Tool)
+        {
+            case AddTool.HazardVertical:
+                DrawRectangle(new Rectangle(inner.Center.X - 2, inner.Y, 4, inner.Height), Color.White);
+                break;
+            case AddTool.HazardHorizontal:
+                DrawRectangle(new Rectangle(inner.X, inner.Center.Y - 2, inner.Width, 4), Color.White);
+                break;
+        }
+    }
+
     private void DrawOverlapWarnings(Rectangle map)
     {
         var overlappedIndexes = new HashSet<int>();
@@ -705,7 +733,8 @@ internal sealed class EditorGame : Game
         yield return new ToolButton(AddTool.Wall, new Rectangle(x, y, ToolButtonSize, ToolButtonSize));
         yield return new ToolButton(AddTool.Gem, new Rectangle(x + (ToolButtonSize + ToolButtonGap), y, ToolButtonSize, ToolButtonSize));
         yield return new ToolButton(AddTool.TicketPiece, new Rectangle(x + (ToolButtonSize + ToolButtonGap) * 2, y, ToolButtonSize, ToolButtonSize));
-        yield return new ToolButton(AddTool.Hazard, new Rectangle(x + (ToolButtonSize + ToolButtonGap) * 3, y, ToolButtonSize, ToolButtonSize));
+        yield return new ToolButton(AddTool.HazardVertical, new Rectangle(x + (ToolButtonSize + ToolButtonGap) * 3, y, ToolButtonSize, ToolButtonSize));
+        yield return new ToolButton(AddTool.HazardHorizontal, new Rectangle(x + (ToolButtonSize + ToolButtonGap) * 4, y, ToolButtonSize, ToolButtonSize));
     }
 
     private static Color GetToolColor(AddTool tool) => tool switch
@@ -713,7 +742,8 @@ internal sealed class EditorGame : Game
         AddTool.Wall => new Color(108, 116, 132),
         AddTool.Gem => new Color(246, 202, 76),
         AddTool.TicketPiece => new Color(172, 116, 255),
-        AddTool.Hazard => new Color(220, 76, 92),
+        AddTool.HazardVertical => new Color(220, 76, 92),
+        AddTool.HazardHorizontal => new Color(220, 76, 92),
         _ => new Color(70, 76, 88),
     };
 
@@ -722,9 +752,11 @@ internal sealed class EditorGame : Game
         AddTool.Wall => "wall",
         AddTool.Gem => "gem",
         AddTool.TicketPiece => "ticket piece",
-        AddTool.Hazard => "hazard",
+        AddTool.HazardVertical => "vertical hazard",
+        AddTool.HazardHorizontal => "horizontal hazard",
         _ => "none",
     };
+
     private void UpdateWindowTitle()
     {
         var selected = _selectedIndex >= 0 ? _items[_selectedIndex].Kind : "none";
@@ -732,7 +764,7 @@ internal sealed class EditorGame : Game
         var overlaps = CountOverlaps();
         var overlapStatus = overlaps > 0 ? $" - overlaps {overlaps}" : string.Empty;
         var addTool = _addTool == AddTool.None ? "add off" : $"add {GetToolName(_addTool)}";
-        Window.Title = $"SkylarkBimbleStreet Editor - {_stageFiles[_stageIndex].Name} - {_stage.Name} - selected {selected} - {addTool} - {snap}{overlapStatus} - {_status} - toolbar choose/add, drag handle resize, PageUp/PageDown stage, S save, R reload, G snap, T kind, 1 wall, 2 gem, 3 ticket, 4 hazard, A/D min, J/L max, Delete remove";
+        Window.Title = $"SkylarkBimbleStreet Editor - {_stageFiles[_stageIndex].Name} - {_stage.Name} - selected {selected} - {addTool} - {snap}{overlapStatus} - {_status} - toolbar choose/add, drag handle resize, PageUp/PageDown stage, S save, R reload, G snap, T kind, 1 wall, 2 gem, 3 ticket, 4 hazard V, 5 hazard H, A/D min, J/L max, Delete remove";
     }
 
     private int CountOverlaps()
@@ -908,7 +940,8 @@ internal sealed class EditorGame : Game
         Wall,
         Gem,
         TicketPiece,
-        Hazard,
+        HazardVertical,
+        HazardHorizontal,
     }
 
     private readonly record struct ToolButton(AddTool Tool, Rectangle Bounds);
