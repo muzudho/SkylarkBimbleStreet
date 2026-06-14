@@ -351,17 +351,45 @@
     },
     {
       "Bounds": {
-        "X": 1608,
-        "Y": 222,
-        "Width": 76,
-        "Height": 76
+        "X": 1598,
+        "Y": 212,
+        "Width": 96,
+        "Height": 96
       },
       "Velocity": {
         "X": 0,
-        "Y": 270
+        "Y": 260
       },
-      "Min": 198,
-      "Max": 326
+      "Min": 190,
+      "Max": 338
+    },
+    {
+      "Bounds": {
+        "X": 620,
+        "Y": 155,
+        "Width": 92,
+        "Height": 92
+      },
+      "Velocity": {
+        "X": 240,
+        "Y": 0
+      },
+      "Min": 590,
+      "Max": 720
+    },
+    {
+      "Bounds": {
+        "X": 1088,
+        "Y": 344,
+        "Width": 96,
+        "Height": 96
+      },
+      "Velocity": {
+        "X": 0,
+        "Y": 220
+      },
+      "Min": 320,
+      "Max": 460
     }
   ],
   "GemBagCapacity": 34

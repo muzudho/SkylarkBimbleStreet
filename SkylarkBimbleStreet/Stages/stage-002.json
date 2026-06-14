@@ -273,6 +273,20 @@
       },
       "Min": 210,
       "Max": 660
+    },
+    {
+      "Bounds": {
+        "X": 660,
+        "Y": 140,
+        "Width": 92,
+        "Height": 92
+      },
+      "Velocity": {
+        "X": 0,
+        "Y": 220
+      },
+      "Min": 120,
+      "Max": 250
     }
   ],
   "GemBagCapacity": 24
