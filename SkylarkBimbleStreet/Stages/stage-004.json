@@ -149,12 +149,30 @@
       }
     },
     {
+      "Kind": "ticketPiece",
+      "Bounds": {
+        "X": 1080,
+        "Y": 560,
+        "Width": 34,
+        "Height": 34
+      }
+    },
+    {
+      "Kind": "ticketPiece",
+      "Bounds": {
+        "X": 1710,
+        "Y": 210,
+        "Width": 34,
+        "Height": 34
+      }
+    },
+    {
       "Kind": "gem",
       "Bounds": {
         "X": 770,
         "Y": 150,
-        "Width": 34,
-        "Height": 34
+        "Width": 68,
+        "Height": 68
       }
     },
     {
@@ -167,21 +185,12 @@
       }
     },
     {
-      "Kind": "ticketPiece",
-      "Bounds": {
-        "X": 1080,
-        "Y": 560,
-        "Width": 34,
-        "Height": 34
-      }
-    },
-    {
       "Kind": "gem",
       "Bounds": {
         "X": 1370,
         "Y": 360,
-        "Width": 34,
-        "Height": 34
+        "Width": 68,
+        "Height": 68
       }
     },
     {
@@ -194,12 +203,57 @@
       }
     },
     {
-      "Kind": "ticketPiece",
+      "Kind": "gem",
       "Bounds": {
-        "X": 1710,
-        "Y": 210,
-        "Width": 34,
-        "Height": 34
+        "X": 730,
+        "Y": 225,
+        "Width": 17,
+        "Height": 17
+      }
+    },
+    {
+      "Kind": "gem",
+      "Bounds": {
+        "X": 820,
+        "Y": 120,
+        "Width": 17,
+        "Height": 17
+      }
+    },
+    {
+      "Kind": "gem",
+      "Bounds": {
+        "X": 900,
+        "Y": 780,
+        "Width": 17,
+        "Height": 17
+      }
+    },
+    {
+      "Kind": "gem",
+      "Bounds": {
+        "X": 1326,
+        "Y": 430,
+        "Width": 17,
+        "Height": 17
+      }
+    },
+    {
+      "Kind": "gem",
+      "Bounds": {
+        "X": 1445,
+        "Y": 330,
+        "Width": 17,
+        "Height": 17
+      }
+    },
+    {
+      "Kind": "gem",
+      "Bounds": {
+        "X": 1730,
+        "Y": 700,
+        "Width": 17,
+        "Height": 17
       }
     }
   ],
@@ -288,5 +342,6 @@
       "Min": 650,
       "Max": 850
     }
-  ]
+  ],
+  "GemBagCapacity": 28
 }

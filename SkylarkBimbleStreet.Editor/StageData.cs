@@ -11,6 +11,7 @@ internal sealed class StageData
     public ColorData BackgroundColor { get; set; } = null!;
     public RectangleData[] Walls { get; set; } = [];
     public ItemData[] Items { get; set; } = null!;
+    public int? GemBagCapacity { get; set; }
     public RectangleData[] Collectibles { get; set; } = null!;
     public HazardData[] Hazards { get; set; } = [];
 }

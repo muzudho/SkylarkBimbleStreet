@@ -13,6 +13,7 @@ public class Game1 : Game
     private const int VirtualHeight = 1080;
     private const float PlayerSpeed = 520f;
     private const int PlayerSize = 46;
+    private const int GemShardPixelSize = 17;
     private const float RespawnInvincibleSeconds = 0.8f;
     private const float ExitOpenDelaySeconds = 0.32f;
     private const float ExitOpenFlashSeconds = 0.55f;
@@ -554,14 +555,7 @@ public class Game1 : Game
             DrawTicketPiece(new Rectangle(76 + i * 58, 54, 34, 38), i, body, detail);
         }
 
-        var gemHudWidth = Math.Max(80, 34 + _gemBounds.Length * 48);
-        DrawRectangle(new Rectangle(58, 92, gemHudWidth, 18), CurrentPalette.HudBackground);
-        for (var i = 0; i < _gemBounds.Length; i++)
-        {
-            var body = _gemsCollected[i] ? CurrentPalette.Gem : CurrentPalette.HudInactive;
-            var shine = _gemsCollected[i] ? CurrentPalette.GemShine : CurrentPalette.WallInner;
-            DrawGem(new Vector2(82 + i * 48, 101), 28, body, shine);
-        }
+        DrawGemBag(new Rectangle(58, 92, 184, 42), CountCollectedGemShards(), GetCurrentGemBagCapacity(), true);
 
         for (var i = 0; i < Math.Min(_deaths, 8); i++)
         {
@@ -591,6 +585,44 @@ public class Game1 : Game
         }
     }
 
+    private void DrawGemBag(Rectangle bounds, int collectedShards, int capacity, bool showEmpty)
+    {
+        if (capacity <= 0 || (!showEmpty && collectedShards <= 0))
+        {
+            return;
+        }
+
+        var clamped = Math.Clamp(collectedShards, 0, capacity);
+        var full = clamped >= capacity;
+        var body = new Rectangle(bounds.X + 8, bounds.Y + 11, bounds.Width - 16, bounds.Height - 13);
+        var neck = new Rectangle(bounds.Center.X - 24, bounds.Y + 3, 48, 12);
+        var fillHeight = Math.Max(0, body.Height * clamped / capacity);
+        var fill = new Rectangle(body.X + 5, body.Bottom - 5 - fillHeight, body.Width - 10, fillHeight);
+        var frame = full ? CurrentPalette.GemShine : CurrentPalette.WallInner;
+
+        DrawRectangle(body, CurrentPalette.HudBackground);
+        DrawRectangle(neck, CurrentPalette.HudBackground);
+        DrawFrame(body, frame, 4);
+        DrawFrame(neck, frame, 3);
+
+        if (fill.Height > 0)
+        {
+            DrawRectangle(fill, full ? CurrentPalette.GemShine : CurrentPalette.Gem);
+            DrawRectangle(new Rectangle(fill.X + 7, fill.Y + 4, Math.Max(8, fill.Width / 4), Math.Max(3, fill.Height / 5)), CurrentPalette.GemShine);
+        }
+
+        for (var i = 1; i <= 3; i++)
+        {
+            var x = body.X + body.Width * i / 4;
+            var markColor = clamped * 4 >= capacity * i ? CurrentPalette.GemShine : CurrentPalette.HudInactive;
+            DrawRectangle(new Rectangle(x - 2, body.Y + 7, 4, body.Height - 14), markColor);
+        }
+
+        if (full)
+        {
+            DrawGem(new Vector2(bounds.Right - 16, bounds.Y + 12), 22, CurrentPalette.Gem, CurrentPalette.GemShine);
+        }
+    }
     private void DrawPauseMenu()
     {
         DrawRectangle(new Rectangle(0, 0, VirtualWidth, VirtualHeight), WithAlpha(CurrentPalette.Background, 185));
@@ -791,24 +823,8 @@ public class Game1 : Game
             return;
         }
 
-        var total = _stages[stageIndex].Gems.Length;
-        if (total <= 0)
-        {
-            return;
-        }
-
-        var collected = _stageBestGemCounts.Length > stageIndex ? Math.Clamp(_stageBestGemCounts[stageIndex], 0, total) : 0;
-        var size = Math.Min(bounds.Height, 22);
-        var gap = 6;
-        var totalWidth = total * size + (total - 1) * gap;
-        var startX = bounds.Center.X - totalWidth / 2;
-        for (var i = 0; i < total; i++)
-        {
-            var center = new Vector2(startX + i * (size + gap) + size / 2f, bounds.Center.Y);
-            var body = i < collected ? CurrentPalette.Gem : CurrentPalette.HudInactive;
-            var shine = i < collected ? CurrentPalette.GemShine : CurrentPalette.WallInner;
-            DrawGem(center, size, body, shine);
-        }
+        var collected = _stageBestGemCounts.Length > stageIndex ? _stageBestGemCounts[stageIndex] : 0;
+        DrawGemBag(bounds, collected, _stages[stageIndex].GemBagCapacity, false);
     }
     private void DrawStageRecordStats(Rectangle bounds, int stageIndex)
     {
@@ -1655,13 +1671,14 @@ public class Game1 : Game
             if (!_gemsCollected[i] && player.Intersects(_gemBounds[i]))
             {
                 _gemsCollected[i] = true;
-                _stageGemCounts[_currentStageIndex]++;
+                var shardValue = GetGemShardValue(_gemBounds[i]);
+                _stageGemCounts[_currentStageIndex] += shardValue;
                 if (_stageBestGemCounts.Length > _currentStageIndex)
                 {
-                    _stageBestGemCounts[_currentStageIndex] = Math.Max(_stageBestGemCounts[_currentStageIndex], CountCollectedGems());
+                    _stageBestGemCounts[_currentStageIndex] = Math.Max(_stageBestGemCounts[_currentStageIndex], CountCollectedGemShards());
                 }
 
-                LogPlayEvent(PlayEventKind.Gem, _currentStageIndex, _gemBounds[i].Center.ToVector2(), _currentStageElapsedSeconds, i);
+                LogPlayEvent(PlayEventKind.Gem, _currentStageIndex, _gemBounds[i].Center.ToVector2(), _currentStageElapsedSeconds, shardValue);
                 PlaySound(_gemSound);
                 AddGemCollectEffect(_gemBounds[i].Center.ToVector2(), i + _ticketPieceBounds.Length);
             }
@@ -2414,11 +2431,13 @@ public class Game1 : Game
     private void RefreshWindowTitle()
     {
         _titleRefreshTimer = 0.2;
-        var collected = CountCollectedGems();
+        var collected = CountCollectedGemShards();
 
         var state = _stageSelectOpen ? "STAGE SELECT - Left/Right choose - Enter/Space/Start play" : _paused ? "PAUSE - Left/Right choose - Enter/Space/Start/A select" : _cleared ? "CLEAR - Enter/Space/Start/A stage select - R retry" : "Collect ticket pieces, then reach the green exit - Start/Enter pause - Tab for stage select";
         var stage = _stages[_currentStageIndex];
-        Window.Title = $"SkylarkBimbleStreet - {stage.Name} - Palette {CurrentPalette.Name} - {state} - Gems {collected}/{_gemBounds.Length} - Hits {_deaths} - {GetStatsSummary()}";
+        var capacity = GetCurrentGemBagCapacity();
+        var bagState = capacity > 0 && collected >= capacity ? "Bag full" : $"Bag {Math.Min(collected, capacity)}/{capacity} shards";
+        Window.Title = $"SkylarkBimbleStreet - {stage.Name} - Palette {CurrentPalette.Name} - {state} - {bagState} - Hits {_deaths} - {GetStatsSummary()}";
     }
 
     /// <summary>
@@ -2469,18 +2488,27 @@ public class Game1 : Game
     /// <returns>出口の当たり判定を表す矩形</returns>
     private Rectangle GetExitBounds() => _exitBounds;
 
-    private int CountCollectedGems()
+    private int CountCollectedGemShards()
     {
         var collected = 0;
-        foreach (var gemCollected in _gemsCollected)
+        for (var i = 0; i < _gemsCollected.Length; i++)
         {
-            if (gemCollected)
+            if (_gemsCollected[i])
             {
-                collected++;
+                collected += GetGemShardValue(_gemBounds[i]);
             }
         }
 
         return collected;
+    }
+
+    private int GetCurrentGemBagCapacity() => _currentStageIndex >= 0 && _currentStageIndex < _stages.Length ? _stages[_currentStageIndex].GemBagCapacity : 0;
+
+    private static int GetGemShardValue(Rectangle gem)
+    {
+        var widthUnits = Math.Max(1, (int)MathF.Round(gem.Width / (float)GemShardPixelSize));
+        var heightUnits = Math.Max(1, (int)MathF.Round(gem.Height / (float)GemShardPixelSize));
+        return widthUnits * heightUnits;
     }
 
     private bool AreAllTicketPiecesCollected()

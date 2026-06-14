@@ -155,9 +155,9 @@
       "Kind": "gem",
       "Bounds": {
         "X": 650,
-        "Y": 720,
-        "Width": 34,
-        "Height": 34
+        "Y": 705,
+        "Width": 68,
+        "Height": 68
       }
     },
     {
@@ -174,8 +174,71 @@
       "Bounds": {
         "X": 1400,
         "Y": 620,
-        "Width": 34,
-        "Height": 34
+        "Width": 68,
+        "Height": 68
+      }
+    },
+    {
+      "Kind": "gem",
+      "Bounds": {
+        "X": 565,
+        "Y": 490,
+        "Width": 17,
+        "Height": 17
+      }
+    },
+    {
+      "Kind": "gem",
+      "Bounds": {
+        "X": 610,
+        "Y": 690,
+        "Width": 17,
+        "Height": 17
+      }
+    },
+    {
+      "Kind": "gem",
+      "Bounds": {
+        "X": 720,
+        "Y": 705,
+        "Width": 17,
+        "Height": 17
+      }
+    },
+    {
+      "Kind": "gem",
+      "Bounds": {
+        "X": 1195,
+        "Y": 300,
+        "Width": 17,
+        "Height": 17
+      }
+    },
+    {
+      "Kind": "gem",
+      "Bounds": {
+        "X": 1300,
+        "Y": 378,
+        "Width": 17,
+        "Height": 17
+      }
+    },
+    {
+      "Kind": "gem",
+      "Bounds": {
+        "X": 1365,
+        "Y": 690,
+        "Width": 17,
+        "Height": 17
+      }
+    },
+    {
+      "Kind": "gem",
+      "Bounds": {
+        "X": 1478,
+        "Y": 600,
+        "Width": 17,
+        "Height": 17
       }
     }
   ],
@@ -250,5 +313,6 @@
       "Min": 1100,
       "Max": 1300
     }
-  ]
+  ],
+  "GemBagCapacity": 30
 }

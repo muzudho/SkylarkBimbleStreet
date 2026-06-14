@@ -71,6 +71,7 @@ internal static class StageLoader
             walls: Require(data.Walls, stageFile, "walls").Select(ToRectangle).ToArray(),
             ticketPieces: items.TicketPieces,
             gems: items.Gems,
+            gemBagCapacity: data.GemBagCapacity ?? CalculateDefaultGemBagCapacity(items.Gems),
             hazards: Require(data.Hazards, stageFile, "hazards").Select(hazard => ToHazard(hazard, stageFile)).ToArray());
     }
 
@@ -126,6 +127,18 @@ internal static class StageLoader
         return new StageItems(ticketPieces.ToArray(), gems.ToArray());
     }
 
+    private static int CalculateDefaultGemBagCapacity(Rectangle[] gems)
+    {
+        var total = gems.Sum(GetGemShardValue);
+        return Math.Max(4, (int)MathF.Ceiling(total * 0.6f));
+    }
+
+    private static int GetGemShardValue(Rectangle gem)
+    {
+        var widthUnits = Math.Max(1, (int)MathF.Round(gem.Width / 17f));
+        var heightUnits = Math.Max(1, (int)MathF.Round(gem.Height / 17f));
+        return widthUnits * heightUnits;
+    }
     private static int GetStageIndex(string stageFile)
     {
         var fileName = Path.GetFileNameWithoutExtension(stageFile);

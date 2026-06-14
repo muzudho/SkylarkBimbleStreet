@@ -131,24 +131,6 @@
       }
     },
     {
-      "Kind": "gem",
-      "Bounds": {
-        "X": 1450,
-        "Y": 430,
-        "Width": 34,
-        "Height": 34
-      }
-    },
-    {
-      "Kind": "gem",
-      "Bounds": {
-        "X": 1270,
-        "Y": 650,
-        "Width": 34,
-        "Height": 34
-      }
-    },
-    {
       "Kind": "ticketPiece",
       "Bounds": {
         "X": 920,
@@ -158,12 +140,39 @@
       }
     },
     {
+      "Kind": "ticketPiece",
+      "Bounds": {
+        "X": 180,
+        "Y": 220,
+        "Width": 34,
+        "Height": 34
+      }
+    },
+    {
+      "Kind": "gem",
+      "Bounds": {
+        "X": 1450,
+        "Y": 430,
+        "Width": 68,
+        "Height": 68
+      }
+    },
+    {
+      "Kind": "gem",
+      "Bounds": {
+        "X": 1230,
+        "Y": 650,
+        "Width": 34,
+        "Height": 34
+      }
+    },
+    {
       "Kind": "gem",
       "Bounds": {
         "X": 650,
         "Y": 280,
-        "Width": 34,
-        "Height": 34
+        "Width": 68,
+        "Height": 68
       }
     },
     {
@@ -176,12 +185,66 @@
       }
     },
     {
-      "Kind": "ticketPiece",
+      "Kind": "gem",
       "Bounds": {
-        "X": 180,
-        "Y": 220,
-        "Width": 34,
-        "Height": 34
+        "X": 1410,
+        "Y": 510,
+        "Width": 17,
+        "Height": 17
+      }
+    },
+    {
+      "Kind": "gem",
+      "Bounds": {
+        "X": 1525,
+        "Y": 410,
+        "Width": 17,
+        "Height": 17
+      }
+    },
+    {
+      "Kind": "gem",
+      "Bounds": {
+        "X": 1230,
+        "Y": 705,
+        "Width": 17,
+        "Height": 17
+      }
+    },
+    {
+      "Kind": "gem",
+      "Bounds": {
+        "X": 715,
+        "Y": 250,
+        "Width": 17,
+        "Height": 17
+      }
+    },
+    {
+      "Kind": "gem",
+      "Bounds": {
+        "X": 610,
+        "Y": 330,
+        "Width": 17,
+        "Height": 17
+      }
+    },
+    {
+      "Kind": "gem",
+      "Bounds": {
+        "X": 350,
+        "Y": 665,
+        "Width": 17,
+        "Height": 17
+      }
+    },
+    {
+      "Kind": "gem",
+      "Bounds": {
+        "X": 450,
+        "Y": 590,
+        "Width": 17,
+        "Height": 17
       }
     }
   ],
@@ -284,5 +347,6 @@
       "Min": 170,
       "Max": 280
     }
-  ]
+  ],
+  "GemBagCapacity": 28
 }

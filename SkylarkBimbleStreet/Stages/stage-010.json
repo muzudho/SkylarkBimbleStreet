@@ -147,8 +147,8 @@
       "Bounds": {
         "X": 650,
         "Y": 180,
-        "Width": 34,
-        "Height": 34
+        "Width": 68,
+        "Height": 68
       }
     },
     {
@@ -165,8 +165,8 @@
       "Bounds": {
         "X": 1118,
         "Y": 370,
-        "Width": 34,
-        "Height": 34
+        "Width": 68,
+        "Height": 68
       }
     },
     {
@@ -183,8 +183,98 @@
       "Bounds": {
         "X": 1666,
         "Y": 252,
-        "Width": 34,
-        "Height": 34
+        "Width": 68,
+        "Height": 68
+      }
+    },
+    {
+      "Kind": "gem",
+      "Bounds": {
+        "X": 610,
+        "Y": 260,
+        "Width": 17,
+        "Height": 17
+      }
+    },
+    {
+      "Kind": "gem",
+      "Bounds": {
+        "X": 725,
+        "Y": 160,
+        "Width": 17,
+        "Height": 17
+      }
+    },
+    {
+      "Kind": "gem",
+      "Bounds": {
+        "X": 730,
+        "Y": 740,
+        "Width": 17,
+        "Height": 17
+      }
+    },
+    {
+      "Kind": "gem",
+      "Bounds": {
+        "X": 830,
+        "Y": 650,
+        "Width": 17,
+        "Height": 17
+      }
+    },
+    {
+      "Kind": "gem",
+      "Bounds": {
+        "X": 1080,
+        "Y": 450,
+        "Width": 17,
+        "Height": 17
+      }
+    },
+    {
+      "Kind": "gem",
+      "Bounds": {
+        "X": 1195,
+        "Y": 350,
+        "Width": 17,
+        "Height": 17
+      }
+    },
+    {
+      "Kind": "gem",
+      "Bounds": {
+        "X": 1210,
+        "Y": 920,
+        "Width": 17,
+        "Height": 17
+      }
+    },
+    {
+      "Kind": "gem",
+      "Bounds": {
+        "X": 1310,
+        "Y": 845,
+        "Width": 17,
+        "Height": 17
+      }
+    },
+    {
+      "Kind": "gem",
+      "Bounds": {
+        "X": 1628,
+        "Y": 330,
+        "Width": 17,
+        "Height": 17
+      }
+    },
+    {
+      "Kind": "gem",
+      "Bounds": {
+        "X": 1740,
+        "Y": 235,
+        "Width": 17,
+        "Height": 17
       }
     }
   ],
@@ -273,5 +363,6 @@
       "Min": 198,
       "Max": 326
     }
-  ]
+  ],
+  "GemBagCapacity": 34
 }

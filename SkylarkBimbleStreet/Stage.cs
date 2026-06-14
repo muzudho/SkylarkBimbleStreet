@@ -13,6 +13,7 @@ internal sealed class Stage
     public readonly Rectangle[] Walls;
     public readonly Rectangle[] TicketPieces;
     public readonly Rectangle[] Gems;
+    public readonly int GemBagCapacity;
     public readonly Hazard[] Hazards;
 
     public Stage(
@@ -25,6 +26,7 @@ internal sealed class Stage
         Rectangle[] walls,
         Rectangle[] ticketPieces,
         Rectangle[] gems,
+        int gemBagCapacity,
         Hazard[] hazards)
     {
         Name = name;
@@ -36,6 +38,7 @@ internal sealed class Stage
         Walls = walls;
         TicketPieces = ticketPieces;
         Gems = gems;
+        GemBagCapacity = gemBagCapacity;
         Hazards = hazards;
     }
 }

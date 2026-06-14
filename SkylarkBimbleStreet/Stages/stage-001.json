@@ -113,10 +113,10 @@
       }
     },
     {
-      "Kind": "gem",
+      "Kind": "ticketPiece",
       "Bounds": {
-        "X": 660,
-        "Y": 820,
+        "X": 920,
+        "Y": 230,
         "Width": 34,
         "Height": 34
       }
@@ -124,10 +124,19 @@
     {
       "Kind": "ticketPiece",
       "Bounds": {
-        "X": 920,
+        "X": 1450,
         "Y": 230,
         "Width": 34,
         "Height": 34
+      }
+    },
+    {
+      "Kind": "gem",
+      "Bounds": {
+        "X": 660,
+        "Y": 775,
+        "Width": 68,
+        "Height": 68
       }
     },
     {
@@ -140,12 +149,39 @@
       }
     },
     {
-      "Kind": "ticketPiece",
+      "Kind": "gem",
       "Bounds": {
-        "X": 1450,
-        "Y": 230,
-        "Width": 34,
-        "Height": 34
+        "X": 610,
+        "Y": 775,
+        "Width": 17,
+        "Height": 17
+      }
+    },
+    {
+      "Kind": "gem",
+      "Bounds": {
+        "X": 720,
+        "Y": 795,
+        "Width": 17,
+        "Height": 17
+      }
+    },
+    {
+      "Kind": "gem",
+      "Bounds": {
+        "X": 1250,
+        "Y": 720,
+        "Width": 17,
+        "Height": 17
+      }
+    },
+    {
+      "Kind": "gem",
+      "Bounds": {
+        "X": 1170,
+        "Y": 780,
+        "Width": 17,
+        "Height": 17
       }
     }
   ],
@@ -206,5 +242,6 @@
       "Min": 1360,
       "Max": 1510
     }
-  ]
+  ],
+  "GemBagCapacity": 18
 }

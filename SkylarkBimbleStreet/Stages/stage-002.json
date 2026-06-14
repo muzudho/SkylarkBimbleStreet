@@ -1,233 +1,279 @@
-{
-  "Version": 1,
-  "Name": "Stage 2",
-  "PlayerStart": {
-    "X": 95,
-    "Y": 925
-  },
-  "ExitBounds": {
-    "X": 1770,
-    "Y": 58,
-    "Width": 92,
-    "Height": 92
-  },
-  "BusStopBounds": {
-    "X": 300,
-    "Y": 690,
-    "Width": 176,
-    "Height": 124
-  },
-  "HospitalBounds": {
-    "X": 56,
-    "Y": 141,
-    "Width": 176,
-    "Height": 126
-  },
-  "BackgroundColor": {
-    "R": 20,
-    "G": 26,
-    "B": 28
-  },
-  "Walls": [
-    {
-      "X": 0,
-      "Y": 0,
-      "Width": 1920,
-      "Height": 38
-    },
-    {
-      "X": 0,
-      "Y": 1042,
-      "Width": 1920,
-      "Height": 38
-    },
-    {
-      "X": 0,
-      "Y": 0,
-      "Width": 38,
-      "Height": 1080
-    },
-    {
-      "X": 1882,
-      "Y": 0,
-      "Width": 38,
-      "Height": 1080
-    },
-    {
-      "X": 250,
-      "Y": 120,
-      "Width": 38,
-      "Height": 750
-    },
-    {
-      "X": 430,
-      "Y": 870,
-      "Width": 600,
-      "Height": 38
-    },
-    {
-      "X": 560,
-      "Y": 120,
-      "Width": 38,
-      "Height": 610
-    },
-    {
-      "X": 820,
-      "Y": 300,
-      "Width": 38,
-      "Height": 730
-    },
-    {
-      "X": 1080,
-      "Y": 70,
-      "Width": 38,
-      "Height": 680
-    },
-    {
-      "X": 1320,
-      "Y": 250,
-      "Width": 38,
-      "Height": 640
-    },
-    {
-      "X": 1520,
-      "Y": 120,
-      "Width": 38,
-      "Height": 620
-    },
-    {
-      "X": 1120,
-      "Y": 210,
-      "Width": 380,
-      "Height": 38
-    }
-  ],
-  "Items": [
-    {
-      "Kind": "ticketPiece",
-      "Bounds": {
-        "X": 360,
-        "Y": 760,
-        "Width": 34,
-        "Height": 34
-      }
-    },
-    {
-      "Kind": "gem",
-      "Bounds": {
-        "X": 690,
-        "Y": 170,
-        "Width": 34,
-        "Height": 34
-      }
-    },
-    {
-      "Kind": "gem",
-      "Bounds": {
-        "X": 940,
-        "Y": 790,
-        "Width": 34,
-        "Height": 34
-      }
-    },
-    {
-      "Kind": "ticketPiece",
-      "Bounds": {
-        "X": 1210,
-        "Y": 140,
-        "Width": 34,
-        "Height": 34
-      }
-    },
-    {
-      "Kind": "gem",
-      "Bounds": {
-        "X": 1640,
-        "Y": 600,
-        "Width": 34,
-        "Height": 34
-      }
-    },
-    {
-      "Kind": "ticketPiece",
-      "Bounds": {
-        "X": 1660,
-        "Y": 210,
-        "Width": 34,
-        "Height": 34
-      }
-    }
-  ],
-  "Hazards": [
-    {
-      "Bounds": {
-        "X": 350,
-        "Y": 220,
-        "Width": 64,
-        "Height": 64
-      },
-      "Velocity": {
-        "X": 0,
-        "Y": 330
-      },
-      "Min": 180,
-      "Max": 780
-    },
-    {
-      "Bounds": {
-        "X": 694,
-        "Y": 740,
-        "Width": 64,
-        "Height": 64
-      },
-      "Velocity": {
-        "X": 300,
-        "Y": 0
-      },
-      "Min": 634,
-      "Max": 764
-    },
-    {
-      "Bounds": {
-        "X": 930,
-        "Y": 360,
-        "Width": 64,
-        "Height": 64
-      },
-      "Velocity": {
-        "X": 0,
-        "Y": 270
-      },
-      "Min": 330,
-      "Max": 840
-    },
-    {
-      "Bounds": {
-        "X": 1190,
-        "Y": 640,
-        "Width": 64,
-        "Height": 64
-      },
-      "Velocity": {
-        "X": 340,
-        "Y": 0
-      },
-      "Min": 1160,
-      "Max": 1280
-    },
-    {
-      "Bounds": {
-        "X": 1620,
-        "Y": 250,
-        "Width": 64,
-        "Height": 64
-      },
-      "Velocity": {
-        "X": 0,
-        "Y": 300
-      },
-      "Min": 210,
-      "Max": 660
-    }
-  ]
+{
+  "Version": 1,
+  "Name": "Stage 2",
+  "PlayerStart": {
+    "X": 95,
+    "Y": 925
+  },
+  "ExitBounds": {
+    "X": 1770,
+    "Y": 58,
+    "Width": 92,
+    "Height": 92
+  },
+  "BusStopBounds": {
+    "X": 300,
+    "Y": 690,
+    "Width": 176,
+    "Height": 124
+  },
+  "HospitalBounds": {
+    "X": 56,
+    "Y": 141,
+    "Width": 176,
+    "Height": 126
+  },
+  "BackgroundColor": {
+    "R": 20,
+    "G": 26,
+    "B": 28
+  },
+  "Walls": [
+    {
+      "X": 0,
+      "Y": 0,
+      "Width": 1920,
+      "Height": 38
+    },
+    {
+      "X": 0,
+      "Y": 1042,
+      "Width": 1920,
+      "Height": 38
+    },
+    {
+      "X": 0,
+      "Y": 0,
+      "Width": 38,
+      "Height": 1080
+    },
+    {
+      "X": 1882,
+      "Y": 0,
+      "Width": 38,
+      "Height": 1080
+    },
+    {
+      "X": 250,
+      "Y": 120,
+      "Width": 38,
+      "Height": 750
+    },
+    {
+      "X": 430,
+      "Y": 870,
+      "Width": 600,
+      "Height": 38
+    },
+    {
+      "X": 560,
+      "Y": 120,
+      "Width": 38,
+      "Height": 610
+    },
+    {
+      "X": 820,
+      "Y": 300,
+      "Width": 38,
+      "Height": 730
+    },
+    {
+      "X": 1080,
+      "Y": 70,
+      "Width": 38,
+      "Height": 680
+    },
+    {
+      "X": 1320,
+      "Y": 250,
+      "Width": 38,
+      "Height": 640
+    },
+    {
+      "X": 1520,
+      "Y": 120,
+      "Width": 38,
+      "Height": 620
+    },
+    {
+      "X": 1120,
+      "Y": 210,
+      "Width": 380,
+      "Height": 38
+    }
+  ],
+  "Items": [
+    {
+      "Kind": "ticketPiece",
+      "Bounds": {
+        "X": 360,
+        "Y": 760,
+        "Width": 34,
+        "Height": 34
+      }
+    },
+    {
+      "Kind": "ticketPiece",
+      "Bounds": {
+        "X": 1210,
+        "Y": 140,
+        "Width": 34,
+        "Height": 34
+      }
+    },
+    {
+      "Kind": "ticketPiece",
+      "Bounds": {
+        "X": 1660,
+        "Y": 210,
+        "Width": 34,
+        "Height": 34
+      }
+    },
+    {
+      "Kind": "gem",
+      "Bounds": {
+        "X": 690,
+        "Y": 170,
+        "Width": 68,
+        "Height": 68
+      }
+    },
+    {
+      "Kind": "gem",
+      "Bounds": {
+        "X": 940,
+        "Y": 790,
+        "Width": 34,
+        "Height": 34
+      }
+    },
+    {
+      "Kind": "gem",
+      "Bounds": {
+        "X": 1640,
+        "Y": 600,
+        "Width": 34,
+        "Height": 34
+      }
+    },
+    {
+      "Kind": "gem",
+      "Bounds": {
+        "X": 640,
+        "Y": 220,
+        "Width": 17,
+        "Height": 17
+      }
+    },
+    {
+      "Kind": "gem",
+      "Bounds": {
+        "X": 735,
+        "Y": 135,
+        "Width": 17,
+        "Height": 17
+      }
+    },
+    {
+      "Kind": "gem",
+      "Bounds": {
+        "X": 910,
+        "Y": 850,
+        "Width": 17,
+        "Height": 17
+      }
+    },
+    {
+      "Kind": "gem",
+      "Bounds": {
+        "X": 1595,
+        "Y": 560,
+        "Width": 17,
+        "Height": 17
+      }
+    },
+    {
+      "Kind": "gem",
+      "Bounds": {
+        "X": 1695,
+        "Y": 650,
+        "Width": 17,
+        "Height": 17
+      }
+    }
+  ],
+  "Hazards": [
+    {
+      "Bounds": {
+        "X": 350,
+        "Y": 220,
+        "Width": 64,
+        "Height": 64
+      },
+      "Velocity": {
+        "X": 0,
+        "Y": 330
+      },
+      "Min": 180,
+      "Max": 780
+    },
+    {
+      "Bounds": {
+        "X": 694,
+        "Y": 740,
+        "Width": 64,
+        "Height": 64
+      },
+      "Velocity": {
+        "X": 300,
+        "Y": 0
+      },
+      "Min": 634,
+      "Max": 764
+    },
+    {
+      "Bounds": {
+        "X": 930,
+        "Y": 360,
+        "Width": 64,
+        "Height": 64
+      },
+      "Velocity": {
+        "X": 0,
+        "Y": 270
+      },
+      "Min": 330,
+      "Max": 840
+    },
+    {
+      "Bounds": {
+        "X": 1190,
+        "Y": 640,
+        "Width": 64,
+        "Height": 64
+      },
+      "Velocity": {
+        "X": 340,
+        "Y": 0
+      },
+      "Min": 1160,
+      "Max": 1280
+    },
+    {
+      "Bounds": {
+        "X": 1620,
+        "Y": 250,
+        "Width": 64,
+        "Height": 64
+      },
+      "Velocity": {
+        "X": 0,
+        "Y": 300
+      },
+      "Min": 210,
+      "Max": 660
+    }
+  ],
+  "GemBagCapacity": 24
 }
