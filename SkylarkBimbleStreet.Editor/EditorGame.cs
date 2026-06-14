@@ -434,11 +434,39 @@ internal sealed class EditorGame : Game
         DrawRectangle(player, new Color(86, 168, 255));
         DrawFrame(player, Color.White, 2);
 
+        DrawOverlapWarnings(map);
+
         if (_selectedIndex >= 0)
         {
             var selected = Map(_items[_selectedIndex].GetBounds(), map);
             DrawFrame(Inflate(selected, 4), new Color(255, 255, 255), 3);
             DrawRectangle(new Rectangle(selected.Right - HandleSize / 2, selected.Bottom - HandleSize / 2, HandleSize, HandleSize), Color.White);
+        }
+    }
+
+    private void DrawOverlapWarnings(Rectangle map)
+    {
+        var overlappedIndexes = new HashSet<int>();
+        for (var i = 0; i < _items.Count; i++)
+        {
+            var first = _items[i].GetBounds();
+            for (var j = i + 1; j < _items.Count; j++)
+            {
+                var second = _items[j].GetBounds();
+                if (!first.Intersects(second))
+                {
+                    continue;
+                }
+
+                overlappedIndexes.Add(i);
+                overlappedIndexes.Add(j);
+                DrawRectangle(Map(Rectangle.Intersect(first, second), map), new Color(255, 170, 30, 120));
+            }
+        }
+
+        foreach (var index in overlappedIndexes)
+        {
+            DrawFrame(Inflate(Map(_items[index].GetBounds(), map), 2), new Color(255, 190, 40), 3);
         }
     }
 
@@ -476,7 +504,27 @@ internal sealed class EditorGame : Game
     {
         var selected = _selectedIndex >= 0 ? _items[_selectedIndex].Kind : "none";
         var snap = _snapToGrid ? $"snap {SnapGridSize}px" : "snap off";
-        Window.Title = $"SkylarkBimbleStreet Editor - {_stageFiles[_stageIndex].Name} - {_stage.Name} - selected {selected} - {snap} - {_status} - PageUp/PageDown stage, S save, R reload, G snap, T kind, 1 wall, 2 gem, 3 ticket, 4 hazard, Delete remove";
+        var overlaps = CountOverlaps();
+        var overlapStatus = overlaps > 0 ? $" - overlaps {overlaps}" : string.Empty;
+        Window.Title = $"SkylarkBimbleStreet Editor - {_stageFiles[_stageIndex].Name} - {_stage.Name} - selected {selected} - {snap}{overlapStatus} - {_status} - PageUp/PageDown stage, S save, R reload, G snap, T kind, 1 wall, 2 gem, 3 ticket, 4 hazard, Delete remove";
+    }
+
+    private int CountOverlaps()
+    {
+        var count = 0;
+        for (var i = 0; i < _items.Count; i++)
+        {
+            var first = _items[i].GetBounds();
+            for (var j = i + 1; j < _items.Count; j++)
+            {
+                if (first.Intersects(_items[j].GetBounds()))
+                {
+                    count++;
+                }
+            }
+        }
+
+        return count;
     }
 
     private Rectangle GetMapRectangle()
