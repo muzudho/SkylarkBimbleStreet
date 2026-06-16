@@ -15,6 +15,8 @@ public class Game1 : Game
     private const float JetPlayerSpeedMultiplier = 1.55f;
     private const float RollerSlideMultiplier = 0.82f;
     private const int PlayerSize = 46;
+    private const int SmallPlayerSize = 30;
+    private const float SmallPlayerSpeedMultiplier = 0.5f;
     private const int GemShardPixelSize = 17;
     private const float RespawnInvincibleSeconds = 0.8f;
     private const float ExitOpenDelaySeconds = 0.32f;
@@ -83,13 +85,16 @@ public class Game1 : Game
     private Rectangle[] _gemBounds = [];
     private Rectangle[] _jetBounds = [];
     private Rectangle[] _rollerBounds = [];
+    private Rectangle[] _smallBounds = [];
     private Hazard[] _hazards = [];
     private bool[] _ticketPiecesCollected = [];
     private bool[] _gemsCollected = [];
     private bool[] _jetsCollected = [];
     private bool[] _rollersCollected = [];
+    private bool[] _smallsCollected = [];
     private bool _jetActive;
     private bool _rollerActive;
+    private bool _smallActive;
     private bool[] _stagesCleared = [];
     private bool[] _stagePassRecords = [];
     private bool[] _stageNoDamageRecords = [];
@@ -376,6 +381,16 @@ public class Game1 : Game
             }
 
             DrawRoller(_rollerBounds[i], 0f);
+        }
+
+        for (var i = 0; i < _smallBounds.Length; i++)
+        {
+            if (_smallsCollected[i])
+            {
+                continue;
+            }
+
+            DrawSmall(_smallBounds[i]);
         }
 
         for (var i = 0; i < _gemBounds.Length; i++)
@@ -880,6 +895,12 @@ public class Game1 : Game
             DrawRoller(mapped, 0f);
         }
 
+        foreach (var small in stage.Smalls)
+        {
+            var mapped = MapStageRectangle(small, map);
+            DrawSmall(mapped);
+        }
+
         foreach (var hazard in stage.Hazards)
         {
             var mapped = MapStageRectangle(hazard.Bounds, map);
@@ -1298,6 +1319,13 @@ public class Game1 : Game
         DrawLine(new Vector2(lineX, bounds.Y + inset), new Vector2(lineX, bounds.Bottom - inset), Math.Max(2, inset / 2), detail);
         DrawRectangle(new Rectangle(bounds.X + inset, bounds.Y + inset, Math.Max(4, bounds.Width / 4), Math.Max(3, bounds.Height / 8)), detail);
     }
+    private void DrawSmall(Rectangle bounds)
+    {
+        DrawRectangle(bounds, CurrentPalette.PlayerInner);
+        DrawFrame(bounds, CurrentPalette.GemShine, Math.Max(3, bounds.Width / 8));
+        DrawRectangle(Inset(bounds, Math.Max(6, bounds.Width / 4)), CurrentPalette.Background);
+    }
+
     private void DrawRoller(Rectangle bounds, float angle)
     {
         DrawRectangle(bounds, CurrentPalette.WallInner);
@@ -1693,7 +1721,17 @@ public class Game1 : Game
 
         move.Normalize();
         _lastMoveDirection = move;
-        var speed = _jetActive ? PlayerSpeed * JetPlayerSpeedMultiplier : PlayerSpeed;
+        var speed = PlayerSpeed;
+        if (_jetActive)
+        {
+            speed *= JetPlayerSpeedMultiplier;
+        }
+
+        if (_smallActive)
+        {
+            speed *= SmallPlayerSpeedMultiplier;
+        }
+
         var velocity = move * speed * elapsed;
         TryMove(new Vector2(velocity.X, 0f));
         TryMove(new Vector2(0f, velocity.Y));
@@ -1715,7 +1753,11 @@ public class Game1 : Game
 
         var player = GetPlayerBounds();
         DrawRectangle(player, _cleared ? CurrentPalette.ExitOpen : CurrentPalette.Player);
-        DrawRectangle(Inset(player, 10), _jetActive ? CurrentPalette.GemShine : CurrentPalette.PlayerInner);
+        DrawRectangle(Inset(player, Math.Max(6, GetCurrentPlayerSize() / 5)), _jetActive ? CurrentPalette.GemShine : CurrentPalette.PlayerInner);
+        if (_smallActive)
+        {
+            DrawFrame(new Rectangle(player.X - 5, player.Y - 5, player.Width + 10, player.Height + 10), CurrentPalette.PlayerInner, 3);
+        }
         if (_rollerActive)
         {
             var angle = (float)(_currentStageElapsedSeconds * 8.0d);
@@ -1860,6 +1902,20 @@ public class Game1 : Game
             AddGemCollectEffect(_rollerBounds[i].Center.ToVector2(), i + _ticketPieceBounds.Length + _gemBounds.Length + _jetBounds.Length);
         }
 
+        for (var i = 0; i < _smallBounds.Length; i++)
+        {
+            if (_smallsCollected[i] || !player.Intersects(_smallBounds[i]))
+            {
+                continue;
+            }
+
+            _smallsCollected[i] = true;
+            ActivateSmall(_smallBounds[i].Center.ToVector2());
+            LogPlayEvent(PlayEventKind.Small, _currentStageIndex, _smallBounds[i].Center.ToVector2(), _currentStageElapsedSeconds, i);
+            PlaySound(_gemSound, 0.68f);
+            AddGemCollectEffect(_smallBounds[i].Center.ToVector2(), i + _ticketPieceBounds.Length + _gemBounds.Length + _jetBounds.Length + _rollerBounds.Length);
+        }
+
         for (var i = 0; i < _gemBounds.Length; i++)
         {
             if (_gemsCollected[i] || !player.Intersects(_gemBounds[i]))
@@ -1887,6 +1943,34 @@ public class Game1 : Game
         }
     }
 
+    private void ActivateSmall(Vector2 itemCenter)
+    {
+        if (_smallActive)
+        {
+            return;
+        }
+
+        var oldBounds = GetPlayerBounds();
+        _smallActive = true;
+        _playerPosition = oldBounds.Center.ToVector2() - new Vector2(SmallPlayerSize / 2f, SmallPlayerSize / 2f);
+        if (CollidesWithWall(GetPlayerBounds()))
+        {
+            _playerPosition = oldBounds.Center.ToVector2() - new Vector2(SmallPlayerSize / 2f, SmallPlayerSize / 2f);
+        }
+    }
+
+    private bool CollidesWithWall(Rectangle bounds)
+    {
+        foreach (var wall in _walls)
+        {
+            if (bounds.Intersects(wall))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
     private bool IsGemBagFull() => CountCollectedGemShards() >= GetCurrentGemBagCapacity();
 
     private void ReactToFullGemBag()
@@ -2026,6 +2110,7 @@ public class Game1 : Game
         _invincibleTimeRemaining = 0f;
         _jetActive = false;
         _rollerActive = false;
+        _smallActive = false;
         PlaySound(_ambulanceSirenSound, 0.72f);
     }
 
@@ -2562,13 +2647,16 @@ public class Game1 : Game
         _gemBounds = stage.Gems;
         _jetBounds = stage.Jets;
         _rollerBounds = stage.Rollers;
+        _smallBounds = stage.Smalls;
         _hazards = (Hazard[])stage.Hazards.Clone();
         _ticketPiecesCollected = new bool[_ticketPieceBounds.Length];
         _gemsCollected = new bool[_gemBounds.Length];
         _jetsCollected = new bool[_jetBounds.Length];
         _rollersCollected = new bool[_rollerBounds.Length];
+        _smallsCollected = new bool[_smallBounds.Length];
         _jetActive = false;
         _rollerActive = false;
+        _smallActive = false;
         _gemCollectEffects.Clear();
         _gemBagFullNudgeRemaining = 0f;
         _gemBagFullSoundCooldownRemaining = 0f;
@@ -2706,7 +2794,13 @@ public class Game1 : Game
     /// プレイヤーの当たり判定を取得します。
     /// </summary>
     /// <returns>プレイヤーの当たり判定を表す矩形</returns>
-    private Rectangle GetPlayerBounds() => new((int)_playerPosition.X, (int)_playerPosition.Y, PlayerSize, PlayerSize);
+    private int GetCurrentPlayerSize() => _smallActive ? SmallPlayerSize : PlayerSize;
+
+    private Rectangle GetPlayerBounds()
+    {
+        var size = GetCurrentPlayerSize();
+        return new Rectangle((int)_playerPosition.X, (int)_playerPosition.Y, size, size);
+    }
 
     /// <summary>
     /// 出口の当たり判定を取得します。
@@ -3091,6 +3185,7 @@ public class Game1 : Game
         Gem,
         Jet,
         Roller,
+        Small,
         Death,
         Clear,
         FullClear,

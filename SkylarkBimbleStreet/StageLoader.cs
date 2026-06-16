@@ -73,6 +73,7 @@ internal static class StageLoader
             gems: items.Gems,
             jets: items.Jets,
             rollers: items.Rollers,
+            smalls: items.Smalls,
             gemBagCapacity: data.GemBagCapacity ?? CalculateDefaultGemBagCapacity(items.Gems),
             hazards: Require(data.Hazards, stageFile, "hazards").Select(hazard => ToHazard(hazard, stageFile)).ToArray());
     }
@@ -101,7 +102,7 @@ internal static class StageLoader
             }
         }
 
-        return new StageItems(ticketPieces.ToArray(), gems.ToArray(), [], []);
+        return new StageItems(ticketPieces.ToArray(), gems.ToArray(), [], [], []);
     }
 
     private static StageItems LoadExplicitItems(ItemData[] items, string stageFile)
@@ -110,6 +111,7 @@ internal static class StageLoader
         var gems = new List<Rectangle>();
         var jets = new List<Rectangle>();
         var rollers = new List<Rectangle>();
+        var smalls = new List<Rectangle>();
         for (var i = 0; i < items.Length; i++)
         {
             var item = Require(items[i], stageFile, $"items[{i}]");
@@ -129,12 +131,15 @@ internal static class StageLoader
                 case "roller":
                     rollers.Add(bounds);
                     break;
+                case "small":
+                    smalls.Add(bounds);
+                    break;
                 default:
                     throw new InvalidOperationException($"Stage file '{stageFile}' has unknown item kind '{item.Kind}' at items[{i}].kind.");
             }
         }
 
-        return new StageItems(ticketPieces.ToArray(), gems.ToArray(), jets.ToArray(), rollers.ToArray());
+        return new StageItems(ticketPieces.ToArray(), gems.ToArray(), jets.ToArray(), rollers.ToArray(), smalls.ToArray());
     }
 
     private static int CalculateDefaultGemBagCapacity(Rectangle[] gems)
@@ -204,5 +209,5 @@ internal static class StageLoader
         return value;
     }
 
-    private readonly record struct StageItems(Rectangle[] TicketPieces, Rectangle[] Gems, Rectangle[] Jets, Rectangle[] Rollers);
+    private readonly record struct StageItems(Rectangle[] TicketPieces, Rectangle[] Gems, Rectangle[] Jets, Rectangle[] Rollers, Rectangle[] Smalls);
 }
