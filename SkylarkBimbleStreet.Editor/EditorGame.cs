@@ -19,6 +19,8 @@ internal sealed class EditorGame : Game
     private const int ToolButtonSize = 30;
     private const int ToolButtonGap = 8;
     private const int SnapGridSize = 40;
+    private const int NormalPlayerGhostSize = 46;
+    private const int SmallPlayerGhostSize = 30;
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -166,6 +168,7 @@ internal sealed class EditorGame : Game
         DrawRectangle(map, new Color(22, 25, 31));
         DrawGrid(map);
         DrawStage(map);
+        DrawPlayerGhosts(Mouse.GetState().Position, map);
         DrawAddToolbar(map);
         DrawFrame(map, new Color(150, 160, 174), 2);
 
@@ -516,7 +519,7 @@ internal sealed class EditorGame : Game
     private void RebuildItems()
     {
         _items.Clear();
-        _items.Add(new EditableItem("player start", () => CenteredBounds(_stage.PlayerStart, 46, 46), bounds => SetCenter(_stage.PlayerStart, bounds)));
+        _items.Add(new EditableItem("player start", () => CenteredBounds(_stage.PlayerStart, NormalPlayerGhostSize, NormalPlayerGhostSize), bounds => SetCenter(_stage.PlayerStart, bounds)));
         _items.Add(new EditableItem("exit", () => ToRectangle(_stage.ExitBounds), bounds => FromRectangle(_stage.ExitBounds, bounds)));
         _items.Add(new EditableItem("bus stop", () => ToRectangle(_stage.BusStopBounds), bounds => FromRectangle(_stage.BusStopBounds, bounds)));
         _items.Add(new EditableItem("hospital", () => ToRectangle(_stage.HospitalBounds), bounds => FromRectangle(_stage.HospitalBounds, bounds)));
@@ -599,7 +602,7 @@ internal sealed class EditorGame : Game
             DrawRectangle(Map(hazard.Bounds, map), new Color(220, 76, 92));
         }
 
-        var player = Map(CenteredBounds(_stage.PlayerStart, 46, 46), map);
+        var player = Map(CenteredBounds(_stage.PlayerStart, NormalPlayerGhostSize, NormalPlayerGhostSize), map);
         DrawRectangle(player, new Color(86, 168, 255));
         DrawFrame(player, Color.White, 2);
 
@@ -614,6 +617,42 @@ internal sealed class EditorGame : Game
     }
 
 
+    private void DrawPlayerGhosts(Point screenPosition, Rectangle map)
+    {
+        if (!map.Contains(screenPosition))
+        {
+            return;
+        }
+
+        var world = ScreenToWorld(screenPosition, map);
+        var normal = CenteredBounds(world, NormalPlayerGhostSize, NormalPlayerGhostSize);
+        var small = CenteredBounds(world, SmallPlayerGhostSize, SmallPlayerGhostSize);
+        DrawPlayerGhost(normal, map, new Color(86, 168, 255), new Color(255, 95, 95), CollidesWithWall(normal));
+        DrawPlayerGhost(small, map, new Color(230, 248, 255), new Color(255, 150, 95), CollidesWithWall(small));
+    }
+
+    private void DrawPlayerGhost(Rectangle bounds, Rectangle map, Color passColor, Color blockedColor, bool blocked)
+    {
+        var mapped = Map(bounds, map);
+        var color = blocked ? blockedColor : passColor;
+        DrawRectangle(mapped, new Color(color.R, color.G, color.B, (byte)74));
+        DrawFrame(mapped, new Color(color.R, color.G, color.B, (byte)220), blocked ? 3 : 2);
+        DrawRectangle(new Rectangle(mapped.X, mapped.Center.Y - 1, mapped.Width, 2), new Color(color.R, color.G, color.B, (byte)190));
+        DrawRectangle(new Rectangle(mapped.Center.X - 1, mapped.Y, 2, mapped.Height), new Color(color.R, color.G, color.B, (byte)190));
+    }
+
+    private bool CollidesWithWall(Rectangle bounds)
+    {
+        foreach (var wall in _stage.Walls)
+        {
+            if (bounds.Intersects(ToRectangle(wall)))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
     private void DrawAddToolbar(Rectangle map)
     {
         foreach (var button in GetAddToolButtons(map))
@@ -894,6 +933,7 @@ internal sealed class EditorGame : Game
     }
 
     private static Rectangle CenteredBounds(Vector2Data center, int width, int height) => new((int)center.X, (int)center.Y, width, height);
+    private static Rectangle CenteredBounds(Point center, int width, int height) => new(center.X - width / 2, center.Y - height / 2, width, height);
 
     private static void SetCenter(Vector2Data position, Rectangle bounds)
     {
