@@ -19,6 +19,7 @@ public class Game1 : Game
     private const float SmallPlayerSpeedMultiplier = 0.5f;
     private const int GemShardPixelSize = 17;
     private const float RespawnInvincibleSeconds = 0.8f;
+    private const float StageStartNormalPulseSeconds = 0.58f;
     private const float ExitOpenDelaySeconds = 0.32f;
     private const float ExitOpenFlashSeconds = 0.55f;
     private const float GemCollectEffectSeconds = 0.34f;
@@ -152,6 +153,7 @@ public class Game1 : Game
     private float _stageSelectQuickMoveTimeRemaining;
     private float _stageSelectMoveRepeatTimeRemaining;
     private float _invincibleTimeRemaining;
+    private float _stageStartNormalPulseRemaining;
     private float _deathRespawnTimeRemaining;
     private float _exitOpenDelayRemaining;
     private float _exitOpenFlashRemaining;
@@ -277,6 +279,7 @@ public class Game1 : Game
             _currentStageElapsedSeconds += elapsed;
             _stageElapsedSeconds[_currentStageIndex] += elapsed;
             _invincibleTimeRemaining = Math.Max(0f, _invincibleTimeRemaining - elapsed);
+            _stageStartNormalPulseRemaining = Math.Max(0f, _stageStartNormalPulseRemaining - elapsed);
             _exitOpenFlashRemaining = Math.Max(0f, _exitOpenFlashRemaining - elapsed);
             _gemBagFullNudgeRemaining = Math.Max(0f, _gemBagFullNudgeRemaining - elapsed);
             _gemBagFullSoundCooldownRemaining = Math.Max(0f, _gemBagFullSoundCooldownRemaining - elapsed);
@@ -1768,6 +1771,22 @@ public class Game1 : Game
             DrawFrame(new Rectangle(player.X - 7, player.Y - 7, player.Width + 14, player.Height + 14), CurrentPalette.StageCurrent, 4);
             DrawLine(new Vector2(player.X - 18, player.Center.Y), new Vector2(player.X - 4, player.Center.Y), 5, CurrentPalette.GemShine);
         }
+
+        DrawStageStartNormalPulse(player);
+    }
+
+    private void DrawStageStartNormalPulse(Rectangle player)
+    {
+        if (_stageStartNormalPulseRemaining <= 0f || _jetActive || _rollerActive || _smallActive)
+        {
+            return;
+        }
+
+        var progress = 1f - _stageStartNormalPulseRemaining / StageStartNormalPulseSeconds;
+        var spread = 8 + (int)(22f * progress);
+        var alpha = (byte)(190f * (1f - progress));
+        DrawFrame(new Rectangle(player.X - spread, player.Y - spread, player.Width + spread * 2, player.Height + spread * 2), WithAlpha(CurrentPalette.PlayerInner, alpha), 4);
+        DrawFrame(new Rectangle(player.X - 4, player.Y - 4, player.Width + 8, player.Height + 8), WithAlpha(CurrentPalette.GemShine, (byte)(120f * (1f - progress))), 3);
     }
 
     private void TryMove(Vector2 delta)
@@ -2657,6 +2676,7 @@ public class Game1 : Game
         _jetActive = false;
         _rollerActive = false;
         _smallActive = false;
+        _stageStartNormalPulseRemaining = StageStartNormalPulseSeconds;
         _gemCollectEffects.Clear();
         _gemBagFullNudgeRemaining = 0f;
         _gemBagFullSoundCooldownRemaining = 0f;
