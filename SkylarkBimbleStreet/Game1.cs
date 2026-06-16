@@ -35,6 +35,8 @@ public class Game1 : Game
     private const float StageSelectChainMoveOffset = StageSelectCardGap * 0.58f;
     private const float StageSelectSlideReturnRate = 3.0f;
     private const float StageSelectMoveRepeatSeconds = 0.28f;
+    private const int HudBandHeight = 150;
+    private const int HudPadding = 42;
     private const int PauseOptionCount = 5;
     private const int SoundTestEntryOption = 4;
     private const int StageMoveSoundVariantCount = 3;
@@ -304,8 +306,12 @@ public class Game1 : Game
         GraphicsDevice.SetRenderTarget(_scene);
         GraphicsDevice.Clear(_backgroundColor);
 
+        _spriteBatch.Begin(samplerState: SamplerState.PointClamp, transformMatrix: GetPlayfieldTransform());
+        DrawPlayfield();
+        _spriteBatch.End();
+
         _spriteBatch.Begin(samplerState: SamplerState.PointClamp);
-        DrawScene();
+        DrawHud();
         _spriteBatch.End();
 
         GraphicsDevice.SetRenderTarget(null);
@@ -318,7 +324,7 @@ public class Game1 : Game
         base.Draw(gameTime);
     }
 
-    private void DrawScene()
+    private void DrawPlayfield()
     {
         DrawRectangle(new Rectangle(0, 0, VirtualWidth, VirtualHeight), _backgroundColor);
         DrawGrid();
@@ -366,7 +372,6 @@ public class Game1 : Game
         DrawBusPassage();
         DrawBusArrival();
         DrawExitOpenRays(GetExitBounds());
-        DrawHud();
     }
 
 
@@ -553,27 +558,50 @@ public class Game1 : Game
 
     private void DrawHud()
     {
-        var ticketHudWidth = Math.Max(120, 40 + _ticketPieceBounds.Length * 58);
-        DrawRectangle(new Rectangle(58, 58, ticketHudWidth, 22), CurrentPalette.HudBackground);
+        DrawRectangle(new Rectangle(0, 0, VirtualWidth, HudBandHeight), WithAlpha(CurrentPalette.HudBackground, 226));
+        DrawRectangle(new Rectangle(0, HudBandHeight - 5, VirtualWidth, 5), WithAlpha(CurrentPalette.WallInner, 190));
+
+        const int sectionY = 32;
+        const int sectionHeight = 82;
+        const int sectionGap = 28;
+        var ticketHudWidth = Math.Max(148, 42 + _ticketPieceBounds.Length * 58);
+        var ticketSection = new Rectangle(HudPadding, sectionY, ticketHudWidth, sectionHeight);
+        DrawRectangle(ticketSection, WithAlpha(CurrentPalette.HudBackground, 210));
+        DrawFrame(ticketSection, WithAlpha(CurrentPalette.WallInner, 180), 3);
         for (var i = 0; i < _ticketPieceBounds.Length; i++)
         {
             var body = _ticketPiecesCollected[i] ? CurrentPalette.ExitOpen : CurrentPalette.HudInactive;
             var detail = _ticketPiecesCollected[i] ? CurrentPalette.GemShine : CurrentPalette.WallInner;
-            DrawTicketPiece(new Rectangle(76 + i * 58, 54, 34, 38), i, body, detail);
+            DrawTicketPiece(new Rectangle(ticketSection.X + 22 + i * 58, ticketSection.Y + 22, 34, 38), i, body, detail);
         }
 
-        DrawGemBag(new Rectangle(58, 92, 184, 42), CountCollectedGemShards(), GetCurrentGemBagCapacity(), true);
+        var gemBagSection = new Rectangle(ticketSection.Right + sectionGap, sectionY, 250, sectionHeight);
+        DrawRectangle(gemBagSection, WithAlpha(CurrentPalette.HudBackground, 210));
+        DrawFrame(gemBagSection, WithAlpha(CurrentPalette.WallInner, 180), 3);
+        DrawGemBag(new Rectangle(gemBagSection.X + 26, gemBagSection.Y + 17, 198, 48), CountCollectedGemShards(), GetCurrentGemBagCapacity(), true);
 
-        for (var i = 0; i < Math.Min(_deaths, 8); i++)
-        {
-            DrawMissMark(new Rectangle(70 + i * 38, 112, 24, 24));
-        }
-
-        var stageIndicatorStartX = VirtualWidth - 58 - (_stages.Length * 54 - 16);
+        const int stageIndicatorSize = 34;
+        const int stageIndicatorGap = 14;
+        var stageIndicatorWidth = _stages.Length * (stageIndicatorSize + stageIndicatorGap) - stageIndicatorGap;
+        var stageSection = new Rectangle(VirtualWidth - HudPadding - stageIndicatorWidth - 42, sectionY, stageIndicatorWidth + 42, sectionHeight);
+        DrawRectangle(stageSection, WithAlpha(CurrentPalette.HudBackground, 210));
+        DrawFrame(stageSection, WithAlpha(CurrentPalette.WallInner, 180), 3);
+        var stageIndicatorStartX = stageSection.X + 21;
         for (var i = 0; i < _stages.Length; i++)
         {
             var color = i == _currentStageIndex ? CurrentPalette.StageCurrent : CurrentPalette.HudInactive;
-            DrawRectangle(new Rectangle(stageIndicatorStartX + i * 54, 58, 38, 38), color);
+            DrawRectangle(new Rectangle(stageIndicatorStartX + i * (stageIndicatorSize + stageIndicatorGap), stageSection.Y + 24, stageIndicatorSize, stageIndicatorSize), color);
+        }
+
+        var missSectionX = gemBagSection.Right + sectionGap;
+        var missSectionWidth = Math.Max(118, stageSection.X - missSectionX - sectionGap);
+        var missSection = new Rectangle(missSectionX, sectionY, missSectionWidth, sectionHeight);
+        DrawRectangle(missSection, WithAlpha(CurrentPalette.HudBackground, 170));
+        DrawFrame(missSection, WithAlpha(CurrentPalette.WallInner, 140), 3);
+        var maxVisibleMisses = Math.Min(8, Math.Max(0, (missSection.Width - 32) / 38));
+        for (var i = 0; i < Math.Min(_deaths, maxVisibleMisses); i++)
+        {
+            DrawMissMark(new Rectangle(missSection.X + 18 + i * 38, missSection.Y + 29, 24, 24));
         }
 
         if (_cleared)
@@ -2574,6 +2602,14 @@ public class Game1 : Game
         var height = (int)(VirtualHeight * scale);
         return new Rectangle((viewport.Width - width) / 2, (viewport.Height - height) / 2, width, height);
     }
+    private Matrix GetPlayfieldTransform()
+    {
+        var scale = (float)(VirtualHeight - HudBandHeight) / VirtualHeight;
+        var scaledWidth = VirtualWidth * scale;
+        var offsetX = (VirtualWidth - scaledWidth) * 0.5f;
+        return Matrix.CreateScale(scale, scale, 1f) * Matrix.CreateTranslation(offsetX, HudBandHeight, 0f);
+    }
+
 
     /// <summary>
     /// 矩形の描画
