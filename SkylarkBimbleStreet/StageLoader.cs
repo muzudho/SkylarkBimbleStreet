@@ -71,6 +71,7 @@ internal static class StageLoader
             walls: Require(data.Walls, stageFile, "walls").Select(ToRectangle).ToArray(),
             ticketPieces: items.TicketPieces,
             gems: items.Gems,
+            jets: items.Jets,
             gemBagCapacity: data.GemBagCapacity ?? CalculateDefaultGemBagCapacity(items.Gems),
             hazards: Require(data.Hazards, stageFile, "hazards").Select(hazard => ToHazard(hazard, stageFile)).ToArray());
     }
@@ -99,13 +100,14 @@ internal static class StageLoader
             }
         }
 
-        return new StageItems(ticketPieces.ToArray(), gems.ToArray());
+        return new StageItems(ticketPieces.ToArray(), gems.ToArray(), []);
     }
 
     private static StageItems LoadExplicitItems(ItemData[] items, string stageFile)
     {
         var ticketPieces = new List<Rectangle>();
         var gems = new List<Rectangle>();
+        var jets = new List<Rectangle>();
         for (var i = 0; i < items.Length; i++)
         {
             var item = Require(items[i], stageFile, $"items[{i}]");
@@ -119,12 +121,15 @@ internal static class StageLoader
                 case "gem":
                     gems.Add(bounds);
                     break;
+                case "jet":
+                    jets.Add(bounds);
+                    break;
                 default:
                     throw new InvalidOperationException($"Stage file '{stageFile}' has unknown item kind '{item.Kind}' at items[{i}].kind.");
             }
         }
 
-        return new StageItems(ticketPieces.ToArray(), gems.ToArray());
+        return new StageItems(ticketPieces.ToArray(), gems.ToArray(), jets.ToArray());
     }
 
     private static int CalculateDefaultGemBagCapacity(Rectangle[] gems)
@@ -194,5 +199,5 @@ internal static class StageLoader
         return value;
     }
 
-    private readonly record struct StageItems(Rectangle[] TicketPieces, Rectangle[] Gems);
+    private readonly record struct StageItems(Rectangle[] TicketPieces, Rectangle[] Gems, Rectangle[] Jets);
 }

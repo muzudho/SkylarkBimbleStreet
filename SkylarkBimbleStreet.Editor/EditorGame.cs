@@ -533,7 +533,7 @@ internal sealed class EditorGame : Game
                 () => ToRectangle(item.Bounds),
                 bounds => FromRectangle(item.Bounds, bounds),
                 () => _stage.Items = RemoveItem(_stage.Items, item),
-                () => item.Kind = IsTicketPiece(item) ? "gem" : "ticketPiece"));
+                () => CycleItemKind(item)));
         }
 
         foreach (var hazard in _stage.Hazards)
@@ -563,6 +563,13 @@ internal sealed class EditorGame : Game
             {
                 DrawRectangle(mapped, new Color(172, 116, 255));
                 DrawFrame(mapped, new Color(230, 210, 255), 2);
+                continue;
+            }
+
+            if (IsJet(item))
+            {
+                DrawRectangle(mapped, new Color(81, 161, 255));
+                DrawFrame(mapped, new Color(197, 228, 255), 2);
                 continue;
             }
 
@@ -816,6 +823,18 @@ internal sealed class EditorGame : Game
     private static string GetItemDisplayName(ItemData item) => IsTicketPiece(item) ? "ticket piece" : item.Kind;
 
     private static bool IsTicketPiece(ItemData item) => item.Kind is "ticketPiece" or "ticket piece";
+
+    private static bool IsJet(ItemData item) => item.Kind is "jet";
+
+    private static void CycleItemKind(ItemData item)
+    {
+        item.Kind = item.Kind switch
+        {
+            "gem" => "ticketPiece",
+            "ticketPiece" or "ticket piece" => "jet",
+            _ => "gem",
+        };
+    }
 
     private static int[] ChooseTicketPieceIndexes(int collectibleCount)
     {
