@@ -167,6 +167,15 @@
       }
     },
     {
+      "Kind": "roller",
+      "Bounds": {
+        "X": 190,
+        "Y": 520,
+        "Width": 42,
+        "Height": 42
+      }
+    },
+    {
       "Kind": "gem",
       "Bounds": {
         "X": 770,

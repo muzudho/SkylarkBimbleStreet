@@ -573,6 +573,13 @@ internal sealed class EditorGame : Game
                 continue;
             }
 
+            if (IsRoller(item))
+            {
+                DrawRectangle(mapped, new Color(88, 96, 116));
+                DrawFrame(mapped, new Color(255, 239, 151), 2);
+                continue;
+            }
+
             DrawRectangle(mapped, new Color(246, 202, 76));
             DrawFrame(mapped, new Color(255, 250, 170), 2);
         }
@@ -826,12 +833,15 @@ internal sealed class EditorGame : Game
 
     private static bool IsJet(ItemData item) => item.Kind is "jet";
 
+    private static bool IsRoller(ItemData item) => item.Kind is "roller";
+
     private static void CycleItemKind(ItemData item)
     {
         item.Kind = item.Kind switch
         {
             "gem" => "ticketPiece",
             "ticketPiece" or "ticket piece" => "jet",
+            "jet" => "roller",
             _ => "gem",
         };
     }

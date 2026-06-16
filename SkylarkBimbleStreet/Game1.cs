@@ -13,6 +13,7 @@ public class Game1 : Game
     private const int VirtualHeight = 1080;
     private const float PlayerSpeed = 520f;
     private const float JetPlayerSpeedMultiplier = 1.55f;
+    private const float RollerSlideMultiplier = 0.82f;
     private const int PlayerSize = 46;
     private const int GemShardPixelSize = 17;
     private const float RespawnInvincibleSeconds = 0.8f;
@@ -81,11 +82,14 @@ public class Game1 : Game
     private Rectangle[] _ticketPieceBounds = [];
     private Rectangle[] _gemBounds = [];
     private Rectangle[] _jetBounds = [];
+    private Rectangle[] _rollerBounds = [];
     private Hazard[] _hazards = [];
     private bool[] _ticketPiecesCollected = [];
     private bool[] _gemsCollected = [];
     private bool[] _jetsCollected = [];
+    private bool[] _rollersCollected = [];
     private bool _jetActive;
+    private bool _rollerActive;
     private bool[] _stagesCleared = [];
     private bool[] _stagePassRecords = [];
     private bool[] _stageNoDamageRecords = [];
@@ -362,6 +366,16 @@ public class Game1 : Game
             }
 
             DrawJet(_jetBounds[i]);
+        }
+
+        for (var i = 0; i < _rollerBounds.Length; i++)
+        {
+            if (_rollersCollected[i])
+            {
+                continue;
+            }
+
+            DrawRoller(_rollerBounds[i], 0f);
         }
 
         for (var i = 0; i < _gemBounds.Length; i++)
@@ -860,6 +874,12 @@ public class Game1 : Game
             DrawJet(mapped);
         }
 
+        foreach (var roller in stage.Rollers)
+        {
+            var mapped = MapStageRectangle(roller, map);
+            DrawRoller(mapped, 0f);
+        }
+
         foreach (var hazard in stage.Hazards)
         {
             var mapped = MapStageRectangle(hazard.Bounds, map);
@@ -1278,6 +1298,21 @@ public class Game1 : Game
         DrawLine(new Vector2(lineX, bounds.Y + inset), new Vector2(lineX, bounds.Bottom - inset), Math.Max(2, inset / 2), detail);
         DrawRectangle(new Rectangle(bounds.X + inset, bounds.Y + inset, Math.Max(4, bounds.Width / 4), Math.Max(3, bounds.Height / 8)), detail);
     }
+    private void DrawRoller(Rectangle bounds, float angle)
+    {
+        DrawRectangle(bounds, CurrentPalette.WallInner);
+        DrawFrame(bounds, CurrentPalette.GemShine, Math.Max(3, bounds.Width / 8));
+        DrawRollerBar(bounds, angle, CurrentPalette.GemShine);
+    }
+
+    private void DrawRollerBar(Rectangle bounds, float angle, Color color)
+    {
+        var direction = new Vector2(MathF.Cos(angle), MathF.Sin(angle));
+        var halfLength = Math.Max(8f, Math.Min(bounds.Width, bounds.Height) * 0.36f);
+        var center = bounds.Center.ToVector2();
+        DrawLine(center - direction * halfLength, center + direction * halfLength, Math.Max(4, Math.Min(bounds.Width, bounds.Height) / 9), color);
+    }
+
     private void DrawJet(Rectangle bounds)
     {
         var flame = new Rectangle(bounds.X + bounds.Width / 8, bounds.Bottom - bounds.Height / 4, bounds.Width * 3 / 4, bounds.Height / 3);
@@ -1681,6 +1716,11 @@ public class Game1 : Game
         var player = GetPlayerBounds();
         DrawRectangle(player, _cleared ? CurrentPalette.ExitOpen : CurrentPalette.Player);
         DrawRectangle(Inset(player, 10), _jetActive ? CurrentPalette.GemShine : CurrentPalette.PlayerInner);
+        if (_rollerActive)
+        {
+            var angle = (float)(_currentStageElapsedSeconds * 8.0d);
+            DrawRollerBar(player, angle, CurrentPalette.GemShine);
+        }
         if (_jetActive)
         {
             DrawFrame(new Rectangle(player.X - 7, player.Y - 7, player.Width + 14, player.Height + 14), CurrentPalette.StageCurrent, 4);
@@ -1701,7 +1741,55 @@ public class Game1 : Game
             }
 
             _playerPosition -= delta;
+            if (_rollerActive)
+            {
+                TryRollerSlide(delta);
+            }
+
             return;
+        }
+    }
+
+    private void TryRollerSlide(Vector2 blockedDelta)
+    {
+        var amount = MathF.Max(MathF.Abs(blockedDelta.X), MathF.Abs(blockedDelta.Y)) * RollerSlideMultiplier;
+        if (amount <= 0f)
+        {
+            return;
+        }
+
+        var slide = Vector2.Zero;
+        if (blockedDelta.Y < 0f)
+        {
+            slide.X = -amount;
+        }
+        else if (blockedDelta.X < 0f)
+        {
+            slide.Y = amount;
+        }
+        else if (blockedDelta.Y > 0f)
+        {
+            slide.X = amount;
+        }
+        else if (blockedDelta.X > 0f)
+        {
+            slide.Y = -amount;
+        }
+
+        TryMoveWithoutRoller(slide);
+    }
+
+    private void TryMoveWithoutRoller(Vector2 delta)
+    {
+        _playerPosition += delta;
+        var player = GetPlayerBounds();
+        foreach (var wall in _walls)
+        {
+            if (player.Intersects(wall))
+            {
+                _playerPosition -= delta;
+                return;
+            }
         }
     }
 
@@ -1756,6 +1844,20 @@ public class Game1 : Game
             LogPlayEvent(PlayEventKind.Jet, _currentStageIndex, _jetBounds[i].Center.ToVector2(), _currentStageElapsedSeconds, i);
             PlaySound(_gemSound, 0.72f);
             AddGemCollectEffect(_jetBounds[i].Center.ToVector2(), i + _ticketPieceBounds.Length + _gemBounds.Length);
+        }
+
+        for (var i = 0; i < _rollerBounds.Length; i++)
+        {
+            if (_rollersCollected[i] || !player.Intersects(_rollerBounds[i]))
+            {
+                continue;
+            }
+
+            _rollersCollected[i] = true;
+            _rollerActive = true;
+            LogPlayEvent(PlayEventKind.Roller, _currentStageIndex, _rollerBounds[i].Center.ToVector2(), _currentStageElapsedSeconds, i);
+            PlaySound(_gemSound, 0.78f);
+            AddGemCollectEffect(_rollerBounds[i].Center.ToVector2(), i + _ticketPieceBounds.Length + _gemBounds.Length + _jetBounds.Length);
         }
 
         for (var i = 0; i < _gemBounds.Length; i++)
@@ -1923,6 +2025,7 @@ public class Game1 : Game
         _deathRespawnTimeRemaining = DeathEffectSeconds;
         _invincibleTimeRemaining = 0f;
         _jetActive = false;
+        _rollerActive = false;
         PlaySound(_ambulanceSirenSound, 0.72f);
     }
 
@@ -2458,11 +2561,14 @@ public class Game1 : Game
         _ticketPieceBounds = stage.TicketPieces;
         _gemBounds = stage.Gems;
         _jetBounds = stage.Jets;
+        _rollerBounds = stage.Rollers;
         _hazards = (Hazard[])stage.Hazards.Clone();
         _ticketPiecesCollected = new bool[_ticketPieceBounds.Length];
         _gemsCollected = new bool[_gemBounds.Length];
         _jetsCollected = new bool[_jetBounds.Length];
+        _rollersCollected = new bool[_rollerBounds.Length];
         _jetActive = false;
+        _rollerActive = false;
         _gemCollectEffects.Clear();
         _gemBagFullNudgeRemaining = 0f;
         _gemBagFullSoundCooldownRemaining = 0f;
@@ -2984,6 +3090,7 @@ public class Game1 : Game
         TicketPiece,
         Gem,
         Jet,
+        Roller,
         Death,
         Clear,
         FullClear,
