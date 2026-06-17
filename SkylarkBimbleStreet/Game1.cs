@@ -170,6 +170,8 @@ public class Game1 : Game
     private Vector2 _lastMoveDirection = Vector2.UnitX;
     private Vector2 _playerFacingDirection = Vector2.UnitX;
     private Vector2 _playerInputDirection;
+    private Vector2 _lastWallParallelContactDirection;
+    private Vector2 _lastWallParallelMoveDirection;
     private int _inputContactWallIndex = -1;
     private Color _backgroundColor;
 
@@ -1926,9 +1928,33 @@ public class Game1 : Game
             {
                 TryRollerSlide(delta);
             }
+            else
+            {
+                TryBasicWallFollowSlide(delta);
+            }
 
             return;
         }
+
+        RememberWallParallelMove(delta);
+    }
+
+    private void TryBasicWallFollowSlide(Vector2 blockedDelta)
+    {
+        var amount = MathF.Max(MathF.Abs(blockedDelta.X), MathF.Abs(blockedDelta.Y));
+        if (amount <= 0f)
+        {
+            return;
+        }
+
+        var contactDirection = GetAxisDirection(blockedDelta);
+        var slideDirection = GetWallFollowSlideDirection(contactDirection);
+        if (slideDirection == Vector2.Zero)
+        {
+            return;
+        }
+
+        TryMoveWithoutRoller(slideDirection * amount);
     }
 
     private void TryRollerSlide(Vector2 blockedDelta)
@@ -1940,7 +1966,7 @@ public class Game1 : Game
         }
 
         var contactDirection = GetAxisDirection(blockedDelta);
-        var slideDirection = GetRollerSlideDirection(contactDirection);
+        var slideDirection = GetWallFollowSlideDirection(contactDirection);
         if (slideDirection == Vector2.Zero)
         {
             ClearRollerWallFollow();
@@ -1997,7 +2023,41 @@ public class Game1 : Game
         }
 
         _rollerContactDirection = newContactDirection;
-        _rollerSlideDirection = GetRollerSlideDirection(newContactDirection);
+        _rollerSlideDirection = GetWallFollowSlideDirection(newContactDirection);
+    }
+
+    private void RememberWallParallelMove(Vector2 delta)
+    {
+        var moveDirection = GetAxisDirection(delta);
+        if (moveDirection == Vector2.Zero)
+        {
+            return;
+        }
+
+        var contactDirections = new[] { Vector2.UnitX, -Vector2.UnitX, Vector2.UnitY, -Vector2.UnitY };
+        foreach (var contactDirection in contactDirections)
+        {
+            if (!ArePerpendicular(moveDirection, contactDirection) || !HasWallNear(contactDirection, WallContactProbeDistance))
+            {
+                continue;
+            }
+
+            _lastWallParallelContactDirection = contactDirection;
+            _lastWallParallelMoveDirection = moveDirection;
+            return;
+        }
+    }
+
+    private Vector2 GetWallFollowSlideDirection(Vector2 contactDirection)
+    {
+        if (_lastWallParallelMoveDirection != Vector2.Zero
+            && _lastWallParallelContactDirection == contactDirection
+            && ArePerpendicular(_lastWallParallelMoveDirection, contactDirection))
+        {
+            return _lastWallParallelMoveDirection;
+        }
+
+        return GetRightOfDirection(contactDirection);
     }
 
     private static Vector2 GetAxisDirection(Vector2 delta)
@@ -2010,30 +2070,17 @@ public class Game1 : Game
         return delta.Y < 0f ? new Vector2(0f, -1f) : delta.Y > 0f ? new Vector2(0f, 1f) : Vector2.Zero;
     }
 
-    private static Vector2 GetRollerSlideDirection(Vector2 contactDirection)
+    private static Vector2 GetRightOfDirection(Vector2 direction)
     {
-        if (contactDirection.Y < 0f)
+        if (direction == Vector2.Zero)
         {
-            return new Vector2(-1f, 0f);
+            return Vector2.Zero;
         }
 
-        if (contactDirection.X < 0f)
-        {
-            return new Vector2(0f, 1f);
-        }
-
-        if (contactDirection.Y > 0f)
-        {
-            return new Vector2(1f, 0f);
-        }
-
-        if (contactDirection.X > 0f)
-        {
-            return new Vector2(0f, -1f);
-        }
-
-        return Vector2.Zero;
+        return new Vector2(-direction.Y, direction.X);
     }
+
+    private static bool ArePerpendicular(Vector2 a, Vector2 b) => a != Vector2.Zero && b != Vector2.Zero && MathF.Abs(Vector2.Dot(a, b)) < 0.001f;
 
     private void ClearRollerWallFollow()
     {
@@ -2041,10 +2088,12 @@ public class Game1 : Game
         _rollerSlideDirection = Vector2.Zero;
     }
 
-    private bool HasWallNear(Vector2 direction)
+    private bool HasWallNear(Vector2 direction) => HasWallNear(direction, RollerWallProbeDistance);
+
+    private bool HasWallNear(Vector2 direction, int distance)
     {
         var player = GetPlayerBounds();
-        player.Offset((int)(direction.X * RollerWallProbeDistance), (int)(direction.Y * RollerWallProbeDistance));
+        player.Offset((int)(direction.X * distance), (int)(direction.Y * distance));
         return CollidesWithWall(player);
     }
 
@@ -2937,6 +2986,8 @@ public class Game1 : Game
         _playerPosition = _playerStart;
         _playerFacingDirection = Vector2.UnitX;
         _playerInputDirection = Vector2.Zero;
+        _lastWallParallelContactDirection = Vector2.Zero;
+        _lastWallParallelMoveDirection = Vector2.Zero;
         _inputContactWallIndex = -1;
         _lastMoveDirection = Vector2.UnitX;
         _invincibleTimeRemaining = grantInvincibility ? RespawnInvincibleSeconds : 0f;
@@ -2947,6 +2998,8 @@ public class Game1 : Game
         _playerPosition = GetHospitalRespawnPosition();
         _playerFacingDirection = Vector2.UnitX;
         _playerInputDirection = Vector2.Zero;
+        _lastWallParallelContactDirection = Vector2.Zero;
+        _lastWallParallelMoveDirection = Vector2.Zero;
         _inputContactWallIndex = -1;
         _lastMoveDirection = Vector2.UnitX;
         _invincibleTimeRemaining = grantInvincibility ? RespawnInvincibleSeconds : 0f;
