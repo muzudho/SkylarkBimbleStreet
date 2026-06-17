@@ -12,14 +12,14 @@
     "Height": 92
   },
   "BusStopBounds": {
-    "X": 882,
-    "Y": 64,
+    "X": 1142,
+    "Y": 188,
     "Width": 176,
     "Height": 124
   },
   "HospitalBounds": {
-    "X": 619,
-    "Y": 841,
+    "X": 885,
+    "Y": 591,
     "Width": 176,
     "Height": 126
   },
@@ -308,6 +308,15 @@
         "Y": 525,
         "Width": 17,
         "Height": 17
+      }
+    },
+    {
+      "Kind": "roller",
+      "Bounds": {
+        "X": 449,
+        "Y": 406,
+        "Width": 34,
+        "Height": 34
       }
     }
   ],

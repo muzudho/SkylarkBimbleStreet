@@ -14,6 +14,8 @@ public class Game1 : Game
     private const float PlayerSpeed = 520f;
     private const float JetPlayerSpeedMultiplier = 1.55f;
     private const float RollerSlideMultiplier = 0.82f;
+    private const float RollerCornerTurnMultiplier = 0.92f;
+    private const int RollerWallProbeDistance = 4;
     private const int PlayerSize = 46;
     private const int SmallPlayerSize = 30;
     private const float SmallPlayerSpeedMultiplier = 0.5f;
@@ -95,6 +97,8 @@ public class Game1 : Game
     private bool[] _smallsCollected = [];
     private bool _jetActive;
     private bool _rollerActive;
+    private Vector2 _rollerContactDirection;
+    private Vector2 _rollerSlideDirection;
     private bool _smallActive;
     private bool[] _stagesCleared = [];
     private bool[] _stagePassRecords = [];
@@ -163,6 +167,7 @@ public class Game1 : Game
     private float _busPassageTimeRemaining;
     private float _busArrivalTimeRemaining;
     private Vector2 _lastMoveDirection = Vector2.UnitX;
+    private Vector2 _playerFacingDirection = Vector2.UnitX;
     private Color _backgroundColor;
 
     private GamePalette CurrentPalette => _palettes[_paletteIndex];
@@ -322,18 +327,18 @@ public class Game1 : Game
         GraphicsDevice.SetRenderTarget(_scene);
         GraphicsDevice.Clear(_backgroundColor);
 
-        _spriteBatch.Begin(samplerState: SamplerState.PointClamp, transformMatrix: GetPlayfieldTransform());
+        _spriteBatch.Begin(blendState: BlendState.NonPremultiplied, samplerState: SamplerState.PointClamp, transformMatrix: GetPlayfieldTransform());
         DrawPlayfield();
         _spriteBatch.End();
 
-        _spriteBatch.Begin(samplerState: SamplerState.PointClamp);
+        _spriteBatch.Begin(blendState: BlendState.NonPremultiplied, samplerState: SamplerState.PointClamp);
         DrawHud();
         _spriteBatch.End();
 
         GraphicsDevice.SetRenderTarget(null);
         GraphicsDevice.Clear(Color.Black);
 
-        _spriteBatch.Begin(samplerState: SamplerState.PointClamp);
+        _spriteBatch.Begin(blendState: BlendState.NonPremultiplied, samplerState: SamplerState.PointClamp);
         _spriteBatch.Draw(_scene, GetDestinationRectangle(), Color.White);
         _spriteBatch.End();
 
@@ -413,6 +418,7 @@ public class Game1 : Game
             DrawHazard(hazard.Bounds);
         }
 
+        DrawPlayerFacingLight();
         DrawPlayer();
         DrawDeathEffects();
         DrawBusPassage();
@@ -1724,6 +1730,7 @@ public class Game1 : Game
 
         move.Normalize();
         _lastMoveDirection = move;
+        _playerFacingDirection = GetCardinalDirection(move);
         var speed = PlayerSpeed;
         if (_jetActive)
         {
@@ -1738,6 +1745,52 @@ public class Game1 : Game
         var velocity = move * speed * elapsed;
         TryMove(new Vector2(velocity.X, 0f));
         TryMove(new Vector2(0f, velocity.Y));
+        if (_rollerActive)
+        {
+            ContinueRollerWallFollow(MathF.Max(MathF.Abs(velocity.X), MathF.Abs(velocity.Y)) * RollerSlideMultiplier);
+        }
+    }
+
+    private void DrawPlayerFacingLight()
+    {
+        if (_playerInAmbulance || _playerInBus)
+        {
+            return;
+        }
+
+        var player = GetPlayerBounds();
+        var size = GetCurrentPlayerSize();
+        var direction = _playerFacingDirection;
+        var pulse = (float)((Math.Sin(_currentStageElapsedSeconds * 7.0d) + 1d) * 0.5d);
+        var segmentCount = 6;
+        var segmentLength = Math.Max(8, size / 2);
+        var beamWidth = Math.Max(12, size - 10);
+        var perpendicular = new Vector2(-direction.Y, direction.X);
+
+        for (var i = segmentCount - 1; i >= 0; i--)
+        {
+            var distance = size * 0.55f + segmentLength * (i + 0.5f);
+            var center = player.Center.ToVector2() + direction * distance;
+            var fade = 1f - i / (float)segmentCount;
+            var alpha = (byte)((22f + 52f * pulse) * fade);
+            var halfLength = segmentLength / 2f;
+            var halfWidth = beamWidth * (0.36f + fade * 0.34f);
+            var bounds = new Rectangle(
+                (int)(center.X - MathF.Abs(direction.X) * halfLength - MathF.Abs(perpendicular.X) * halfWidth),
+                (int)(center.Y - MathF.Abs(direction.Y) * halfLength - MathF.Abs(perpendicular.Y) * halfWidth),
+                Math.Max(1, (int)(MathF.Abs(direction.X) * segmentLength + MathF.Abs(perpendicular.X) * halfWidth * 2f)),
+                Math.Max(1, (int)(MathF.Abs(direction.Y) * segmentLength + MathF.Abs(perpendicular.Y) * halfWidth * 2f)));
+
+            DrawRectangle(bounds, WithAlpha(CurrentPalette.StageCurrent, alpha));
+        }
+
+        var markerCenter = player.Center.ToVector2() + direction * size;
+        var marker = new Rectangle(
+            (int)markerCenter.X - size / 2,
+            (int)markerCenter.Y - size / 2,
+            size,
+            size);
+        DrawFrame(marker, WithAlpha(CurrentPalette.StageCurrent, (byte)(72f + 28f * pulse)), 2);
     }
 
     private void DrawPlayer()
@@ -1819,28 +1872,116 @@ public class Game1 : Game
             return;
         }
 
-        var slide = Vector2.Zero;
-        if (blockedDelta.Y < 0f)
+        var contactDirection = GetAxisDirection(blockedDelta);
+        var slideDirection = GetRollerSlideDirection(contactDirection);
+        if (slideDirection == Vector2.Zero)
         {
-            slide.X = -amount;
-        }
-        else if (blockedDelta.X < 0f)
-        {
-            slide.Y = amount;
-        }
-        else if (blockedDelta.Y > 0f)
-        {
-            slide.X = amount;
-        }
-        else if (blockedDelta.X > 0f)
-        {
-            slide.Y = -amount;
+            ClearRollerWallFollow();
+            return;
         }
 
-        TryMoveWithoutRoller(slide);
+        var slide = slideDirection * amount;
+        if (!TryMoveWithoutRoller(slide))
+        {
+            ClearRollerWallFollow();
+            return;
+        }
+
+        _rollerContactDirection = contactDirection;
+        _rollerSlideDirection = slideDirection;
+        if (!HasWallNear(contactDirection))
+        {
+            TryRollerTurnCorner(slideDirection, contactDirection, amount * RollerCornerTurnMultiplier);
+        }
     }
 
-    private void TryMoveWithoutRoller(Vector2 delta)
+    private void ContinueRollerWallFollow(float amount)
+    {
+        if (amount <= 0f || _rollerContactDirection == Vector2.Zero || _rollerSlideDirection == Vector2.Zero)
+        {
+            return;
+        }
+
+        if (HasWallNear(_rollerContactDirection))
+        {
+            return;
+        }
+
+        TryRollerTurnCorner(_rollerSlideDirection, _rollerContactDirection, amount * RollerCornerTurnMultiplier);
+    }
+
+    private void TryRollerTurnCorner(Vector2 slideDirection, Vector2 contactDirection, float amount)
+    {
+        if (amount <= 0f)
+        {
+            return;
+        }
+
+        var turn = contactDirection * amount;
+        if (!TryMoveWithoutRoller(turn))
+        {
+            return;
+        }
+
+        var newContactDirection = -slideDirection;
+        if (!HasWallNear(newContactDirection))
+        {
+            TryMoveWithoutRoller(newContactDirection * RollerWallProbeDistance);
+        }
+
+        _rollerContactDirection = newContactDirection;
+        _rollerSlideDirection = GetRollerSlideDirection(newContactDirection);
+    }
+
+    private static Vector2 GetAxisDirection(Vector2 delta)
+    {
+        if (MathF.Abs(delta.X) >= MathF.Abs(delta.Y))
+        {
+            return delta.X < 0f ? new Vector2(-1f, 0f) : delta.X > 0f ? new Vector2(1f, 0f) : Vector2.Zero;
+        }
+
+        return delta.Y < 0f ? new Vector2(0f, -1f) : delta.Y > 0f ? new Vector2(0f, 1f) : Vector2.Zero;
+    }
+
+    private static Vector2 GetRollerSlideDirection(Vector2 contactDirection)
+    {
+        if (contactDirection.Y < 0f)
+        {
+            return new Vector2(-1f, 0f);
+        }
+
+        if (contactDirection.X < 0f)
+        {
+            return new Vector2(0f, 1f);
+        }
+
+        if (contactDirection.Y > 0f)
+        {
+            return new Vector2(1f, 0f);
+        }
+
+        if (contactDirection.X > 0f)
+        {
+            return new Vector2(0f, -1f);
+        }
+
+        return Vector2.Zero;
+    }
+
+    private void ClearRollerWallFollow()
+    {
+        _rollerContactDirection = Vector2.Zero;
+        _rollerSlideDirection = Vector2.Zero;
+    }
+
+    private bool HasWallNear(Vector2 direction)
+    {
+        var player = GetPlayerBounds();
+        player.Offset((int)(direction.X * RollerWallProbeDistance), (int)(direction.Y * RollerWallProbeDistance));
+        return CollidesWithWall(player);
+    }
+
+    private bool TryMoveWithoutRoller(Vector2 delta)
     {
         _playerPosition += delta;
         var player = GetPlayerBounds();
@@ -1849,9 +1990,11 @@ public class Game1 : Game
             if (player.Intersects(wall))
             {
                 _playerPosition -= delta;
-                return;
+                return false;
             }
         }
+
+        return true;
     }
 
     private void UpdateHazards(float elapsed)
@@ -2129,6 +2272,7 @@ public class Game1 : Game
         _invincibleTimeRemaining = 0f;
         _jetActive = false;
         _rollerActive = false;
+        ClearRollerWallFollow();
         _smallActive = false;
         PlaySound(_ambulanceSirenSound, 0.72f);
     }
@@ -2675,6 +2819,7 @@ public class Game1 : Game
         _smallsCollected = new bool[_smallBounds.Length];
         _jetActive = false;
         _rollerActive = false;
+        ClearRollerWallFollow();
         _smallActive = false;
         _stageStartNormalPulseRemaining = StageStartNormalPulseSeconds;
         _gemCollectEffects.Clear();
@@ -2723,12 +2868,16 @@ public class Game1 : Game
     private void ResetPlayerOnly(bool grantInvincibility)
     {
         _playerPosition = _playerStart;
+        _playerFacingDirection = Vector2.UnitX;
+        _lastMoveDirection = Vector2.UnitX;
         _invincibleTimeRemaining = grantInvincibility ? RespawnInvincibleSeconds : 0f;
     }
 
     private void ResetPlayerAtHospital(bool grantInvincibility)
     {
         _playerPosition = GetHospitalRespawnPosition();
+        _playerFacingDirection = Vector2.UnitX;
+        _lastMoveDirection = Vector2.UnitX;
         _invincibleTimeRemaining = grantInvincibility ? RespawnInvincibleSeconds : 0f;
     }
 
@@ -2808,6 +2957,16 @@ public class Game1 : Game
         move.X += thumbstick.X;
         move.Y -= thumbstick.Y;
         return move;
+    }
+
+    private static Vector2 GetCardinalDirection(Vector2 direction)
+    {
+        if (MathF.Abs(direction.X) >= MathF.Abs(direction.Y))
+        {
+            return direction.X >= 0f ? Vector2.UnitX : -Vector2.UnitX;
+        }
+
+        return direction.Y >= 0f ? Vector2.UnitY : -Vector2.UnitY;
     }
 
     /// <summary>
