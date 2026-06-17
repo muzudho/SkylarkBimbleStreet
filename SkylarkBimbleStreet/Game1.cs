@@ -15,6 +15,7 @@ public class Game1 : Game
     private const float JetPlayerSpeedMultiplier = 1.55f;
     private const float RollerSlideMultiplier = 0.82f;
     private const float RollerCornerTurnMultiplier = 0.92f;
+    private const float BasicWallFollowCornerTurnMultiplier = 0.92f;
     private const int RollerWallProbeDistance = 4;
     private const int WallContactProbeDistance = 28;
     private const int PlayerSize = 46;
@@ -172,6 +173,8 @@ public class Game1 : Game
     private Vector2 _playerInputDirection;
     private Vector2 _lastWallParallelContactDirection;
     private Vector2 _lastWallParallelMoveDirection;
+    private Vector2 _basicWallFollowContactDirection;
+    private Vector2 _basicWallFollowSlideDirection;
     private int _inputContactWallIndex = -1;
     private Color _backgroundColor;
 
@@ -1756,9 +1759,14 @@ public class Game1 : Game
         var velocity = move * speed * elapsed;
         TryMove(new Vector2(velocity.X, 0f));
         TryMove(new Vector2(0f, velocity.Y));
+        var maxMoveAmount = MathF.Max(MathF.Abs(velocity.X), MathF.Abs(velocity.Y));
         if (_rollerActive)
         {
-            ContinueRollerWallFollow(MathF.Max(MathF.Abs(velocity.X), MathF.Abs(velocity.Y)) * RollerSlideMultiplier);
+            ContinueRollerWallFollow(maxMoveAmount * RollerSlideMultiplier);
+        }
+        else
+        {
+            ContinueBasicWallFollow(maxMoveAmount * BasicWallFollowCornerTurnMultiplier);
         }
     }
 
@@ -1951,10 +1959,60 @@ public class Game1 : Game
         var slideDirection = GetWallFollowSlideDirection(contactDirection);
         if (slideDirection == Vector2.Zero)
         {
+            ClearBasicWallFollow();
             return;
         }
 
-        TryMoveWithoutRoller(slideDirection * amount);
+        if (!TryMoveWithoutRoller(slideDirection * amount))
+        {
+            ClearBasicWallFollow();
+            return;
+        }
+
+        _basicWallFollowContactDirection = contactDirection;
+        _basicWallFollowSlideDirection = slideDirection;
+        if (!HasWallNear(contactDirection))
+        {
+            TryBasicWallFollowTurnCorner(slideDirection, contactDirection, amount * BasicWallFollowCornerTurnMultiplier);
+        }
+    }
+
+    private void ContinueBasicWallFollow(float amount)
+    {
+        if (amount <= 0f || _basicWallFollowContactDirection == Vector2.Zero || _basicWallFollowSlideDirection == Vector2.Zero)
+        {
+            return;
+        }
+
+        if (HasWallNear(_basicWallFollowContactDirection))
+        {
+            return;
+        }
+
+        TryBasicWallFollowTurnCorner(_basicWallFollowSlideDirection, _basicWallFollowContactDirection, amount);
+    }
+
+    private void TryBasicWallFollowTurnCorner(Vector2 slideDirection, Vector2 contactDirection, float amount)
+    {
+        if (amount <= 0f)
+        {
+            return;
+        }
+
+        if (!TryMoveWithoutRoller(contactDirection * amount))
+        {
+            ClearBasicWallFollow();
+            return;
+        }
+
+        var newContactDirection = -slideDirection;
+        if (!HasWallNear(newContactDirection))
+        {
+            TryMoveWithoutRoller(newContactDirection * RollerWallProbeDistance);
+        }
+
+        _basicWallFollowContactDirection = newContactDirection;
+        _basicWallFollowSlideDirection = GetWallFollowSlideDirection(newContactDirection);
     }
 
     private void TryRollerSlide(Vector2 blockedDelta)
@@ -2082,10 +2140,17 @@ public class Game1 : Game
 
     private static bool ArePerpendicular(Vector2 a, Vector2 b) => a != Vector2.Zero && b != Vector2.Zero && MathF.Abs(Vector2.Dot(a, b)) < 0.001f;
 
+    private void ClearBasicWallFollow()
+    {
+        _basicWallFollowContactDirection = Vector2.Zero;
+        _basicWallFollowSlideDirection = Vector2.Zero;
+    }
+
     private void ClearRollerWallFollow()
     {
         _rollerContactDirection = Vector2.Zero;
         _rollerSlideDirection = Vector2.Zero;
+        ClearBasicWallFollow();
     }
 
     private bool HasWallNear(Vector2 direction) => HasWallNear(direction, RollerWallProbeDistance);
@@ -2988,6 +3053,7 @@ public class Game1 : Game
         _playerInputDirection = Vector2.Zero;
         _lastWallParallelContactDirection = Vector2.Zero;
         _lastWallParallelMoveDirection = Vector2.Zero;
+        ClearBasicWallFollow();
         _inputContactWallIndex = -1;
         _lastMoveDirection = Vector2.UnitX;
         _invincibleTimeRemaining = grantInvincibility ? RespawnInvincibleSeconds : 0f;
@@ -3000,6 +3066,7 @@ public class Game1 : Game
         _playerInputDirection = Vector2.Zero;
         _lastWallParallelContactDirection = Vector2.Zero;
         _lastWallParallelMoveDirection = Vector2.Zero;
+        ClearBasicWallFollow();
         _inputContactWallIndex = -1;
         _lastMoveDirection = Vector2.UnitX;
         _invincibleTimeRemaining = grantInvincibility ? RespawnInvincibleSeconds : 0f;
