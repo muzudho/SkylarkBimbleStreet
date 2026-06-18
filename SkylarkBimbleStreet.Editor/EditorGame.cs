@@ -183,10 +183,7 @@ internal sealed class EditorGame : Game
         var leftPressed = mouse.LeftButton == ButtonState.Pressed && _previousMouse.LeftButton == ButtonState.Released;
         var leftReleased = mouse.LeftButton == ButtonState.Released && _previousMouse.LeftButton == ButtonState.Pressed;
 
-        if (leftPressed && TrySelectAddTool(mouse.Position, map))
-        {
-            return;
-        }
+        if (leftPressed && TrySelectAddTool(mouse.Position, map)) return;
 
         if (leftPressed && map.Contains(mouse.Position))
         {
@@ -226,10 +223,7 @@ internal sealed class EditorGame : Game
             _dragMode = DragMode.None;
         }
 
-        if (!_dragging || _selectedIndex < 0 || mouse.LeftButton != ButtonState.Pressed)
-        {
-            return;
-        }
+        if (!_dragging || _selectedIndex < 0 || mouse.LeftButton != ButtonState.Pressed) return;
 
         var item = _items[_selectedIndex];
         var draggedBounds = item.GetBounds();
@@ -619,10 +613,7 @@ internal sealed class EditorGame : Game
 
     private void DrawPlayerGhosts(Point screenPosition, Rectangle map)
     {
-        if (!map.Contains(screenPosition))
-        {
-            return;
-        }
+        if (!map.Contains(screenPosition)) return;
 
         var world = ScreenToWorld(screenPosition, map);
         var normal = CenteredBounds(world, NormalPlayerGhostSize, NormalPlayerGhostSize);

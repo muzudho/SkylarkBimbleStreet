@@ -501,10 +501,7 @@ public class Game1 : Game
             DrawRectangle(new Rectangle(board.X + 12, board.Y + 12 + i * 14, board.Width - 24, 5), i == 0 ? CurrentPalette.GemShine : CurrentPalette.PlayerInner);
         }
 
-        if (_busStopWaitProgress <= 0f || _busPassagePending)
-        {
-            return;
-        }
+        if (_busStopWaitProgress <= 0f || _busPassagePending) return;
 
         var progress = MathHelper.Clamp(_busStopWaitProgress / BusStopWaitSeconds, 0f, 1f);
         var bar = new Rectangle(bounds.X, bounds.Y - 18, bounds.Width, 10);
@@ -539,10 +536,7 @@ public class Game1 : Game
 
     private void DrawExitOpenFlash(Rectangle bounds)
     {
-        if (_exitOpenFlashRemaining <= 0f)
-        {
-            return;
-        }
+        if (_exitOpenFlashRemaining <= 0f) return;
 
         var progress = 1f - _exitOpenFlashRemaining / ExitOpenFlashSeconds;
         var fade = 1f - progress;
@@ -561,10 +555,7 @@ public class Game1 : Game
 
     private void DrawExitOpenRays(Rectangle bounds)
     {
-        if (_exitOpenFlashRemaining <= 0f)
-        {
-            return;
-        }
+        if (_exitOpenFlashRemaining <= 0f) return;
 
         var progress = 1f - _exitOpenFlashRemaining / ExitOpenFlashSeconds;
         var fade = 1f - progress;
@@ -694,10 +685,7 @@ public class Game1 : Game
             bounds.Offset(wobble, 0);
         }
 
-        if (capacity <= 0 || (!showEmpty && collectedShards <= 0))
-        {
-            return;
-        }
+        if (capacity <= 0 || (!showEmpty && collectedShards <= 0)) return;
 
         var clamped = Math.Clamp(collectedShards, 0, capacity);
         var full = clamped >= capacity;
@@ -943,10 +931,7 @@ public class Game1 : Game
 
     private void DrawStageGemCollection(Rectangle bounds, int stageIndex)
     {
-        if (stageIndex < 0 || stageIndex >= _stages.Length)
-        {
-            return;
-        }
+        if (stageIndex < 0 || stageIndex >= _stages.Length) return;
 
         var collected = _stageBestGemCounts.Length > stageIndex ? _stageBestGemCounts[stageIndex] : 0;
         DrawGemBag(bounds, collected, _stages[stageIndex].GemBagCapacity, false);
@@ -967,10 +952,7 @@ public class Game1 : Game
             records[count++] = StageRecordKind.NoDamage;
         }
 
-        if (count == 0)
-        {
-            return;
-        }
+        if (count == 0) return;
 
         var badgeSize = Math.Min(bounds.Height, 34);
         var gap = 8;
@@ -1592,10 +1574,7 @@ public class Game1 : Game
 
     private void MoveStageSelection(int direction)
     {
-        if (_stageSelectPendingMoveDirection != 0)
-        {
-            return;
-        }
+        if (_stageSelectPendingMoveDirection != 0) return;
 
         if (_stageSelectSlideDelay > 0f || _stageSelectSlideOffset != 0f)
         {
@@ -1604,10 +1583,7 @@ public class Game1 : Game
         }
 
         var nextStageIndex = Math.Clamp(_selectedStageIndex + direction, 0, _stages.Length - 1);
-        if (nextStageIndex == _selectedStageIndex)
-        {
-            return;
-        }
+        if (nextStageIndex == _selectedStageIndex) return;
 
         if (_stageSelectFocusAmount < 1f || _stageSelectQuickMoveTimeRemaining > 0f)
         {
@@ -1623,10 +1599,7 @@ public class Game1 : Game
     private void ApplyStageSelectionMove(int direction, bool preserveCurrentPosition = false)
     {
         var nextStageIndex = Math.Clamp(_selectedStageIndex + direction, 0, _stages.Length - 1);
-        if (nextStageIndex == _selectedStageIndex)
-        {
-            return;
-        }
+        if (nextStageIndex == _selectedStageIndex) return;
 
         _selectedStageIndex = nextStageIndex;
         _stageSelectSlideOffset = preserveCurrentPosition
@@ -1670,10 +1643,7 @@ public class Game1 : Game
         }
 
         _stageSelectMoveRepeatTimeRemaining = Math.Max(0f, _stageSelectMoveRepeatTimeRemaining - elapsed);
-        if (_stageSelectMoveRepeatTimeRemaining > 0f)
-        {
-            return;
-        }
+        if (_stageSelectMoveRepeatTimeRemaining > 0f) return;
 
         _stageSelectMoveRepeatTimeRemaining = StageSelectMoveRepeatSeconds;
         MoveStageSelection(direction);
@@ -1789,10 +1759,7 @@ public class Game1 : Game
 
     private void DrawInputContactWallHighlight()
     {
-        if (_playerInAmbulance || _playerInBus || _playerInputDirection == Vector2.Zero)
-        {
-            return;
-        }
+        if (_playerInAmbulance || _playerInBus || _playerInputDirection == Vector2.Zero) return;
 
         var probe = GetPlayerBounds();
         probe.Offset((int)(_playerInputDirection.X * WallContactProbeDistance), (int)(_playerInputDirection.Y * WallContactProbeDistance));
@@ -1846,10 +1813,7 @@ public class Game1 : Game
 
     private void DrawPlayerFacingLight()
     {
-        if (_playerInAmbulance || _playerInBus)
-        {
-            return;
-        }
+        if (_playerInAmbulance || _playerInBus) return;
 
         var player = GetPlayerBounds();
         var size = GetCurrentPlayerSize();
@@ -1888,10 +1852,7 @@ public class Game1 : Game
 
     private void DrawPlayer()
     {
-        if (_playerInAmbulance || _playerInBus)
-        {
-            return;
-        }
+        if (_playerInAmbulance || _playerInBus) return;
 
         if (_invincibleTimeRemaining > 0f && (int)(_invincibleTimeRemaining * 16f) % 2 == 0)
         {
@@ -1923,10 +1884,7 @@ public class Game1 : Game
 
     private void DrawStageStartNormalPulse(Rectangle player)
     {
-        if (_stageStartNormalPulseRemaining <= 0f || _jetActive || _rollerActive || _smallActive)
-        {
-            return;
-        }
+        if (_stageStartNormalPulseRemaining <= 0f || _jetActive || _rollerActive || _smallActive) return;
 
         var progress = 1f - _stageStartNormalPulseRemaining / StageStartNormalPulseSeconds;
         var spread = 8 + (int)(22f * progress);
@@ -1967,10 +1925,7 @@ public class Game1 : Game
     private void TryBasicWallFollowSlide(Vector2 blockedDelta)
     {
         var amount = MathF.Max(MathF.Abs(blockedDelta.X), MathF.Abs(blockedDelta.Y));
-        if (amount <= 0f)
-        {
-            return;
-        }
+        if (amount <= 0f) return;
 
         var contactDirection = GetAxisDirection(blockedDelta);
         var slideDirection = GetWallFollowSlideDirection(contactDirection);
@@ -1983,10 +1938,7 @@ public class Game1 : Game
         var turnDirection = GetWallFollowTurnDirection(contactDirection, slideDirection);
         if (!TryMoveWithoutRoller(slideDirection * amount))
         {
-            if (TryBasicWallFollowTurnInnerCorner(slideDirection, amount, turnDirection))
-            {
-                return;
-            }
+            if (TryBasicWallFollowTurnInnerCorner(slideDirection, amount, turnDirection)) return;
 
             ClearBasicWallFollow();
             return;
@@ -2004,34 +1956,22 @@ public class Game1 : Game
 
     private void ContinueBasicWallFollow(float amount)
     {
-        if (amount <= 0f || _basicWallFollowContactDirection == Vector2.Zero || _basicWallFollowSlideDirection == Vector2.Zero)
-        {
-            return;
-        }
+        if (amount <= 0f || _basicWallFollowContactDirection == Vector2.Zero || _basicWallFollowSlideDirection == Vector2.Zero) return;
 
         if (HasWallNear(_basicWallFollowContactDirection))
         {
-            if (_wallFollowMovedThisFrame)
-            {
-                return;
-            }
+            if (_wallFollowMovedThisFrame) return;
 
             if (!TryMoveWithoutRoller(_basicWallFollowSlideDirection * amount))
             {
-                if (TryBasicWallFollowTurnInnerCorner(_basicWallFollowSlideDirection, amount, _basicWallFollowTurnDirection))
-                {
-                    return;
-                }
+                if (TryBasicWallFollowTurnInnerCorner(_basicWallFollowSlideDirection, amount, _basicWallFollowTurnDirection)) return;
 
                 ClearBasicWallFollow();
                 return;
             }
 
             _wallFollowMovedThisFrame = true;
-            if (HasWallNear(_basicWallFollowContactDirection))
-            {
-                return;
-            }
+            if (HasWallNear(_basicWallFollowContactDirection)) return;
         }
 
         TryBasicWallFollowTurnCorner(_basicWallFollowSlideDirection, _basicWallFollowContactDirection, amount);
@@ -2039,10 +1979,7 @@ public class Game1 : Game
 
     private void TryBasicWallFollowTurnCorner(Vector2 slideDirection, Vector2 contactDirection, float amount)
     {
-        if (amount <= 0f)
-        {
-            return;
-        }
+        if (amount <= 0f) return;
 
         if (!TryMoveWithoutRoller(contactDirection * amount))
         {
@@ -2085,10 +2022,7 @@ public class Game1 : Game
     private void TryRollerSlide(Vector2 blockedDelta)
     {
         var amount = MathF.Max(MathF.Abs(blockedDelta.X), MathF.Abs(blockedDelta.Y)) * RollerSlideMultiplier;
-        if (amount <= 0f)
-        {
-            return;
-        }
+        if (amount <= 0f) return;
 
         var contactDirection = GetAxisDirection(blockedDelta);
         var slideDirection = GetWallFollowSlideDirection(contactDirection);
@@ -2102,10 +2036,7 @@ public class Game1 : Game
         var slide = slideDirection * amount;
         if (!TryMoveWithoutRoller(slide))
         {
-            if (TryRollerTurnInnerCorner(slideDirection, amount, turnDirection))
-            {
-                return;
-            }
+            if (TryRollerTurnInnerCorner(slideDirection, amount, turnDirection)) return;
 
             ClearRollerWallFollow();
             return;
@@ -2123,34 +2054,22 @@ public class Game1 : Game
 
     private void ContinueRollerWallFollow(float amount)
     {
-        if (amount <= 0f || _rollerContactDirection == Vector2.Zero || _rollerSlideDirection == Vector2.Zero)
-        {
-            return;
-        }
+        if (amount <= 0f || _rollerContactDirection == Vector2.Zero || _rollerSlideDirection == Vector2.Zero) return;
 
         if (HasWallNear(_rollerContactDirection))
         {
-            if (_wallFollowMovedThisFrame)
-            {
-                return;
-            }
+            if (_wallFollowMovedThisFrame) return;
 
             if (!TryMoveWithoutRoller(_rollerSlideDirection * amount))
             {
-                if (TryRollerTurnInnerCorner(_rollerSlideDirection, amount, _rollerWallFollowTurnDirection))
-                {
-                    return;
-                }
+                if (TryRollerTurnInnerCorner(_rollerSlideDirection, amount, _rollerWallFollowTurnDirection)) return;
 
                 ClearRollerWallFollow();
                 return;
             }
 
             _wallFollowMovedThisFrame = true;
-            if (HasWallNear(_rollerContactDirection))
-            {
-                return;
-            }
+            if (HasWallNear(_rollerContactDirection)) return;
         }
 
         TryRollerTurnCorner(_rollerSlideDirection, _rollerContactDirection, amount * RollerCornerTurnMultiplier);
@@ -2158,16 +2077,10 @@ public class Game1 : Game
 
     private void TryRollerTurnCorner(Vector2 slideDirection, Vector2 contactDirection, float amount)
     {
-        if (amount <= 0f)
-        {
-            return;
-        }
+        if (amount <= 0f) return;
 
         var turn = contactDirection * amount;
-        if (!TryMoveWithoutRoller(turn))
-        {
-            return;
-        }
+        if (!TryMoveWithoutRoller(turn)) return;
 
         _wallFollowMovedThisFrame = true;
         var newContactDirection = -slideDirection;
@@ -2204,10 +2117,7 @@ public class Game1 : Game
     private void RememberWallParallelMove(Vector2 delta)
     {
         var moveDirection = GetAxisDirection(delta);
-        if (moveDirection == Vector2.Zero)
-        {
-            return;
-        }
+        if (moveDirection == Vector2.Zero) return;
 
         var contactDirections = new[] { Vector2.UnitX, -Vector2.UnitX, Vector2.UnitY, -Vector2.UnitY };
         foreach (var contactDirection in contactDirections)
@@ -2449,10 +2359,7 @@ public class Game1 : Game
 
     private void ActivateSmall(Vector2 itemCenter)
     {
-        if (_smallActive)
-        {
-            return;
-        }
+        if (_smallActive) return;
 
         var oldBounds = GetPlayerBounds();
         _smallActive = true;
@@ -2480,10 +2387,7 @@ public class Game1 : Game
     private void ReactToFullGemBag()
     {
         _gemBagFullNudgeRemaining = GemBagFullNudgeSeconds;
-        if (_gemBagFullSoundCooldownRemaining > 0f)
-        {
-            return;
-        }
+        if (_gemBagFullSoundCooldownRemaining > 0f) return;
 
         PlaySound(_gemBagFullSound, 0.62f);
         _gemBagFullSoundCooldownRemaining = GemBagFullSoundCooldownSeconds;
@@ -2491,26 +2395,17 @@ public class Game1 : Game
 
     private void StartExitOpenDelayIfReady()
     {
-        if (_exitOpen || _exitOpenDelayRemaining > 0f || !AreAllTicketPiecesCollected())
-        {
-            return;
-        }
+        if (_exitOpen || _exitOpenDelayRemaining > 0f || !AreAllTicketPiecesCollected()) return;
 
         _exitOpenDelayRemaining = ExitOpenDelaySeconds;
     }
 
     private void UpdateExitOpening(float elapsed)
     {
-        if (_exitOpen || _exitOpenDelayRemaining <= 0f)
-        {
-            return;
-        }
+        if (_exitOpen || _exitOpenDelayRemaining <= 0f) return;
 
         _exitOpenDelayRemaining = Math.Max(0f, _exitOpenDelayRemaining - elapsed);
-        if (_exitOpenDelayRemaining > 0f)
-        {
-            return;
-        }
+        if (_exitOpenDelayRemaining > 0f) return;
 
         _exitOpen = true;
         _exitOpenFlashRemaining = ExitOpenFlashSeconds;
@@ -2579,10 +2474,7 @@ public class Game1 : Game
 
     private void CheckHazardCollision()
     {
-        if (_invincibleTimeRemaining > 0f)
-        {
-            return;
-        }
+        if (_invincibleTimeRemaining > 0f) return;
 
         var player = GetPlayerBounds();
         foreach (var hazard in _hazards)
@@ -2621,10 +2513,7 @@ public class Game1 : Game
 
     private void UpdateDeathRespawn(float elapsed)
     {
-        if (!_deathRespawnPending)
-        {
-            return;
-        }
+        if (!_deathRespawnPending) return;
 
         _deathRespawnTimeRemaining = Math.Max(0f, _deathRespawnTimeRemaining - elapsed);
         var progress = 1f - _deathRespawnTimeRemaining / DeathEffectSeconds;
@@ -2664,10 +2553,7 @@ public class Game1 : Game
             ResetPlayerAtHospital(true);
         }
 
-        if (_deathRespawnTimeRemaining > 0f)
-        {
-            return;
-        }
+        if (_deathRespawnTimeRemaining > 0f) return;
 
         _deathRespawnPending = false;
         _playerInAmbulance = false;
@@ -2840,10 +2726,7 @@ public class Game1 : Game
 
     private void DrawAmbulancePassenger(Vector2 missPosition, Vector2 pickup, Vector2 dropoff, float progress)
     {
-        if (progress >= 0.30f && progress < 0.72f)
-        {
-            return;
-        }
+        if (progress >= 0.30f && progress < 0.72f) return;
 
         Vector2 position;
         if (progress < 0.30f)
@@ -2864,10 +2747,7 @@ public class Game1 : Game
 
     private void CheckBusStop(float elapsed)
     {
-        if (_busPassagePending)
-        {
-            return;
-        }
+        if (_busPassagePending) return;
 
         if (!GetPlayerBounds().Intersects(_busStopBounds))
         {
@@ -2876,10 +2756,7 @@ public class Game1 : Game
         }
 
         _busStopWaitProgress = Math.Min(BusStopWaitSeconds, _busStopWaitProgress + elapsed);
-        if (_busStopWaitProgress < BusStopWaitSeconds)
-        {
-            return;
-        }
+        if (_busStopWaitProgress < BusStopWaitSeconds) return;
 
         StartBusPassage();
     }
@@ -2895,16 +2772,10 @@ public class Game1 : Game
 
     private void UpdateBusPassage(float elapsed)
     {
-        if (!_busPassagePending)
-        {
-            return;
-        }
+        if (!_busPassagePending) return;
 
         _busPassageTimeRemaining = Math.Max(0f, _busPassageTimeRemaining - elapsed);
-        if (_busPassageTimeRemaining > 0f)
-        {
-            return;
-        }
+        if (_busPassageTimeRemaining > 0f) return;
 
         CompleteBusPassage();
     }
@@ -2934,16 +2805,10 @@ public class Game1 : Game
 
     private void UpdateBusArrival(float elapsed)
     {
-        if (!_busArrivalPending)
-        {
-            return;
-        }
+        if (!_busArrivalPending) return;
 
         _busArrivalTimeRemaining = Math.Max(0f, _busArrivalTimeRemaining - elapsed);
-        if (_busArrivalTimeRemaining > 0f)
-        {
-            return;
-        }
+        if (_busArrivalTimeRemaining > 0f) return;
 
         _busArrivalPending = false;
         _playerInBus = false;
@@ -2962,10 +2827,7 @@ public class Game1 : Game
 
     private void DrawBusArrival()
     {
-        if (!_busArrivalPending)
-        {
-            return;
-        }
+        if (!_busArrivalPending) return;
 
         var progress = 1f - _busArrivalTimeRemaining / BusArrivalSeconds;
         var stop = GetBusStopPassengerPoint();
@@ -2980,10 +2842,7 @@ public class Game1 : Game
 
     private void DrawBusArrivalPassenger(Vector2 stop, float progress)
     {
-        if (progress < 0.58f)
-        {
-            return;
-        }
+        if (progress < 0.58f) return;
 
         var step = MathHelper.Clamp((progress - 0.58f) / 0.28f, 0f, 1f);
         var start = stop - new Vector2(PlayerSize / 2f, PlayerSize / 2f);
@@ -2995,10 +2854,7 @@ public class Game1 : Game
     }
     private void DrawBusPassage()
     {
-        if (!_busPassagePending)
-        {
-            return;
-        }
+        if (!_busPassagePending) return;
 
         var progress = 1f - _busPassageTimeRemaining / BusPassageSeconds;
         var stop = _busStopBounds.Center.ToVector2();
@@ -3049,10 +2905,7 @@ public class Game1 : Game
 
     private void UpdateStageRecords()
     {
-        if (_currentStageIndex < 0 || _currentStageIndex >= _stages.Length)
-        {
-            return;
-        }
+        if (_currentStageIndex < 0 || _currentStageIndex >= _stages.Length) return;
 
         AwardStageRecord(StageRecordKind.Pass, _stagePassRecords, true);
         AwardStageRecord(StageRecordKind.NoDamage, _stageNoDamageRecords, _stageDeathCounts.Length > _currentStageIndex && _stageDeathCounts[_currentStageIndex] == 0);
@@ -3060,10 +2913,7 @@ public class Game1 : Game
 
     private void AwardStageRecord(StageRecordKind kind, bool[] records, bool achieved)
     {
-        if (!achieved || records.Length <= _currentStageIndex || records[_currentStageIndex])
-        {
-            return;
-        }
+        if (!achieved || records.Length <= _currentStageIndex || records[_currentStageIndex]) return;
 
         records[_currentStageIndex] = true;
         _badgeAwardEffects.Add(new BadgeAwardEffect(_currentStageIndex, kind, BadgeAwardEffectSeconds, BadgeAwardEffectSeconds));
@@ -3099,10 +2949,7 @@ public class Game1 : Game
 
     private void LogPlayEvent(PlayEventKind kind, int stageIndex, Vector2 position, double stageElapsedSeconds, int detail)
     {
-        if (_stageElapsedSeconds.Length == 0)
-        {
-            return;
-        }
+        if (_stageElapsedSeconds.Length == 0) return;
 
         _playEvents.Add(new PlayEvent(kind, stageIndex, _runElapsedSeconds, stageElapsedSeconds, position, detail));
     }
@@ -3252,10 +3099,7 @@ public class Game1 : Game
     private void UpdateWindowTitle(GameTime gameTime)
     {
         _titleRefreshTimer -= gameTime.ElapsedGameTime.TotalSeconds;
-        if (_titleRefreshTimer > 0)
-        {
-            return;
-        }
+        if (_titleRefreshTimer > 0) return;
 
         RefreshWindowTitle();
     }
@@ -3476,10 +3320,7 @@ public class Game1 : Game
 
     private void SelectStageMoveSound(int variantIndex)
     {
-        if (_stageMoveSounds.Length == 0)
-        {
-            return;
-        }
+        if (_stageMoveSounds.Length == 0) return;
 
         _stageMoveSoundIndex = Math.Clamp(variantIndex, 0, Math.Min(StageMoveSoundVariantCount, _stageMoveSounds.Length) - 1);
         _stageMoveSound = _stageMoveSounds[_stageMoveSoundIndex];
