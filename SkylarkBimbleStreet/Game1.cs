@@ -2065,12 +2065,12 @@ public class Game1 : Game
     {
         var newContactDirection = slideDirection;
         var newSlideDirection = GetWallFollowSlideDirection(newContactDirection, turnDirection);
-        if (newSlideDirection == Vector2.Zero || !TryMoveWithoutRoller(newSlideDirection * amount))
+        if (newSlideDirection == Vector2.Zero || !HasWallNear(newContactDirection))
         {
             return false;
         }
 
-        _wallFollowMovedThisFrame = true;
+        _wallFollowMovedThisFrame = TryMoveWithoutRollerStepped(newSlideDirection * amount);
         _basicWallFollowContactDirection = newContactDirection;
         _basicWallFollowSlideDirection = newSlideDirection;
         _basicWallFollowTurnDirection = turnDirection;
@@ -2179,12 +2179,12 @@ public class Game1 : Game
     {
         var newContactDirection = slideDirection;
         var newSlideDirection = GetWallFollowSlideDirection(newContactDirection, turnDirection);
-        if (newSlideDirection == Vector2.Zero || !TryMoveWithoutRoller(newSlideDirection * amount))
+        if (newSlideDirection == Vector2.Zero || !HasWallNear(newContactDirection))
         {
             return false;
         }
 
-        _wallFollowMovedThisFrame = true;
+        _wallFollowMovedThisFrame = TryMoveWithoutRollerStepped(newSlideDirection * amount);
         _rollerContactDirection = newContactDirection;
         _rollerSlideDirection = newSlideDirection;
         _rollerWallFollowTurnDirection = turnDirection;
@@ -2292,6 +2292,25 @@ public class Game1 : Game
         var player = GetPlayerBounds();
         player.Offset((int)(direction.X * distance), (int)(direction.Y * distance));
         return CollidesWithWall(player);
+    }
+
+    private bool TryMoveWithoutRollerStepped(Vector2 delta)
+    {
+        if (TryMoveWithoutRoller(delta))
+        {
+            return true;
+        }
+
+        foreach (var scale in new[] { 0.5f, 0.25f, 0.125f })
+        {
+            if (TryMoveWithoutRoller(delta * scale))
+            {
+                return true;
+            }
+        }
+
+        var direction = GetAxisDirection(delta);
+        return direction != Vector2.Zero && TryMoveWithoutRoller(direction);
     }
 
     private bool TryMoveWithoutRoller(Vector2 delta)
