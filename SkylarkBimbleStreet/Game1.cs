@@ -172,6 +172,7 @@ public class Game1 : Game
     private Vector2 _lastMoveDirection = Vector2.UnitX;
     private Vector2 _playerFacingDirection = Vector2.UnitX;
     private Vector2 _playerInputDirection;
+    private Vector2 _playerGhostVelocity;
     private Vector2 _lastWallParallelContactDirection;
     private Vector2 _lastWallParallelMoveDirection;
     private Vector2 _basicWallFollowContactDirection;
@@ -420,6 +421,7 @@ public class Game1 : Game
         }
 
         DrawPlayerFacingLight();
+        DrawPlayerGhost();
         DrawPlayer();
         DrawDeathEffects();
         DrawBusPassage();
@@ -1694,6 +1696,7 @@ public class Game1 : Game
         if (move == Vector2.Zero)
         {
             _playerInputDirection = Vector2.Zero;
+            _playerGhostVelocity = Vector2.Zero;
             _inputContactWallIndex = -1;
             ClearActiveWallFollow();
             return;
@@ -1716,6 +1719,7 @@ public class Game1 : Game
         }
 
         var velocity = move * speed * elapsed;
+        _playerGhostVelocity = GetPlayerGhostVelocity(velocity);
         _wallFollowMovedThisFrame = false;
         var maxMoveAmount = MathF.Max(MathF.Abs(velocity.X), MathF.Abs(velocity.Y));
         if (_rollerActive && IsRollerWallFollowActive())
@@ -1788,11 +1792,11 @@ public class Game1 : Game
 
         var probe = GetPlayerBounds();
         probe.Offset((int)(_playerInputDirection.X * WallContactProbeDistance), (int)(_playerInputDirection.Y * WallContactProbeDistance));
-        var pulse = (float)((Math.Sin(_currentStageElapsedSeconds * 8.0d) + 1d) * 0.5d);
+        var color = new Color(118, 218, 255);
 
         if (_inputContactWallIndex >= 0 && _inputContactWallIndex < _walls.Length)
         {
-            DrawContactWallHighlight(_walls[_inputContactWallIndex], pulse);
+            DrawWallFollowWallHighlight(CreateWallContact(_inputContactWallIndex, _playerInputDirection), color, 7);
             return;
         }
 
@@ -1800,36 +1804,8 @@ public class Game1 : Game
         {
             if (!probe.Intersects(_walls[i])) continue;
 
-            DrawContactWallHighlight(_walls[i], pulse);
+            DrawWallFollowWallHighlight(CreateWallContact(i, _playerInputDirection), color, 7);
             return;
-        }
-    }
-
-    private void DrawContactWallHighlight(Rectangle wall, float pulse)
-    {
-        var contactColor = new Color(118, 218, 255);
-        var glowAlpha = (byte)(92f + 54f * pulse);
-        var frameAlpha = (byte)(190f + 45f * pulse);
-        var expanded = new Rectangle(wall.X - 5, wall.Y - 5, wall.Width + 10, wall.Height + 10);
-
-        DrawRectangle(wall, WithAlpha(contactColor, glowAlpha));
-        DrawFrame(expanded, WithAlpha(contactColor, frameAlpha), 8);
-        DrawFrame(wall, WithAlpha(CurrentPalette.GemShine, (byte)(120f + 40f * pulse)), 3);
-
-        var stripeColor = WithAlpha(CurrentPalette.GemShine, (byte)(95f + 45f * pulse));
-        if (wall.Width >= wall.Height)
-        {
-            for (var x = wall.X + 10; x < wall.Right - 10; x += 22)
-            {
-                DrawLine(new Vector2(x, wall.Y + 6), new Vector2(x + 14, wall.Bottom - 6), 3, stripeColor);
-            }
-        }
-        else
-        {
-            for (var y = wall.Y + 10; y < wall.Bottom - 10; y += 22)
-            {
-                DrawLine(new Vector2(wall.X + 6, y), new Vector2(wall.Right - 6, y + 14), 3, stripeColor);
-            }
         }
     }
 
@@ -1870,6 +1846,24 @@ public class Game1 : Game
             size,
             size);
         DrawFrame(marker, WithAlpha(CurrentPalette.StageCurrent, (byte)(72f + 28f * pulse)), 2);
+    }
+
+    private void DrawPlayerGhost()
+    {
+        if (_playerInAmbulance || _playerInBus || _playerGhostVelocity == Vector2.Zero) return;
+
+        var ghost = GetPlayerBounds();
+        ghost.Offset((int)MathF.Round(_playerGhostVelocity.X), (int)MathF.Round(_playerGhostVelocity.Y));
+        var hitWallIndex = FindCollidingWallIndex(ghost);
+        var frameColor = hitWallIndex >= 0 ? new Color(255, 174, 72) : new Color(118, 218, 255);
+        DrawRectangle(ghost, WithAlpha(frameColor, 45));
+        DrawFrame(ghost, WithAlpha(frameColor, 220), 3);
+        DrawFrame(new Rectangle(ghost.X - 4, ghost.Y - 4, ghost.Width + 8, ghost.Height + 8), WithAlpha(frameColor, 120), 2);
+
+        if (hitWallIndex >= 0)
+        {
+            DrawWallFollowWallHighlight(CreateWallContact(hitWallIndex, _playerGhostVelocity), frameColor, 6);
+        }
     }
 
     private void DrawPlayer()
@@ -1913,6 +1907,14 @@ public class Game1 : Game
         var alpha = (byte)(190f * (1f - progress));
         DrawFrame(new Rectangle(player.X - spread, player.Y - spread, player.Width + spread * 2, player.Height + spread * 2), WithAlpha(CurrentPalette.PlayerInner, alpha), 4);
         DrawFrame(new Rectangle(player.X - 4, player.Y - 4, player.Width + 8, player.Height + 8), WithAlpha(CurrentPalette.GemShine, (byte)(120f * (1f - progress))), 3);
+    }
+
+    private Vector2 GetPlayerGhostVelocity(Vector2 velocity)
+    {
+        var amount = MathF.Max(MathF.Abs(velocity.X), MathF.Abs(velocity.Y));
+        if (_rollerActive && IsRollerWallFollowActive()) return _rollerSlideDirection * amount * RollerSlideMultiplier;
+        if (!_rollerActive && IsBasicWallFollowActive()) return _basicWallFollowSlideDirection * amount * BasicWallFollowCornerTurnMultiplier;
+        return velocity;
     }
 
     private void TryMove(Vector2 delta)
@@ -3109,6 +3111,7 @@ public class Game1 : Game
         _playerPosition = _playerStart;
         _playerFacingDirection = Vector2.UnitX;
         _playerInputDirection = Vector2.Zero;
+        _playerGhostVelocity = Vector2.Zero;
         _lastWallParallelContactDirection = Vector2.Zero;
         _lastWallParallelMoveDirection = Vector2.Zero;
         ClearBasicWallFollow();
@@ -3122,6 +3125,7 @@ public class Game1 : Game
         _playerPosition = GetHospitalRespawnPosition();
         _playerFacingDirection = Vector2.UnitX;
         _playerInputDirection = Vector2.Zero;
+        _playerGhostVelocity = Vector2.Zero;
         _lastWallParallelContactDirection = Vector2.Zero;
         _lastWallParallelMoveDirection = Vector2.Zero;
         ClearBasicWallFollow();
