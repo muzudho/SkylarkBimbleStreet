@@ -2070,7 +2070,12 @@ public class Game1 : Game
             return false;
         }
 
-        _wallFollowMovedThisFrame = TryMoveWithoutRollerStepped(newSlideDirection * amount);
+        if (!TryMoveWithoutRollerStepped(newSlideDirection * amount))
+        {
+            return false;
+        }
+
+        _wallFollowMovedThisFrame = true;
         _basicWallFollowContactDirection = newContactDirection;
         _basicWallFollowSlideDirection = newSlideDirection;
         _basicWallFollowTurnDirection = turnDirection;
@@ -2184,7 +2189,12 @@ public class Game1 : Game
             return false;
         }
 
-        _wallFollowMovedThisFrame = TryMoveWithoutRollerStepped(newSlideDirection * amount);
+        if (!TryMoveWithoutRollerStepped(newSlideDirection * amount))
+        {
+            return false;
+        }
+
+        _wallFollowMovedThisFrame = true;
         _rollerContactDirection = newContactDirection;
         _rollerSlideDirection = newSlideDirection;
         _rollerWallFollowTurnDirection = turnDirection;
