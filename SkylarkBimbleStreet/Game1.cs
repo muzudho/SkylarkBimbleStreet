@@ -1698,6 +1698,7 @@ public class Game1 : Game
         {
             _playerInputDirection = Vector2.Zero;
             _playerGhostVelocity = Vector2.Zero;
+            _wallFollowHitContact = WallContact.None;
             _inputContactWallIndex = -1;
             ClearActiveWallFollow();
             return;
@@ -1720,18 +1721,21 @@ public class Game1 : Game
         }
 
         var velocity = move * speed * elapsed;
-        _playerGhostVelocity = GetPlayerGhostVelocity(velocity);
         _wallFollowMovedThisFrame = false;
         var maxMoveAmount = MathF.Max(MathF.Abs(velocity.X), MathF.Abs(velocity.Y));
         if (_rollerActive && IsRollerWallFollowActive())
         {
             ContinueRollerWallFollow(maxMoveAmount * RollerSlideMultiplier);
+            _playerGhostVelocity = GetPlayerGhostVelocity(velocity);
+            RefreshPlayerGhostHitContact();
             return;
         }
 
         if (!_rollerActive && IsBasicWallFollowActive())
         {
             ContinueBasicWallFollow(maxMoveAmount * BasicWallFollowCornerTurnMultiplier);
+            _playerGhostVelocity = GetPlayerGhostVelocity(velocity);
+            RefreshPlayerGhostHitContact();
             return;
         }
 
@@ -1745,6 +1749,9 @@ public class Game1 : Game
         {
             ContinueBasicWallFollow(maxMoveAmount * BasicWallFollowCornerTurnMultiplier);
         }
+
+        _playerGhostVelocity = GetPlayerGhostVelocity(velocity);
+        RefreshPlayerGhostHitContact();
     }
 
     private void DrawWallFollowWallHighlights()
@@ -1789,7 +1796,7 @@ public class Game1 : Game
 
     private void DrawInputContactWallHighlight()
     {
-        if (_playerInAmbulance || _playerInBus || _playerInputDirection == Vector2.Zero) return;
+        if (_playerInAmbulance || _playerInBus || _playerInputDirection == Vector2.Zero || IsWallFollowActive()) return;
 
         var probe = GetPlayerBounds();
         probe.Offset((int)(_playerInputDirection.X * WallContactProbeDistance), (int)(_playerInputDirection.Y * WallContactProbeDistance));
@@ -1853,18 +1860,32 @@ public class Game1 : Game
     {
         if (_playerInAmbulance || _playerInBus || _playerGhostVelocity == Vector2.Zero) return;
 
-        var ghost = GetPlayerBounds();
-        ghost.Offset((int)MathF.Round(_playerGhostVelocity.X * PlayerGhostPreviewFrames), (int)MathF.Round(_playerGhostVelocity.Y * PlayerGhostPreviewFrames));
-        var hitWallIndex = FindCollidingWallIndex(ghost);
-        var frameColor = hitWallIndex >= 0 ? new Color(255, 174, 72) : new Color(118, 218, 255);
+        var ghost = GetPlayerGhostBounds();
+        var frameColor = _wallFollowHitContact.IsValid(_walls.Length) ? new Color(255, 174, 72) : new Color(118, 218, 255);
         DrawRectangle(ghost, WithAlpha(frameColor, 45));
         DrawFrame(ghost, WithAlpha(frameColor, 220), 3);
         DrawFrame(new Rectangle(ghost.X - 4, ghost.Y - 4, ghost.Width + 8, ghost.Height + 8), WithAlpha(frameColor, 120), 2);
+    }
 
-        if (hitWallIndex >= 0)
+    private void RefreshPlayerGhostHitContact()
+    {
+        if (_playerGhostVelocity == Vector2.Zero)
         {
-            DrawWallFollowWallHighlight(CreateWallContact(hitWallIndex, _playerGhostVelocity), frameColor, 6);
+            _wallFollowHitContact = WallContact.None;
+            return;
         }
+
+        var hitWallIndex = FindCollidingWallIndex(GetPlayerGhostBounds());
+        _wallFollowHitContact = hitWallIndex >= 0
+            ? CreateWallContact(hitWallIndex, _playerGhostVelocity)
+            : WallContact.None;
+    }
+
+    private Rectangle GetPlayerGhostBounds()
+    {
+        var ghost = GetPlayerBounds();
+        ghost.Offset((int)MathF.Round(_playerGhostVelocity.X * PlayerGhostPreviewFrames), (int)MathF.Round(_playerGhostVelocity.Y * PlayerGhostPreviewFrames));
+        return ghost;
     }
 
     private void DrawPlayer()
@@ -1962,7 +1983,6 @@ public class Game1 : Game
         var turnDirection = GetWallFollowTurnDirection(contactDirection, slideDirection);
         if (!TryMoveWithoutRoller(slideDirection * amount, out var hitWallContact))
         {
-            _wallFollowHitContact = hitWallContact;
             ClearBasicWallFollow();
             return;
         }
@@ -1990,7 +2010,6 @@ public class Game1 : Game
 
             if (!TryMoveWithoutRoller(_basicWallFollowSlideDirection * amount, out var hitWallContact))
             {
-                _wallFollowHitContact = hitWallContact;
                 if (TryBasicWallFollowTurnInnerCorner(_basicWallFollowSlideDirection, amount, _basicWallFollowTurnDirection, hitWallContact)) return;
 
                 ClearBasicWallFollow();
@@ -2065,7 +2084,6 @@ public class Game1 : Game
         var slide = slideDirection * amount;
         if (!TryMoveWithoutRoller(slide, out var hitWallContact))
         {
-            _wallFollowHitContact = hitWallContact;
             ClearRollerWallFollow();
             return;
         }
@@ -2093,7 +2111,6 @@ public class Game1 : Game
 
             if (!TryMoveWithoutRoller(_rollerSlideDirection * amount, out var hitWallContact))
             {
-                _wallFollowHitContact = hitWallContact;
                 if (TryRollerTurnInnerCorner(_rollerSlideDirection, amount, _rollerWallFollowTurnDirection, hitWallContact)) return;
 
                 ClearRollerWallFollow();
@@ -2221,6 +2238,8 @@ public class Game1 : Game
     private bool IsBasicWallFollowActive() => _basicWallFollowContactDirection != Vector2.Zero && _basicWallFollowSlideDirection != Vector2.Zero;
 
     private bool IsRollerWallFollowActive() => _rollerContactDirection != Vector2.Zero && _rollerSlideDirection != Vector2.Zero;
+
+    private bool IsWallFollowActive() => _rollerActive ? IsRollerWallFollowActive() : IsBasicWallFollowActive();
 
     private void ClearActiveWallFollow()
     {
