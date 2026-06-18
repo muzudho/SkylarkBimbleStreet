@@ -18,6 +18,7 @@ public class Game1 : Game
     private const float BasicWallFollowCornerTurnMultiplier = 0.92f;
     private const int RollerWallProbeDistance = 4;
     private const int WallContactProbeDistance = 28;
+    private const float PlayerGhostPreviewFrames = 4f;
     private const int PlayerSize = 46;
     private const int SmallPlayerSize = 30;
     private const float SmallPlayerSpeedMultiplier = 0.5f;
@@ -1853,7 +1854,7 @@ public class Game1 : Game
         if (_playerInAmbulance || _playerInBus || _playerGhostVelocity == Vector2.Zero) return;
 
         var ghost = GetPlayerBounds();
-        ghost.Offset((int)MathF.Round(_playerGhostVelocity.X), (int)MathF.Round(_playerGhostVelocity.Y));
+        ghost.Offset((int)MathF.Round(_playerGhostVelocity.X * PlayerGhostPreviewFrames), (int)MathF.Round(_playerGhostVelocity.Y * PlayerGhostPreviewFrames));
         var hitWallIndex = FindCollidingWallIndex(ghost);
         var frameColor = hitWallIndex >= 0 ? new Color(255, 174, 72) : new Color(118, 218, 255);
         DrawRectangle(ghost, WithAlpha(frameColor, 45));
