@@ -2065,7 +2065,7 @@ public class Game1 : Game
     {
         var newContactDirection = slideDirection;
         var newSlideDirection = GetWallFollowSlideDirection(newContactDirection, turnDirection);
-        if (newSlideDirection == Vector2.Zero || !HasWallNear(newContactDirection))
+        if (newSlideDirection == Vector2.Zero)
         {
             return false;
         }
@@ -2179,7 +2179,7 @@ public class Game1 : Game
     {
         var newContactDirection = slideDirection;
         var newSlideDirection = GetWallFollowSlideDirection(newContactDirection, turnDirection);
-        if (newSlideDirection == Vector2.Zero || !HasWallNear(newContactDirection))
+        if (newSlideDirection == Vector2.Zero)
         {
             return false;
         }
