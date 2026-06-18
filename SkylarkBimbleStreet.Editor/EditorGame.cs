@@ -678,10 +678,7 @@ internal sealed class EditorGame : Game
             for (var j = i + 1; j < _items.Count; j++)
             {
                 var second = _items[j].GetBounds();
-                if (!first.Intersects(second))
-                {
-                    continue;
-                }
+                if (!first.Intersects(second)) continue;
 
                 overlappedIndexes.Add(i);
                 overlappedIndexes.Add(j);
@@ -762,10 +759,7 @@ internal sealed class EditorGame : Game
     {
         foreach (var button in GetAddToolButtons(map))
         {
-            if (!button.Bounds.Contains(screenPosition))
-            {
-                continue;
-            }
+            if (!button.Bounds.Contains(screenPosition)) continue;
 
             _addTool = _addTool == button.Tool ? AddTool.None : button.Tool;
             _dragging = false;

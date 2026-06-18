@@ -376,50 +376,35 @@ public class Game1 : Game
 
         for (var i = 0; i < _ticketPieceBounds.Length; i++)
         {
-            if (_ticketPiecesCollected[i])
-            {
-                continue;
-            }
+            if (_ticketPiecesCollected[i]) continue;
 
             DrawTicketPiece(_ticketPieceBounds[i], i, CurrentPalette.ExitOpen, CurrentPalette.GemShine);
         }
 
         for (var i = 0; i < _jetBounds.Length; i++)
         {
-            if (_jetsCollected[i])
-            {
-                continue;
-            }
+            if (_jetsCollected[i]) continue;
 
             DrawJet(_jetBounds[i]);
         }
 
         for (var i = 0; i < _rollerBounds.Length; i++)
         {
-            if (_rollersCollected[i])
-            {
-                continue;
-            }
+            if (_rollersCollected[i]) continue;
 
             DrawRoller(_rollerBounds[i], 0f);
         }
 
         for (var i = 0; i < _smallBounds.Length; i++)
         {
-            if (_smallsCollected[i])
-            {
-                continue;
-            }
+            if (_smallsCollected[i]) continue;
 
             DrawSmall(_smallBounds[i]);
         }
 
         for (var i = 0; i < _gemBounds.Length; i++)
         {
-            if (_gemsCollected[i])
-            {
-                continue;
-            }
+            if (_gemsCollected[i]) continue;
 
             DrawGem(_gemBounds[i].Center.ToVector2(), _gemBounds[i].Width, CurrentPalette.Gem, CurrentPalette.GemShine);
         }
@@ -991,10 +976,7 @@ public class Game1 : Game
     {
         foreach (var effect in _badgeAwardEffects)
         {
-            if (effect.StageIndex != stageIndex || effect.Kind != kind)
-            {
-                continue;
-            }
+            if (effect.StageIndex != stageIndex || effect.Kind != kind) continue;
 
             var progress = 1f - effect.TimeRemaining / effect.Duration;
             var pulse = (float)Math.Sin(progress * Math.PI * 6f) * 0.5f + 0.5f;
@@ -1773,10 +1755,7 @@ public class Game1 : Game
 
         for (var i = 0; i < _walls.Length; i++)
         {
-            if (!probe.Intersects(_walls[i]))
-            {
-                continue;
-            }
+            if (!probe.Intersects(_walls[i])) continue;
 
             DrawContactWallHighlight(_walls[i], pulse);
             return;
@@ -1900,10 +1879,7 @@ public class Game1 : Game
 
         for (var i = 0; i < _walls.Length; i++)
         {
-            if (!player.Intersects(_walls[i]))
-            {
-                continue;
-            }
+            if (!player.Intersects(_walls[i])) continue;
 
             _inputContactWallIndex = i;
             _playerPosition -= delta;
@@ -2122,10 +2098,7 @@ public class Game1 : Game
         var contactDirections = new[] { Vector2.UnitX, -Vector2.UnitX, Vector2.UnitY, -Vector2.UnitY };
         foreach (var contactDirection in contactDirections)
         {
-            if (!ArePerpendicular(moveDirection, contactDirection) || !HasWallNear(contactDirection, WallContactProbeDistance))
-            {
-                continue;
-            }
+            if (!ArePerpendicular(moveDirection, contactDirection) || !HasWallNear(contactDirection, WallContactProbeDistance)) continue;
 
             _lastWallParallelContactDirection = contactDirection;
             _lastWallParallelMoveDirection = moveDirection;
@@ -2290,10 +2263,7 @@ public class Game1 : Game
 
         for (var i = 0; i < _jetBounds.Length; i++)
         {
-            if (_jetsCollected[i] || !player.Intersects(_jetBounds[i]))
-            {
-                continue;
-            }
+            if (_jetsCollected[i] || !player.Intersects(_jetBounds[i])) continue;
 
             _jetsCollected[i] = true;
             _jetActive = true;
@@ -2304,10 +2274,7 @@ public class Game1 : Game
 
         for (var i = 0; i < _rollerBounds.Length; i++)
         {
-            if (_rollersCollected[i] || !player.Intersects(_rollerBounds[i]))
-            {
-                continue;
-            }
+            if (_rollersCollected[i] || !player.Intersects(_rollerBounds[i])) continue;
 
             _rollersCollected[i] = true;
             _rollerActive = true;
@@ -2318,10 +2285,7 @@ public class Game1 : Game
 
         for (var i = 0; i < _smallBounds.Length; i++)
         {
-            if (_smallsCollected[i] || !player.Intersects(_smallBounds[i]))
-            {
-                continue;
-            }
+            if (_smallsCollected[i] || !player.Intersects(_smallBounds[i])) continue;
 
             _smallsCollected[i] = true;
             ActivateSmall(_smallBounds[i].Center.ToVector2());
@@ -2332,10 +2296,7 @@ public class Game1 : Game
 
         for (var i = 0; i < _gemBounds.Length; i++)
         {
-            if (_gemsCollected[i] || !player.Intersects(_gemBounds[i]))
-            {
-                continue;
-            }
+            if (_gemsCollected[i] || !player.Intersects(_gemBounds[i])) continue;
 
             if (IsGemBagFull())
             {
@@ -2445,10 +2406,7 @@ public class Game1 : Game
             {
                 for (var x = -2; x <= 2; x++)
                 {
-                    if (Math.Abs(x) + Math.Abs(y) > 3 || (!blink && (x + y + effect.Seed) % 2 == 0))
-                    {
-                        continue;
-                    }
+                    if (Math.Abs(x) + Math.Abs(y) > 3 || (!blink && (x + y + effect.Seed) % 2 == 0)) continue;
 
                     var local = new Vector2(x * 11f, y * 11f);
                     var drift = Vector2.Normalize(local == Vector2.Zero ? new Vector2(0f, -1f) : local) * progress * (18f + (x * x + y * y) * 2f);
