@@ -178,8 +178,8 @@ public class Game1 : Game
     private Vector2 _basicWallFollowSlideDirection;
     private int _basicWallFollowTurnDirection = 1;
     private bool _wallFollowMovedThisFrame;
-    private int _wallFollowWallIndex = -1;
-    private int _wallFollowHitWallIndex = -1;
+    private WallContact _wallFollowWallContact = WallContact.None;
+    private WallContact _wallFollowHitContact = WallContact.None;
     private int _inputContactWallIndex = -1;
     private Color _backgroundColor;
 
@@ -1744,23 +1744,42 @@ public class Game1 : Game
 
     private void DrawWallFollowWallHighlights()
     {
-        if (IsValidWallIndex(_wallFollowWallIndex))
+        if (_wallFollowWallContact.IsValid(_walls.Length))
         {
-            DrawWallFollowWallHighlight(_walls[_wallFollowWallIndex], new Color(78, 220, 150), 8);
+            DrawWallFollowWallHighlight(_wallFollowWallContact, new Color(78, 220, 150), 10);
         }
 
-        if (IsValidWallIndex(_wallFollowHitWallIndex))
+        if (_wallFollowHitContact.IsValid(_walls.Length))
         {
-            DrawWallFollowWallHighlight(_walls[_wallFollowHitWallIndex], new Color(255, 174, 72), _wallFollowHitWallIndex == _wallFollowWallIndex ? 14 : 8);
+            var thickness = _wallFollowHitContact.WallIndex == _wallFollowWallContact.WallIndex ? 16 : 10;
+            DrawWallFollowWallHighlight(_wallFollowHitContact, new Color(255, 174, 72), thickness);
         }
     }
 
-    private void DrawWallFollowWallHighlight(Rectangle wall, Color color, int spread)
+    private void DrawWallFollowWallHighlight(WallContact contact, Color color, int thickness)
     {
-        var expanded = new Rectangle(wall.X - spread, wall.Y - spread, wall.Width + spread * 2, wall.Height + spread * 2);
-        DrawRectangle(wall, WithAlpha(color, 70));
-        DrawFrame(expanded, WithAlpha(color, 220), 5);
-        DrawFrame(wall, WithAlpha(CurrentPalette.GemShine, 120), 2);
+        var wall = _walls[contact.WallIndex];
+        var alpha = WithAlpha(color, 230);
+        var glow = WithAlpha(color, 90);
+        switch (contact.Side)
+        {
+            case WallContactSide.Top:
+                DrawLine(new Vector2(wall.Left, wall.Top), new Vector2(wall.Right, wall.Top), thickness + 8, glow);
+                DrawLine(new Vector2(wall.Left, wall.Top), new Vector2(wall.Right, wall.Top), thickness, alpha);
+                break;
+            case WallContactSide.Right:
+                DrawLine(new Vector2(wall.Right, wall.Top), new Vector2(wall.Right, wall.Bottom), thickness + 8, glow);
+                DrawLine(new Vector2(wall.Right, wall.Top), new Vector2(wall.Right, wall.Bottom), thickness, alpha);
+                break;
+            case WallContactSide.Bottom:
+                DrawLine(new Vector2(wall.Left, wall.Bottom), new Vector2(wall.Right, wall.Bottom), thickness + 8, glow);
+                DrawLine(new Vector2(wall.Left, wall.Bottom), new Vector2(wall.Right, wall.Bottom), thickness, alpha);
+                break;
+            case WallContactSide.Left:
+                DrawLine(new Vector2(wall.Left, wall.Top), new Vector2(wall.Left, wall.Bottom), thickness + 8, glow);
+                DrawLine(new Vector2(wall.Left, wall.Top), new Vector2(wall.Left, wall.Bottom), thickness, alpha);
+                break;
+        }
     }
 
     private void DrawInputContactWallHighlight()
@@ -1906,8 +1925,8 @@ public class Game1 : Game
             if (!player.Intersects(_walls[i])) continue;
 
             _inputContactWallIndex = i;
-            _wallFollowWallIndex = i;
-            _wallFollowHitWallIndex = -1;
+            _wallFollowWallContact = CreateWallContact(i, delta);
+            _wallFollowHitContact = WallContact.None;
             _playerPosition -= delta;
             if (_rollerActive)
             {
@@ -1938,11 +1957,15 @@ public class Game1 : Game
         }
 
         var turnDirection = GetWallFollowTurnDirection(contactDirection, slideDirection);
-        if (!TryMoveWithoutRoller(slideDirection * amount, out var hitWallIndex))
+        if (!TryMoveWithoutRoller(slideDirection * amount, out var hitWallContact))
         {
-            _wallFollowHitWallIndex = hitWallIndex;
-            if (TryBasicWallFollowTurnInnerCorner(slideDirection, amount, turnDirection, hitWallIndex)) return;
+            _wallFollowHitContact = hitWallContact;
+            ClearBasicWallFollow();
+            return;
+        }
 
+        if (!HasWallNear(contactDirection))
+        {
             ClearBasicWallFollow();
             return;
         }
@@ -1952,10 +1975,6 @@ public class Game1 : Game
         _basicWallFollowSlideDirection = slideDirection;
         _basicWallFollowTurnDirection = turnDirection;
         RememberWallFollowWall(contactDirection);
-        if (!HasWallNear(contactDirection))
-        {
-            TryBasicWallFollowTurnCorner(slideDirection, contactDirection, amount * BasicWallFollowCornerTurnMultiplier);
-        }
     }
 
     private void ContinueBasicWallFollow(float amount)
@@ -1966,10 +1985,10 @@ public class Game1 : Game
         {
             if (_wallFollowMovedThisFrame) return;
 
-            if (!TryMoveWithoutRoller(_basicWallFollowSlideDirection * amount, out var hitWallIndex))
+            if (!TryMoveWithoutRoller(_basicWallFollowSlideDirection * amount, out var hitWallContact))
             {
-                _wallFollowHitWallIndex = hitWallIndex;
-                if (TryBasicWallFollowTurnInnerCorner(_basicWallFollowSlideDirection, amount, _basicWallFollowTurnDirection, hitWallIndex)) return;
+                _wallFollowHitContact = hitWallContact;
+                if (TryBasicWallFollowTurnInnerCorner(_basicWallFollowSlideDirection, amount, _basicWallFollowTurnDirection, hitWallContact)) return;
 
                 ClearBasicWallFollow();
                 return;
@@ -2004,7 +2023,7 @@ public class Game1 : Game
         RememberWallFollowWall(newContactDirection);
     }
 
-    private bool TryBasicWallFollowTurnInnerCorner(Vector2 slideDirection, float amount, int turnDirection, int hitWallIndex)
+    private bool TryBasicWallFollowTurnInnerCorner(Vector2 slideDirection, float amount, int turnDirection, WallContact hitWallContact)
     {
         var newContactDirection = slideDirection;
         var newSlideDirection = GetWallFollowSlideDirection(newContactDirection, turnDirection);
@@ -2022,7 +2041,7 @@ public class Game1 : Game
         _basicWallFollowContactDirection = newContactDirection;
         _basicWallFollowSlideDirection = newSlideDirection;
         _basicWallFollowTurnDirection = turnDirection;
-        RememberWallFollowWall(newContactDirection, hitWallIndex);
+        RememberWallFollowWall(newContactDirection, hitWallContact);
         return true;
     }
 
@@ -2041,11 +2060,15 @@ public class Game1 : Game
 
         var turnDirection = GetWallFollowTurnDirection(contactDirection, slideDirection);
         var slide = slideDirection * amount;
-        if (!TryMoveWithoutRoller(slide, out var hitWallIndex))
+        if (!TryMoveWithoutRoller(slide, out var hitWallContact))
         {
-            _wallFollowHitWallIndex = hitWallIndex;
-            if (TryRollerTurnInnerCorner(slideDirection, amount, turnDirection, hitWallIndex)) return;
+            _wallFollowHitContact = hitWallContact;
+            ClearRollerWallFollow();
+            return;
+        }
 
+        if (!HasWallNear(contactDirection))
+        {
             ClearRollerWallFollow();
             return;
         }
@@ -2055,10 +2078,6 @@ public class Game1 : Game
         _rollerSlideDirection = slideDirection;
         _rollerWallFollowTurnDirection = turnDirection;
         RememberWallFollowWall(contactDirection);
-        if (!HasWallNear(contactDirection))
-        {
-            TryRollerTurnCorner(slideDirection, contactDirection, amount * RollerCornerTurnMultiplier);
-        }
     }
 
     private void ContinueRollerWallFollow(float amount)
@@ -2069,10 +2088,10 @@ public class Game1 : Game
         {
             if (_wallFollowMovedThisFrame) return;
 
-            if (!TryMoveWithoutRoller(_rollerSlideDirection * amount, out var hitWallIndex))
+            if (!TryMoveWithoutRoller(_rollerSlideDirection * amount, out var hitWallContact))
             {
-                _wallFollowHitWallIndex = hitWallIndex;
-                if (TryRollerTurnInnerCorner(_rollerSlideDirection, amount, _rollerWallFollowTurnDirection, hitWallIndex)) return;
+                _wallFollowHitContact = hitWallContact;
+                if (TryRollerTurnInnerCorner(_rollerSlideDirection, amount, _rollerWallFollowTurnDirection, hitWallContact)) return;
 
                 ClearRollerWallFollow();
                 return;
@@ -2104,7 +2123,7 @@ public class Game1 : Game
         RememberWallFollowWall(newContactDirection);
     }
 
-    private bool TryRollerTurnInnerCorner(Vector2 slideDirection, float amount, int turnDirection, int hitWallIndex)
+    private bool TryRollerTurnInnerCorner(Vector2 slideDirection, float amount, int turnDirection, WallContact hitWallContact)
     {
         var newContactDirection = slideDirection;
         var newSlideDirection = GetWallFollowSlideDirection(newContactDirection, turnDirection);
@@ -2122,7 +2141,7 @@ public class Game1 : Game
         _rollerContactDirection = newContactDirection;
         _rollerSlideDirection = newSlideDirection;
         _rollerWallFollowTurnDirection = turnDirection;
-        RememberWallFollowWall(newContactDirection, hitWallIndex);
+        RememberWallFollowWall(newContactDirection, hitWallContact);
         return true;
     }
 
@@ -2182,6 +2201,18 @@ public class Game1 : Game
         return new Vector2(-direction.Y, direction.X);
     }
 
+    private static WallContact CreateWallContact(int wallIndex, Vector2 contactDirection) => new(wallIndex, GetWallContactSide(contactDirection));
+
+    private static WallContactSide GetWallContactSide(Vector2 contactDirection)
+    {
+        var direction = GetAxisDirection(contactDirection);
+        if (direction.X > 0f) return WallContactSide.Left;
+        if (direction.X < 0f) return WallContactSide.Right;
+        if (direction.Y > 0f) return WallContactSide.Top;
+        if (direction.Y < 0f) return WallContactSide.Bottom;
+        return WallContactSide.None;
+    }
+
     private static bool ArePerpendicular(Vector2 a, Vector2 b) => a != Vector2.Zero && b != Vector2.Zero && MathF.Abs(Vector2.Dot(a, b)) < 0.001f;
 
     private bool IsBasicWallFollowActive() => _basicWallFollowContactDirection != Vector2.Zero && _basicWallFollowSlideDirection != Vector2.Zero;
@@ -2199,16 +2230,18 @@ public class Game1 : Game
         ClearBasicWallFollow();
     }
 
-    private void RememberWallFollowWall(Vector2 contactDirection, int fallbackWallIndex = -1)
+    private void RememberWallFollowWall(Vector2 contactDirection, WallContact fallbackContact = null)
     {
         var wallIndex = FindWallNear(contactDirection);
-        _wallFollowWallIndex = IsValidWallIndex(wallIndex) ? wallIndex : fallbackWallIndex;
+        _wallFollowWallContact = IsValidWallIndex(wallIndex)
+            ? CreateWallContact(wallIndex, contactDirection)
+            : fallbackContact ?? WallContact.None;
     }
 
     private void ClearWallFollowWallIndexes()
     {
-        _wallFollowWallIndex = -1;
-        _wallFollowHitWallIndex = -1;
+        _wallFollowWallContact = WallContact.None;
+        _wallFollowHitContact = WallContact.None;
     }
 
     private bool IsValidWallIndex(int wallIndex) => wallIndex >= 0 && wallIndex < _walls.Length;
@@ -2266,17 +2299,19 @@ public class Game1 : Game
 
     private bool TryMoveWithoutRoller(Vector2 delta) => TryMoveWithoutRoller(delta, out _);
 
-    private bool TryMoveWithoutRoller(Vector2 delta, out int hitWallIndex)
+    private bool TryMoveWithoutRoller(Vector2 delta, out WallContact hitWallContact)
     {
         _playerPosition += delta;
         var player = GetPlayerBounds();
-        hitWallIndex = FindCollidingWallIndex(player);
+        var hitWallIndex = FindCollidingWallIndex(player);
         if (hitWallIndex >= 0)
         {
+            hitWallContact = CreateWallContact(hitWallIndex, delta);
             _playerPosition -= delta;
             return false;
         }
 
+        hitWallContact = WallContact.None;
         return true;
     }
 
@@ -3551,6 +3586,32 @@ public class Game1 : Game
     private readonly record struct DeathEffect(Vector2 Position, float TimeRemaining, float Duration, int Seed);
     private readonly record struct DeathStopMark(Vector2 Position, Vector2 Direction);
     private readonly record struct BadgeAwardEffect(int StageIndex, StageRecordKind Kind, float TimeRemaining, float Duration);
+
+    private enum WallContactSide
+    {
+        None,
+        Top,
+        Right,
+        Bottom,
+        Left,
+    }
+
+    private sealed class WallContact
+    {
+        public static readonly WallContact None = new(-1, WallContactSide.None);
+
+        public WallContact(int wallIndex, WallContactSide side)
+        {
+            WallIndex = wallIndex;
+            Side = side;
+        }
+
+        public int WallIndex { get; }
+
+        public WallContactSide Side { get; }
+
+        public bool IsValid(int wallCount) => WallIndex >= 0 && WallIndex < wallCount && Side != WallContactSide.None;
+    }
 
     private enum WaveShape
     {
