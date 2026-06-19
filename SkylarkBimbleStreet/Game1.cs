@@ -86,7 +86,7 @@ public class Game1 : Game
         new("Mono Check", new Color(18, 18, 18), new Color(42, 42, 42), new Color(88, 88, 88), new Color(132, 132, 132), new Color(210, 210, 210), new Color(246, 246, 246), new Color(255, 255, 255), new Color(176, 176, 176), new Color(232, 232, 232), new Color(108, 108, 108), new Color(190, 190, 190), new Color(236, 236, 236), new Color(70, 70, 70), new Color(46, 46, 46), new Color(92, 92, 92), new Color(214, 214, 214)),
     ];
 
-    private Wall[] _walls = [];
+    private Walls _walls = new([]);
     private Rectangle[] _ticketPieceBounds = [];
     private Rectangle[] _gemBounds = [];
     private Rectangle[] _jetBounds = [];
@@ -1756,12 +1756,12 @@ public class Game1 : Game
 
     private void DrawWallFollowWallHighlights()
     {
-        if (_wallFollowWallContact.IsValid(_walls.Length))
+        if (_wallFollowWallContact.IsValid(_walls.Count))
         {
             DrawWallFollowWallHighlight(_wallFollowWallContact, new Color(78, 220, 150), 10);
         }
 
-        if (_wallFollowHitContact.IsValid(_walls.Length))
+        if (_wallFollowHitContact.IsValid(_walls.Count))
         {
             var thickness = _wallFollowHitContact.WallIndex == _wallFollowWallContact.WallIndex ? 16 : 10;
             DrawWallFollowWallHighlight(_wallFollowHitContact, new Color(255, 174, 72), thickness);
@@ -1802,13 +1802,13 @@ public class Game1 : Game
         probe.Offset((int)(_playerInputDirection.X * WallContactProbeDistance), (int)(_playerInputDirection.Y * WallContactProbeDistance));
         var color = new Color(118, 218, 255);
 
-        if (_inputContactWallIndex >= 0 && _inputContactWallIndex < _walls.Length)
+        if (_inputContactWallIndex >= 0 && _walls.IsValidIndex(_inputContactWallIndex))
         {
             DrawWallFollowWallHighlight(CreateWallContact(_inputContactWallIndex, _playerInputDirection), color, 7);
             return;
         }
 
-        for (var i = 0; i < _walls.Length; i++)
+        for (var i = 0; i < _walls.Count; i++)
         {
             if (!probe.Intersects(_walls[i].Bounds)) continue;
 
@@ -1861,7 +1861,7 @@ public class Game1 : Game
         if (_playerInAmbulance || _playerInBus || _playerGhostVelocity == Vector2.Zero) return;
 
         var ghost = GetPlayerGhostBounds();
-        var frameColor = _wallFollowHitContact.IsValid(_walls.Length) ? new Color(255, 174, 72) : new Color(118, 218, 255);
+        var frameColor = _wallFollowHitContact.IsValid(_walls.Count) ? new Color(255, 174, 72) : new Color(118, 218, 255);
         DrawRectangle(ghost, WithAlpha(frameColor, 45));
         DrawFrame(ghost, WithAlpha(frameColor, 220), 3);
         DrawFrame(new Rectangle(ghost.X - 4, ghost.Y - 4, ghost.Width + 8, ghost.Height + 8), WithAlpha(frameColor, 120), 2);
@@ -1944,7 +1944,7 @@ public class Game1 : Game
         _playerPosition += delta;
         var player = GetPlayerBounds();
 
-        for (var i = 0; i < _walls.Length; i++)
+        for (var i = 0; i < _walls.Count; i++)
         {
             if (!player.Intersects(_walls[i].Bounds)) continue;
 
@@ -2266,7 +2266,7 @@ public class Game1 : Game
         _wallFollowHitContact = WallContact.None;
     }
 
-    private bool IsValidWallIndex(int wallIndex) => wallIndex >= 0 && wallIndex < _walls.Length;
+    private bool IsValidWallIndex(int wallIndex) => _walls.IsValidIndex(wallIndex);
 
     private void ClearBasicWallFollow()
     {
@@ -2293,11 +2293,7 @@ public class Game1 : Game
 
     private int FindWallNear(Vector2 direction, int distance)
     {
-        if (direction == Vector2.Zero) return -1;
-
-        var player = GetPlayerBounds();
-        player.Offset((int)(direction.X * distance), (int)(direction.Y * distance));
-        return FindCollidingWallIndex(player);
+        return _walls.FindNearIndex(GetPlayerBounds(), direction, distance);
     }
 
     private bool TryMoveWithoutRollerStepped(Vector2 delta)
@@ -2325,7 +2321,7 @@ public class Game1 : Game
     {
         _playerPosition += delta;
         var player = GetPlayerBounds();
-        var hitWallIndex = FindCollidingWallIndex(player);
+        var hitWallIndex = _walls.FindCollidingIndex(player);
         if (hitWallIndex >= 0)
         {
             hitWallContact = CreateWallContact(hitWallIndex, delta);
@@ -2446,16 +2442,11 @@ public class Game1 : Game
         }
     }
 
-    private bool CollidesWithWall(Rectangle bounds) => FindCollidingWallIndex(bounds) >= 0;
+    private bool CollidesWithWall(Rectangle bounds) => _walls.Collides(bounds);
 
     private int FindCollidingWallIndex(Rectangle bounds)
     {
-        for (var i = 0; i < _walls.Length; i++)
-        {
-            if (bounds.Intersects(_walls[i].Bounds)) return i;
-        }
-
-        return -1;
+        return _walls.FindCollidingIndex(bounds);
     }
     private bool IsGemBagFull() => CountCollectedGemShards() >= GetCurrentGemBagCapacity();
 
@@ -3066,7 +3057,7 @@ public class Game1 : Game
     {
         _currentStageIndex = stageIndex;
         var stage = _stages[_currentStageIndex];
-        _walls = stage.Walls;
+        _walls = new Walls(stage.Walls);
         _ticketPieceBounds = stage.TicketPieces;
         _gemBounds = stage.Gems;
         _jetBounds = stage.Jets;
