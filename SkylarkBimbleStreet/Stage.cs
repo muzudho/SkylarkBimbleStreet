@@ -10,7 +10,7 @@ internal sealed class Stage
     public readonly Rectangle BusStopBounds;
     public readonly Rectangle HospitalBounds;
     public readonly Color BackgroundColor;
-    public readonly Rectangle[] Walls;
+    public readonly Wall[] Walls;
     public readonly Rectangle[] TicketPieces;
     public readonly Rectangle[] Gems;
     public readonly Rectangle[] Jets;
@@ -26,7 +26,7 @@ internal sealed class Stage
         Rectangle busStopBounds,
         Rectangle hospitalBounds,
         Color backgroundColor,
-        Rectangle[] walls,
+        Wall[] walls,
         Rectangle[] ticketPieces,
         Rectangle[] gems,
         Rectangle[] jets,

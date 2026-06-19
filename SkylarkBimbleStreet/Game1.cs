@@ -86,7 +86,7 @@ public class Game1 : Game
         new("Mono Check", new Color(18, 18, 18), new Color(42, 42, 42), new Color(88, 88, 88), new Color(132, 132, 132), new Color(210, 210, 210), new Color(246, 246, 246), new Color(255, 255, 255), new Color(176, 176, 176), new Color(232, 232, 232), new Color(108, 108, 108), new Color(190, 190, 190), new Color(236, 236, 236), new Color(70, 70, 70), new Color(46, 46, 46), new Color(92, 92, 92), new Color(214, 214, 214)),
     ];
 
-    private Rectangle[] _walls = [];
+    private Wall[] _walls = [];
     private Rectangle[] _ticketPieceBounds = [];
     private Rectangle[] _gemBounds = [];
     private Rectangle[] _jetBounds = [];
@@ -367,8 +367,8 @@ public class Game1 : Game
 
         foreach (var wall in _walls)
         {
-            DrawRectangle(wall, CurrentPalette.WallOuter);
-            DrawRectangle(Inset(wall, 5), CurrentPalette.WallInner);
+            DrawRectangle(wall.Bounds, CurrentPalette.WallOuter);
+            DrawRectangle(Inset(wall.Bounds, 5), CurrentPalette.WallInner);
         }
 
         DrawWallFollowWallHighlights();
@@ -854,7 +854,7 @@ public class Game1 : Game
 
         foreach (var wall in stage.Walls)
         {
-            var mapped = MapStageRectangle(wall, map);
+            var mapped = MapStageRectangle(wall.Bounds, map);
             DrawRectangle(mapped, CurrentPalette.WallOuter);
             DrawRectangle(Inset(mapped, Math.Max(1, mapped.Width > mapped.Height ? mapped.Height / 4 : mapped.Width / 4)), CurrentPalette.WallInner);
         }
@@ -1770,7 +1770,7 @@ public class Game1 : Game
 
     private void DrawWallFollowWallHighlight(WallContact contact, Color color, int thickness)
     {
-        var wall = _walls[contact.WallIndex];
+        var wall = _walls[contact.WallIndex].Bounds;
         var alpha = WithAlpha(color, 230);
         var glow = WithAlpha(color, 90);
         switch (contact.Side)
@@ -1810,7 +1810,7 @@ public class Game1 : Game
 
         for (var i = 0; i < _walls.Length; i++)
         {
-            if (!probe.Intersects(_walls[i])) continue;
+            if (!probe.Intersects(_walls[i].Bounds)) continue;
 
             DrawWallFollowWallHighlight(CreateWallContact(i, _playerInputDirection), color, 7);
             return;
@@ -1946,7 +1946,7 @@ public class Game1 : Game
 
         for (var i = 0; i < _walls.Length; i++)
         {
-            if (!player.Intersects(_walls[i])) continue;
+            if (!player.Intersects(_walls[i].Bounds)) continue;
 
             _inputContactWallIndex = i;
             _wallFollowWallContact = CreateWallContact(i, delta);
@@ -2452,7 +2452,7 @@ public class Game1 : Game
     {
         for (var i = 0; i < _walls.Length; i++)
         {
-            if (bounds.Intersects(_walls[i])) return i;
+            if (bounds.Intersects(_walls[i].Bounds)) return i;
         }
 
         return -1;

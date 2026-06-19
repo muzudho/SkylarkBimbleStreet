@@ -68,7 +68,7 @@ internal static class StageLoader
             busStopBounds: ToRectangle(Require(data.BusStopBounds, stageFile, "busStopBounds")),
             hospitalBounds: ToRectangle(Require(data.HospitalBounds, stageFile, "hospitalBounds")),
             backgroundColor: ToColor(Require(data.BackgroundColor, stageFile, "backgroundColor")),
-            walls: Require(data.Walls, stageFile, "walls").Select(ToRectangle).ToArray(),
+            walls: Require(data.Walls, stageFile, "walls").Select((wall, index) => new Wall(index, ToRectangle(wall))).ToArray(),
             ticketPieces: items.TicketPieces,
             gems: items.Gems,
             jets: items.Jets,
