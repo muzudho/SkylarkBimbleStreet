@@ -86,6 +86,7 @@ public class Game1 : Game
         new("Mono Check", new Color(18, 18, 18), new Color(42, 42, 42), new Color(88, 88, 88), new Color(132, 132, 132), new Color(210, 210, 210), new Color(246, 246, 246), new Color(255, 255, 255), new Color(176, 176, 176), new Color(232, 232, 232), new Color(108, 108, 108), new Color(190, 190, 190), new Color(236, 236, 236), new Color(70, 70, 70), new Color(46, 46, 46), new Color(92, 92, 92), new Color(214, 214, 214)),
     ];
 
+    private readonly WallRenderer _wallRenderer = new();
     private Walls _walls = new([]);
     private Rectangle[] _ticketPieceBounds = [];
     private Rectangle[] _gemBounds = [];
@@ -365,11 +366,7 @@ public class Game1 : Game
         DrawRectangle(new Rectangle(0, 0, VirtualWidth, VirtualHeight), _backgroundColor);
         DrawGrid();
 
-        foreach (var wall in _walls)
-        {
-            DrawRectangle(wall.Bounds, CurrentPalette.WallOuter);
-            DrawRectangle(Inset(wall.Bounds, 5), CurrentPalette.WallInner);
-        }
+        _wallRenderer.DrawWalls(_walls, static rectangle => rectangle, CurrentPalette.WallOuter, CurrentPalette.WallInner, DrawRectangle, Inset, static _ => 5);
 
         DrawWallFollowWallHighlights();
         DrawInputContactWallHighlight();
@@ -852,12 +849,7 @@ public class Game1 : Game
         DrawFrame(new Rectangle(map.X - 10, map.Y - 10, map.Width + 20, map.Height + 20), CurrentPalette.WallInner, 5);
         DrawRectangle(map, WithAlpha(CurrentPalette.Background, 235));
 
-        foreach (var wall in stage.Walls)
-        {
-            var mapped = MapStageRectangle(wall.Bounds, map);
-            DrawRectangle(mapped, CurrentPalette.WallOuter);
-            DrawRectangle(Inset(mapped, Math.Max(1, mapped.Width > mapped.Height ? mapped.Height / 4 : mapped.Width / 4)), CurrentPalette.WallInner);
-        }
+        _wallRenderer.DrawWalls(stage.Walls, rectangle => MapStageRectangle(rectangle, map), CurrentPalette.WallOuter, CurrentPalette.WallInner, DrawRectangle, Inset, mapped => Math.Max(1, mapped.Width > mapped.Height ? mapped.Height / 4 : mapped.Width / 4));
 
         var hospital = MapStageRectangle(stage.HospitalBounds, map);
         DrawRectangle(hospital, CurrentPalette.HudBackground);
@@ -3601,32 +3593,6 @@ public class Game1 : Game
     private readonly record struct DeathEffect(Vector2 Position, float TimeRemaining, float Duration, int Seed);
     private readonly record struct DeathStopMark(Vector2 Position, Vector2 Direction);
     private readonly record struct BadgeAwardEffect(int StageIndex, StageRecordKind Kind, float TimeRemaining, float Duration);
-
-    private enum WallContactSide
-    {
-        None,
-        Top,
-        Right,
-        Bottom,
-        Left,
-    }
-
-    private sealed class WallContact
-    {
-        public static readonly WallContact None = new(-1, WallContactSide.None);
-
-        public WallContact(int wallIndex, WallContactSide side)
-        {
-            WallIndex = wallIndex;
-            Side = side;
-        }
-
-        public int WallIndex { get; }
-
-        public WallContactSide Side { get; }
-
-        public bool IsValid(int wallCount) => WallIndex >= 0 && WallIndex < wallCount && Side != WallContactSide.None;
-    }
 
     private enum WaveShape
     {
