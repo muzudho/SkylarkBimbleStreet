@@ -1770,7 +1770,7 @@ public class Game1 : Game
 
     private void DrawWallFollowWallHighlight(WallContact contact, Color color, int thickness)
     {
-        var wall = _walls[contact.WallIndex].Bounds;
+        var wall = _walls[contact.WallIndex];
         var alpha = WithAlpha(color, 230);
         var glow = WithAlpha(color, 90);
         switch (contact.Side)

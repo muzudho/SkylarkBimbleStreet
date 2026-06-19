@@ -16,4 +16,12 @@ internal sealed class Wall
     public int Id { get; }
 
     public Rectangle Bounds { get; }
+
+    public int Left => Bounds.Left;
+
+    public int Right => Bounds.Right;
+
+    public int Top => Bounds.Top;
+
+    public int Bottom => Bounds.Bottom;
 }
