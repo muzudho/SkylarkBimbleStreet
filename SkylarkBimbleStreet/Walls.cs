@@ -63,6 +63,15 @@ internal sealed class Walls : IEnumerable<Wall>
         return FindCollidingIndex(probe);
     }
 
+    /// <summary>
+    /// 少し広めに取って、ぶつかった壁があるか。
+    /// </summary>
+    /// <param name="bounds"></param>
+    /// <param name="direction"></param>
+    /// <param name="distance"></param>
+    /// <returns></returns>
+    public bool HasCollisionNear(Rectangle bounds, Vector2 direction, int distance) => FindNearIndex(bounds, direction, distance) >= 0;
+
     public IEnumerator<Wall> GetEnumerator() => ((IEnumerable<Wall>)_items).GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
