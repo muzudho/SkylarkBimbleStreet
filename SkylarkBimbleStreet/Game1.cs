@@ -366,10 +366,12 @@ public class Game1 : Game
         DrawRectangle(new Rectangle(0, 0, VirtualWidth, VirtualHeight), _backgroundColor);
         DrawGrid();
 
+        // 壁の描画
         _wallRenderer.DrawWalls(_walls, static rectangle => rectangle, CurrentPalette.WallOuter, CurrentPalette.WallInner, DrawRectangle, Inset, static _ => 5);
 
-        DrawWallFollowWallHighlights();
-        DrawInputContactWallHighlight();
+        // 壁追従と、壁ハイライトの描画
+        _wallRenderer.DrawWallFollowWallHighlights(_walls, _wallFollowWallContact, _wallFollowHitContact, DrawLine, WithAlpha);
+        _wallRenderer.DrawInputContactWallHighlight(_walls, GetPlayerBounds(), _playerInputDirection, _playerInAmbulance, _playerInBus, IsWallFollowActive(), _inputContactWallIndex, WallContactProbeDistance, DrawLine, WithAlpha);
 
         DrawExit(GetExitBounds());
         DrawHospital(_hospitalBounds);
@@ -1744,69 +1746,6 @@ public class Game1 : Game
 
         _playerGhostVelocity = GetPlayerGhostVelocity(velocity);
         RefreshPlayerGhostHitContact();
-    }
-
-    private void DrawWallFollowWallHighlights()
-    {
-        if (_wallFollowWallContact.IsValid(_walls.Count))
-        {
-            DrawWallFollowWallHighlight(_wallFollowWallContact, new Color(78, 220, 150), 10);
-        }
-
-        if (_wallFollowHitContact.IsValid(_walls.Count))
-        {
-            var thickness = _wallFollowHitContact.WallIndex == _wallFollowWallContact.WallIndex ? 16 : 10;
-            DrawWallFollowWallHighlight(_wallFollowHitContact, new Color(255, 174, 72), thickness);
-        }
-    }
-
-    private void DrawWallFollowWallHighlight(WallContact contact, Color color, int thickness)
-    {
-        var wall = _walls[contact.WallIndex];
-        var alpha = WithAlpha(color, 230);
-        var glow = WithAlpha(color, 90);
-        switch (contact.Side)
-        {
-            case WallContactSide.Top:
-                DrawLine(new Vector2(wall.Left, wall.Top), new Vector2(wall.Right, wall.Top), thickness + 8, glow);
-                DrawLine(new Vector2(wall.Left, wall.Top), new Vector2(wall.Right, wall.Top), thickness, alpha);
-                break;
-            case WallContactSide.Right:
-                DrawLine(new Vector2(wall.Right, wall.Top), new Vector2(wall.Right, wall.Bottom), thickness + 8, glow);
-                DrawLine(new Vector2(wall.Right, wall.Top), new Vector2(wall.Right, wall.Bottom), thickness, alpha);
-                break;
-            case WallContactSide.Bottom:
-                DrawLine(new Vector2(wall.Left, wall.Bottom), new Vector2(wall.Right, wall.Bottom), thickness + 8, glow);
-                DrawLine(new Vector2(wall.Left, wall.Bottom), new Vector2(wall.Right, wall.Bottom), thickness, alpha);
-                break;
-            case WallContactSide.Left:
-                DrawLine(new Vector2(wall.Left, wall.Top), new Vector2(wall.Left, wall.Bottom), thickness + 8, glow);
-                DrawLine(new Vector2(wall.Left, wall.Top), new Vector2(wall.Left, wall.Bottom), thickness, alpha);
-                break;
-        }
-    }
-
-    private void DrawInputContactWallHighlight()
-    {
-        if (_playerInAmbulance || _playerInBus || _playerInputDirection == Vector2.Zero || IsWallFollowActive()) return;
-
-        var probe = GetPlayerBounds();
-        probe.Offset((int)(_playerInputDirection.X * WallContactProbeDistance), (int)(_playerInputDirection.Y * WallContactProbeDistance));
-        var color = new Color(118, 218, 255);
-
-        if (_inputContactWallIndex >= 0 && _walls.IsValidIndex(_inputContactWallIndex))
-        {
-            DrawWallFollowWallHighlight(CreateWallContact(_inputContactWallIndex, _playerInputDirection), color, 7);
-            return;
-        }
-
-        for (var i = 0; i < _walls.Count; i++)
-        {
-            if (!probe.Intersects(_walls[i].Bounds)) continue;
-
-            DrawWallFollowWallHighlight(CreateWallContact(i, _playerInputDirection), color, 7);
-            return;
-        }
     }
 
     private void DrawPlayerFacingLight()
