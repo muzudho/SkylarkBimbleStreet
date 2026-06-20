@@ -1794,19 +1794,20 @@ public class Game1 : Game
     {
         if (_playerInAmbulance || _playerInBus) return;
 
-        DrawPlayerGhost(_wallFollower.InputDirectionGhostVelocity, new Color(80, 255, 120));
-        DrawPlayerGhost(_wallFollower.MoveDirectionGhostVelocity, new Color(118, 218, 255));
-        DrawPlayerGhost(_wallFollower.OuterCornerGhostVelocity, new Color(255, 220, 72));
+        DrawPlayerGhost(_wallFollower.InputDirectionGhostVelocity, new Color(80, 255, 120), 10, 2);
+        DrawPlayerGhost(_wallFollower.MoveDirectionGhostVelocity, new Color(118, 218, 255), 5, 3);
+        DrawPlayerGhost(_wallFollower.OuterCornerGhostVelocity, new Color(255, 220, 72), 0, 4);
     }
 
-    private void DrawPlayerGhost(Vector2 velocity, Color frameColor)
+    private void DrawPlayerGhost(Vector2 velocity, Color frameColor, int spread, int thickness)
     {
         if (velocity == Vector2.Zero) return;
 
         var ghost = GetPlayerGhostBounds(velocity);
-        DrawRectangle(ghost, WithAlpha(frameColor, 45));
-        DrawFrame(ghost, WithAlpha(frameColor, 220), 3);
-        DrawFrame(new Rectangle(ghost.X - 4, ghost.Y - 4, ghost.Width + 8, ghost.Height + 8), WithAlpha(frameColor, 120), 2);
+        var frame = new Rectangle(ghost.X - spread, ghost.Y - spread, ghost.Width + spread * 2, ghost.Height + spread * 2);
+        DrawRectangle(frame, WithAlpha(frameColor, 28));
+        DrawFrame(frame, WithAlpha(frameColor, 230), thickness);
+        DrawFrame(new Rectangle(frame.X - 4, frame.Y - 4, frame.Width + 8, frame.Height + 8), WithAlpha(frameColor, 130), 2);
     }
 
     private Rectangle GetPlayerGhostBounds(Vector2 velocity)
