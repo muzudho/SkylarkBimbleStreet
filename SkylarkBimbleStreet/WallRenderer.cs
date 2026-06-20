@@ -58,7 +58,7 @@ internal sealed class WallRenderer
         Action<Vector2, Vector2, int, Color> drawLine,
         Func<Color, byte, Color> withAlpha)
     {
-        if (wallFollowWallContact.IsValid(walls.Count))
+        if (wallFollowerStateKind != WallFollowerStateKind.BeforeWall && wallFollowWallContact.IsValid(walls.Count))
         {
             DrawWallFollowWallHighlight(walls[wallFollowWallContact.WallIndex], wallFollowWallContact.Side, GetWallFollowWallColor(wallFollowerStateKind), 10, drawLine, withAlpha);
         }
@@ -72,7 +72,6 @@ internal sealed class WallRenderer
 
     private static Color GetWallFollowWallColor(WallFollowerStateKind stateKind) => stateKind switch
     {
-        WallFollowerStateKind.BeforeWall => new Color(255, 174, 72),
         WallFollowerStateKind.FacingWall => new Color(78, 220, 150),
         WallFollowerStateKind.AlongWall => new Color(118, 218, 255),
         _ => new Color(78, 220, 150),

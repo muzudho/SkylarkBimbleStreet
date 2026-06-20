@@ -72,6 +72,8 @@ internal sealed class WallFollower
     private int _basicWallFollowTurnDirection = 1;
     private WallContact _pendingWallFollowContact = WallContact.None;
     private Vector2 _pendingWallFollowContactDirection;
+    private WallContact _latchedWallFollowContact = WallContact.None;
+    private Vector2 _latchedWallFollowContactDirection;
     private bool _wallFollowMovedThisFrame;
 
     public WallFollower(
@@ -155,6 +157,7 @@ internal sealed class WallFollower
     {
         _wallFollowMovedThisFrame = false;
         InputContactWallIndex = -1;
+        ClearLatchedWallFollowIfAway();
     }
 
     public void ResetForNoMove()
@@ -166,11 +169,14 @@ internal sealed class WallFollower
         InputContactWallIndex = -1;
         WallFollowHitContact = WallContact.None;
         ClearActiveWallFollow();
+        ClearLatchedWallFollow();
         SetState(_noReactionState);
     }
 
     public void Move(Vector2 delta, bool rollerActive)
     {
+        if (TryMoveWithLatchedWall(delta, rollerActive)) return;
+
         if (TryStartPendingWallFollow(delta, rollerActive)) return;
 
         _noReactionState.Move(new WallFollowerContext(this, delta, 0f, rollerActive, WallContact.None));
@@ -333,9 +339,43 @@ internal sealed class WallFollower
         }
 
         WallFollowWallContact = _pendingWallFollowContact;
+        LatchWallFollowWall(_pendingWallFollowContact, _pendingWallFollowContactDirection);
         ClearPendingWallFollow();
         SetState(_alongWallState);
         return true;
+    }
+
+    private bool TryMoveWithLatchedWall(Vector2 delta, bool rollerActive)
+    {
+        if (!IsLatchedWallNear()) return false;
+
+        WallFollowWallContact = _latchedWallFollowContact;
+        var moveDirection = GetAxisDirection(delta);
+        if (moveDirection == Vector2.Zero) return false;
+
+        if (moveDirection == _latchedWallFollowContactDirection)
+        {
+            SetState(_alongWallState);
+            return true;
+        }
+
+        if (ArePerpendicular(moveDirection, _latchedWallFollowContactDirection))
+        {
+            if (rollerActive)
+            {
+                StartRollerWallFollow(_latchedWallFollowContactDirection, moveDirection);
+            }
+            else
+            {
+                StartBasicWallFollow(_latchedWallFollowContactDirection, moveDirection);
+            }
+
+            SetState(_alongWallState);
+            return true;
+        }
+
+        ClearLatchedWallFollow();
+        return false;
     }
 
     private void StartBasicWallFollow(Vector2 contactDirection, Vector2 slideDirection)
@@ -646,6 +686,33 @@ internal sealed class WallFollower
         WallFollowWallContact = _walls.IsValidIndex(wallIndex)
             ? CreateWallContact(wallIndex, contactDirection)
             : fallbackContact ?? WallContact.None;
+        LatchWallFollowWall(WallFollowWallContact, contactDirection);
+    }
+
+    private void LatchWallFollowWall(WallContact contact, Vector2 contactDirection)
+    {
+        if (!contact.IsValid(_walls.Count) || contactDirection == Vector2.Zero) return;
+
+        _latchedWallFollowContact = contact;
+        _latchedWallFollowContactDirection = contactDirection;
+    }
+
+    private bool IsLatchedWallNear()
+        => _latchedWallFollowContact.IsValid(_walls.Count)
+        && _latchedWallFollowContactDirection != Vector2.Zero
+        && HasWallNear(_latchedWallFollowContactDirection, _rollerWallProbeDistance);
+
+    private void ClearLatchedWallFollowIfAway()
+    {
+        if (_latchedWallFollowContactDirection == Vector2.Zero || IsLatchedWallNear()) return;
+
+        ClearLatchedWallFollow();
+    }
+
+    private void ClearLatchedWallFollow()
+    {
+        _latchedWallFollowContact = WallContact.None;
+        _latchedWallFollowContactDirection = Vector2.Zero;
     }
 
     private void RefreshPlayerGhostHitContact()
