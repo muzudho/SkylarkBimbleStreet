@@ -23,22 +23,26 @@ using Microsoft.Xna.Framework;
 /// 
 ///            a
 ///          +----+
-///    b     |    |
+///    c     |    |
 ///       +--+    +--+
-/// 1 - b |          |
+///    d  |          |
 ///       +----------+
-///        1
+///        b
+///        
+/// b > a
 /// 
-/// 横幅 a と、高さ b の割合を指定したいぜ（＾～＾） つまり、 a, b は帽子の部分な（＾▽＾）
+/// 横幅 a, b と、高さ c, d を元サイズとの割合で指定したいぜ（＾～＾） つまり、 a, c は帽子の部分な（＾▽＾）
 /// こうすると、サイズを指定しやすいぜ（＾▽＾）
 ///     </pre>
 /// </summary>
 internal static class SlimeRenderer
 {
     // 壁追従中のプレイヤー表示。判定矩形は変えず、描画だけスライム状に変える。
-    // CapWidthRatio: 図の a。帽子部分の横幅。CapHeightRatio: 図の b。帽子部分の高さ。
-    private const float SlimeCapWidthRatio = 0.68f;
-    private const float SlimeCapHeightRatio = 0.62f;
+    // 図の a, b, c, d。元プレイヤーサイズに対する倍率なので、1 より大きい値も使える。
+    private const float SlimeCapWidthRatio = 0.88f;     // a
+    private const float SlimeBaseWidthRatio = 1.32f;    // b
+    private const float SlimeCapHeightRatio = 0.62f;    // c
+    private const float SlimeBaseHeightRatio = 0.42f;   // d
 
     public static Rectangle Draw(
         Rectangle player,
@@ -68,44 +72,38 @@ internal static class SlimeRenderer
     private static Rectangle GetSlimeBaseBounds(Rectangle player, Vector2 contactDirection)
     {
         // 台座部分は、親壁に接している側へ寄せる。
-        var baseThickness = GetBaseThickness(player, contactDirection);
-        if (contactDirection.X > 0f) return new Rectangle(player.Right - baseThickness, player.Y, baseThickness, player.Height);
-        if (contactDirection.X < 0f) return new Rectangle(player.X, player.Y, baseThickness, player.Height);
-        if (contactDirection.Y > 0f) return new Rectangle(player.X, player.Bottom - baseThickness, player.Width, baseThickness);
-        if (contactDirection.Y < 0f) return new Rectangle(player.X, player.Y, player.Width, baseThickness);
+        var baseWidth = GetParallelSize(player, contactDirection, SlimeBaseWidthRatio);
+        var baseHeight = GetDepthSize(player, contactDirection, SlimeBaseHeightRatio);
+        if (contactDirection.X > 0f) return new Rectangle(player.Right - baseHeight, player.Center.Y - baseWidth / 2, baseHeight, baseWidth);
+        if (contactDirection.X < 0f) return new Rectangle(player.X, player.Center.Y - baseWidth / 2, baseHeight, baseWidth);
+        if (contactDirection.Y > 0f) return new Rectangle(player.Center.X - baseWidth / 2, player.Bottom - baseHeight, baseWidth, baseHeight);
+        if (contactDirection.Y < 0f) return new Rectangle(player.Center.X - baseWidth / 2, player.Y, baseWidth, baseHeight);
         return player;
     }
 
     private static Rectangle GetSlimeCapBounds(Rectangle player, Vector2 contactDirection)
     {
         // 帽子部分は、親壁と反対側の中央へ置く。
-        var capWidth = GetCapWidth(player, contactDirection);
-        var capHeight = GetCapHeight(player, contactDirection);
-        if (contactDirection.X > 0f) return new Rectangle(player.X, player.Center.Y - capHeight / 2, capWidth, capHeight);
-        if (contactDirection.X < 0f) return new Rectangle(player.Right - capWidth, player.Center.Y - capHeight / 2, capWidth, capHeight);
-        if (contactDirection.Y > 0f) return new Rectangle(player.Center.X - capWidth / 2, player.Y, capWidth, capHeight);
-        if (contactDirection.Y < 0f) return new Rectangle(player.Center.X - capWidth / 2, player.Bottom - capHeight, capWidth, capHeight);
+        var capWidth = GetParallelSize(player, contactDirection, SlimeCapWidthRatio);
+        var capHeight = GetDepthSize(player, contactDirection, SlimeCapHeightRatio);
+        var baseHeight = GetDepthSize(player, contactDirection, SlimeBaseHeightRatio);
+        if (contactDirection.X > 0f) return new Rectangle(player.Right - baseHeight - capHeight, player.Center.Y - capWidth / 2, capHeight, capWidth);
+        if (contactDirection.X < 0f) return new Rectangle(player.X + baseHeight, player.Center.Y - capWidth / 2, capHeight, capWidth);
+        if (contactDirection.Y > 0f) return new Rectangle(player.Center.X - capWidth / 2, player.Bottom - baseHeight - capHeight, capWidth, capHeight);
+        if (contactDirection.Y < 0f) return new Rectangle(player.Center.X - capWidth / 2, player.Y + baseHeight, capWidth, capHeight);
         return Rectangle.Empty;
     }
 
-    private static int GetBaseThickness(Rectangle player, Vector2 contactDirection)
-    {
-        var size = contactDirection.X != 0f ? player.Width : player.Height;
-        return Math.Max(1, size - GetCapDepth(player, contactDirection));
-    }
-
-    private static int GetCapWidth(Rectangle player, Vector2 contactDirection)
+    private static int GetParallelSize(Rectangle player, Vector2 contactDirection, float ratio)
     {
         var size = contactDirection.X != 0f ? player.Height : player.Width;
-        return Math.Clamp((int)MathF.Round(size * SlimeCapWidthRatio), 1, size);
+        return Math.Max(1, (int)MathF.Round(size * ratio));
     }
 
-    private static int GetCapHeight(Rectangle player, Vector2 contactDirection) => GetCapDepth(player, contactDirection);
-
-    private static int GetCapDepth(Rectangle player, Vector2 contactDirection)
+    private static int GetDepthSize(Rectangle player, Vector2 contactDirection, float ratio)
     {
         var size = contactDirection.X != 0f ? player.Width : player.Height;
-        return Math.Clamp((int)MathF.Round(size * SlimeCapHeightRatio), 1, size);
+        return Math.Max(1, (int)MathF.Round(size * ratio));
     }
 
     private static Color WithAlpha(Color color, byte alpha) => new(color.R, color.G, color.B, alpha);
