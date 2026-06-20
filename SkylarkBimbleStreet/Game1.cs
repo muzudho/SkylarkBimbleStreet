@@ -184,7 +184,7 @@ public class Game1 : Game
         _graphics.PreferredBackBufferWidth = 1280;
         _graphics.PreferredBackBufferHeight = 720;
         _graphics.SynchronizeWithVerticalRetrace = true;
-        _wallFollower = new WallFollower(_walls, TryMoveWithoutRoller, GetPlayerBounds, RollerWallProbeDistance, WallContactProbeDistance, RollerSlideMultiplier, RollerCornerTurnMultiplier, BasicWallFollowCornerTurnMultiplier, PlayerGhostPreviewFrames);
+        _wallFollower = new WallFollower(_walls, TryMoveWithoutRoller, GetPlayerBounds, RollerWallProbeDistance, WallContactProbeDistance, RollerSlideMultiplier, RollerCornerTurnMultiplier, BasicWallFollowCornerTurnMultiplier);
 
         Content.RootDirectory = "Content";
         IsMouseVisible = true;
@@ -1792,19 +1792,27 @@ public class Game1 : Game
 
     private void DrawPlayerGhost()
     {
-        if (_playerInAmbulance || _playerInBus || _wallFollower.PlayerGhostVelocity == Vector2.Zero) return;
+        if (_playerInAmbulance || _playerInBus) return;
 
-        var ghost = GetPlayerGhostBounds();
-        var frameColor = _wallFollower.WallFollowHitContact.IsValid(_walls.Count) ? new Color(255, 174, 72) : new Color(118, 218, 255);
+        DrawPlayerGhost(_wallFollower.InputDirectionGhostVelocity, new Color(80, 255, 120));
+        DrawPlayerGhost(_wallFollower.MoveDirectionGhostVelocity, new Color(118, 218, 255));
+        DrawPlayerGhost(_wallFollower.OuterCornerGhostVelocity, new Color(255, 220, 72));
+    }
+
+    private void DrawPlayerGhost(Vector2 velocity, Color frameColor)
+    {
+        if (velocity == Vector2.Zero) return;
+
+        var ghost = GetPlayerGhostBounds(velocity);
         DrawRectangle(ghost, WithAlpha(frameColor, 45));
         DrawFrame(ghost, WithAlpha(frameColor, 220), 3);
         DrawFrame(new Rectangle(ghost.X - 4, ghost.Y - 4, ghost.Width + 8, ghost.Height + 8), WithAlpha(frameColor, 120), 2);
     }
 
-    private Rectangle GetPlayerGhostBounds()
+    private Rectangle GetPlayerGhostBounds(Vector2 velocity)
     {
         var ghost = GetPlayerBounds();
-        ghost.Offset((int)MathF.Round(_wallFollower.PlayerGhostVelocity.X * PlayerGhostPreviewFrames), (int)MathF.Round(_wallFollower.PlayerGhostVelocity.Y * PlayerGhostPreviewFrames));
+        ghost.Offset((int)MathF.Round(velocity.X * PlayerGhostPreviewFrames), (int)MathF.Round(velocity.Y * PlayerGhostPreviewFrames));
         return ghost;
     }
 

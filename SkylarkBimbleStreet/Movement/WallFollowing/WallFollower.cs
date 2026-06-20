@@ -62,7 +62,6 @@ internal sealed class WallFollower
     private readonly float _rollerSlideMultiplier;
     private readonly float _rollerCornerTurnMultiplier;
     private readonly float _basicWallFollowCornerTurnMultiplier;
-    private readonly float _playerGhostPreviewFrames;
     private Vector2 _rollerContactDirection;
     private Vector2 _rollerSlideDirection;
     private int _rollerWallFollowTurnDirection = 1;
@@ -83,8 +82,7 @@ internal sealed class WallFollower
         int wallContactProbeDistance,
         float rollerSlideMultiplier,
         float rollerCornerTurnMultiplier,
-        float basicWallFollowCornerTurnMultiplier,
-        float playerGhostPreviewFrames)
+        float basicWallFollowCornerTurnMultiplier)
     {
         _walls = walls;
         _tryMoveWithoutRoller = tryMoveWithoutRoller;
@@ -94,7 +92,6 @@ internal sealed class WallFollower
         _rollerSlideMultiplier = rollerSlideMultiplier;
         _rollerCornerTurnMultiplier = rollerCornerTurnMultiplier;
         _basicWallFollowCornerTurnMultiplier = basicWallFollowCornerTurnMultiplier;
-        _playerGhostPreviewFrames = playerGhostPreviewFrames;
     }
 
     public WallContact WallFollowWallContact { get; private set; } = WallContact.None;
@@ -104,6 +101,12 @@ internal sealed class WallFollower
     public int InputContactWallIndex { get; private set; } = -1;
 
     public Vector2 PlayerGhostVelocity { get; private set; }
+
+    public Vector2 InputDirectionGhostVelocity { get; private set; }
+
+    public Vector2 MoveDirectionGhostVelocity { get; private set; }
+
+    public Vector2 OuterCornerGhostVelocity { get; private set; }
 
     public WallFollowerStateKind StateKind { get; private set; } = WallFollowerStateKind.NoReaction;
 
@@ -157,6 +160,9 @@ internal sealed class WallFollower
     public void ResetForNoMove()
     {
         PlayerGhostVelocity = Vector2.Zero;
+        InputDirectionGhostVelocity = Vector2.Zero;
+        MoveDirectionGhostVelocity = Vector2.Zero;
+        OuterCornerGhostVelocity = Vector2.Zero;
         InputContactWallIndex = -1;
         WallFollowHitContact = WallContact.None;
         ClearActiveWallFollow();
@@ -244,7 +250,10 @@ internal sealed class WallFollower
 
     public void UpdateGhostState(Vector2 velocity, bool rollerActive)
     {
-        PlayerGhostVelocity = GetPlayerGhostVelocity(velocity, rollerActive);
+        InputDirectionGhostVelocity = velocity;
+        MoveDirectionGhostVelocity = GetMoveDirectionGhostVelocity(velocity, rollerActive);
+        OuterCornerGhostVelocity = GetOuterCornerGhostVelocity(MoveDirectionGhostVelocity, rollerActive);
+        PlayerGhostVelocity = MoveDirectionGhostVelocity;
         RefreshPlayerGhostHitContact();
     }
 
@@ -641,30 +650,39 @@ internal sealed class WallFollower
 
     private void RefreshPlayerGhostHitContact()
     {
-        if (PlayerGhostVelocity == Vector2.Zero)
+        if (OuterCornerGhostVelocity == Vector2.Zero)
         {
             WallFollowHitContact = WallContact.None;
             return;
         }
 
-        var hitWallIndex = _walls.FindCollidingIndex(GetPlayerGhostBounds());
+        var hitWallIndex = _walls.FindCollidingIndex(GetOuterCornerGhostBounds());
         WallFollowHitContact = hitWallIndex >= 0
-            ? CreateWallContact(hitWallIndex, PlayerGhostVelocity)
+            ? CreateWallContact(hitWallIndex, OuterCornerGhostVelocity)
             : WallContact.None;
     }
 
-    private Rectangle GetPlayerGhostBounds()
+    private Rectangle GetOuterCornerGhostBounds()
     {
         var ghost = _getPlayerBounds();
-        ghost.Offset((int)MathF.Round(PlayerGhostVelocity.X * _playerGhostPreviewFrames), (int)MathF.Round(PlayerGhostVelocity.Y * _playerGhostPreviewFrames));
+        ghost.Offset((int)MathF.Round(OuterCornerGhostVelocity.X), (int)MathF.Round(OuterCornerGhostVelocity.Y));
         return ghost;
     }
 
-    private Vector2 GetPlayerGhostVelocity(Vector2 velocity, bool rollerActive)
+    private Vector2 GetMoveDirectionGhostVelocity(Vector2 velocity, bool rollerActive)
     {
         var amount = MathF.Max(MathF.Abs(velocity.X), MathF.Abs(velocity.Y));
         if (rollerActive && IsRollerWallFollowActive()) return _rollerSlideDirection * amount * _rollerSlideMultiplier;
         if (!rollerActive && IsBasicWallFollowActive()) return _basicWallFollowSlideDirection * amount * _basicWallFollowCornerTurnMultiplier;
         return velocity;
+    }
+
+    private Vector2 GetOuterCornerGhostVelocity(Vector2 moveDirectionGhostVelocity, bool rollerActive)
+    {
+        var contactDirection = GetWallFollowContactDirection(rollerActive);
+        if (moveDirectionGhostVelocity == Vector2.Zero || contactDirection == Vector2.Zero) return Vector2.Zero;
+
+        var amount = MathF.Max(MathF.Abs(moveDirectionGhostVelocity.X), MathF.Abs(moveDirectionGhostVelocity.Y));
+        return moveDirectionGhostVelocity + contactDirection * amount;
     }
 }
