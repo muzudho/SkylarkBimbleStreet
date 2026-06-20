@@ -361,7 +361,7 @@ public class Game1 : Game
         _wallRenderer.DrawWalls(_walls, static rectangle => rectangle, CurrentPalette.WallOuter, CurrentPalette.WallInner, DrawRectangle, Inset, static _ => 5);
 
         // 壁追従と、壁ハイライトの描画
-        _wallRenderer.DrawWallFollowWallHighlights(_walls, _wallFollower.WallFollowWallContact, _wallFollower.WallFollowHitContact, DrawLine, WithAlpha);
+        _wallRenderer.DrawWallFollowWallHighlights(_walls, _wallFollower.WallFollowWallContact, _wallFollower.WallFollowHitContact, _wallFollower.GetStateKind(), DrawLine, WithAlpha);
         _wallRenderer.DrawInputContactWallHighlight(_walls, GetPlayerBounds(), _playerInputDirection, _playerInAmbulance, _playerInBus, _wallFollower.IsWallFollowActive(_rollerActive), _wallFollower.InputContactWallIndex, WallContactProbeDistance, DrawLine, WithAlpha);
 
         DrawExit(GetExitBounds());

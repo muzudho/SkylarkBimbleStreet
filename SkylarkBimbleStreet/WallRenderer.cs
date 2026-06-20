@@ -3,6 +3,7 @@ namespace SkylarkBimbleStreet;
 using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
+using SkylarkBimbleStreet.Movement.WallFollowing;
 
 /// <summary>
 /// 壁の描画を担当
@@ -46,18 +47,20 @@ internal sealed class WallRenderer
     /// <param name="walls">描画する壁のコレクション</param>
     /// <param name="wallFollowWallContact">壁追従の接触情報</param>
     /// <param name="wallFollowHitContact">壁追従のヒット情報</param>
+    /// <param name="wallFollowerStateKind">片手壁伝い法の状態</param>
     /// <param name="drawLine">線を描画する関数</param>
     /// <param name="withAlpha">アルファ値を適用する関数</param>
     public void DrawWallFollowWallHighlights(
         Walls walls,
         WallContact wallFollowWallContact,
         WallContact wallFollowHitContact,
+        WallFollowerStateKind wallFollowerStateKind,
         Action<Vector2, Vector2, int, Color> drawLine,
         Func<Color, byte, Color> withAlpha)
     {
         if (wallFollowWallContact.IsValid(walls.Count))
         {
-            DrawWallFollowWallHighlight(walls[wallFollowWallContact.WallIndex], wallFollowWallContact.Side, new Color(78, 220, 150), 10, drawLine, withAlpha);
+            DrawWallFollowWallHighlight(walls[wallFollowWallContact.WallIndex], wallFollowWallContact.Side, GetWallFollowWallColor(wallFollowerStateKind), 10, drawLine, withAlpha);
         }
 
         if (wallFollowHitContact.IsValid(walls.Count))
@@ -66,6 +69,14 @@ internal sealed class WallRenderer
             DrawWallFollowWallHighlight(walls[wallFollowHitContact.WallIndex], wallFollowHitContact.Side, new Color(255, 174, 72), thickness, drawLine, withAlpha);
         }
     }
+
+    private static Color GetWallFollowWallColor(WallFollowerStateKind stateKind) => stateKind switch
+    {
+        WallFollowerStateKind.BeforeWall => new Color(255, 174, 72),
+        WallFollowerStateKind.FacingWall => new Color(78, 220, 150),
+        WallFollowerStateKind.AlongWall => new Color(118, 218, 255),
+        _ => new Color(78, 220, 150),
+    };
 
     /// <summary>
     /// プレイヤーの入力に応じた壁のハイライトを描画する。
