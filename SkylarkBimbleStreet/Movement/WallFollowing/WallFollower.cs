@@ -1,7 +1,8 @@
-namespace SkylarkBimbleStreet;
+namespace SkylarkBimbleStreet.Movement.WallFollowing;
 
 using System;
 using Microsoft.Xna.Framework;
+using SkylarkBimbleStreet;
 
 internal delegate bool MoveWithoutRollerDelegate(Vector2 delta, out WallContact hitWallContact);
 

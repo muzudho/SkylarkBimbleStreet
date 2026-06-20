@@ -1,5 +1,4 @@
-namespace SkylarkBimbleStreet;
-
+namespace SkylarkBimbleStreet.Movement.WallFollowing;
 /// <summary>
 /// 片手壁伝い法の［壁直前］状態を表すクラス。
 /// </summary>

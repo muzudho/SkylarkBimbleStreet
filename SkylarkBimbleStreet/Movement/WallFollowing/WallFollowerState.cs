@@ -1,6 +1,7 @@
-namespace SkylarkBimbleStreet;
+namespace SkylarkBimbleStreet.Movement.WallFollowing;
 
 using Microsoft.Xna.Framework;
+using SkylarkBimbleStreet;
 
 internal enum WallFollowerStateKind
 {
