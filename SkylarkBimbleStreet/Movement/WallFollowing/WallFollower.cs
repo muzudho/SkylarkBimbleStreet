@@ -71,6 +71,8 @@ internal sealed class WallFollower
     private Vector2 _basicWallFollowContactDirection;
     private Vector2 _basicWallFollowSlideDirection;
     private int _basicWallFollowTurnDirection = 1;
+    private WallContact _pendingWallFollowContact = WallContact.None;
+    private Vector2 _pendingWallFollowContactDirection;
     private bool _wallFollowMovedThisFrame;
 
     public WallFollower(
@@ -130,15 +132,8 @@ internal sealed class WallFollower
         InputContactWallIndex = context.HitWallContact.WallIndex;
         WallFollowWallContact = context.HitWallContact;
         WallFollowHitContact = WallContact.None;
-
-        if (context.RollerActive)
-        {
-            TryRollerSlide(context.Delta);
-        }
-        else
-        {
-            TryBasicWallFollowSlide(context.Delta);
-        }
+        _pendingWallFollowContact = context.HitWallContact;
+        _pendingWallFollowContactDirection = GetPendingWallFollowContactDirection(context.HitWallContact, context.Delta);
     }
 
     internal void ContinueAlongWallForState(WallFollowerContext context)
@@ -170,6 +165,8 @@ internal sealed class WallFollower
 
     public void Move(Vector2 delta, bool rollerActive)
     {
+        if (TryStartPendingWallFollow(delta, rollerActive)) return;
+
         _noReactionState.Move(new WallFollowerContext(this, delta, 0f, rollerActive, WallContact.None));
     }
 
@@ -290,6 +287,53 @@ internal sealed class WallFollower
         RememberWallFollowWall(contactDirection);
     }
 
+    private bool TryStartPendingWallFollow(Vector2 delta, bool rollerActive)
+    {
+        if (!_pendingWallFollowContact.IsValid(_walls.Count) || _pendingWallFollowContactDirection == Vector2.Zero) return false;
+
+        var slideDirection = GetAxisDirection(delta);
+        if (slideDirection == Vector2.Zero) return false;
+
+        if (slideDirection == -_pendingWallFollowContactDirection)
+        {
+            ClearPendingWallFollow();
+            return false;
+        }
+
+        if (!ArePerpendicular(slideDirection, _pendingWallFollowContactDirection))
+        {
+            SetState(_facingWallState);
+            return true;
+        }
+
+        if (!HasWallNear(_pendingWallFollowContactDirection, _rollerWallProbeDistance))
+        {
+            ClearPendingWallFollow();
+            return false;
+        }
+
+        if (rollerActive)
+        {
+            StartRollerWallFollow(_pendingWallFollowContactDirection, slideDirection);
+        }
+        else
+        {
+            StartBasicWallFollow(_pendingWallFollowContactDirection, slideDirection);
+        }
+
+        WallFollowWallContact = _pendingWallFollowContact;
+        ClearPendingWallFollow();
+        SetState(_alongWallState);
+        return true;
+    }
+
+    private void StartBasicWallFollow(Vector2 contactDirection, Vector2 slideDirection)
+    {
+        _basicWallFollowContactDirection = contactDirection;
+        _basicWallFollowSlideDirection = slideDirection;
+        _basicWallFollowTurnDirection = GetWallFollowTurnDirection(contactDirection, slideDirection);
+    }
+
     private void TryBasicWallFollowTurnCorner(Vector2 slideDirection, Vector2 contactDirection, float amount)
     {
         if (amount <= 0f) return;
@@ -366,6 +410,13 @@ internal sealed class WallFollower
         _rollerSlideDirection = slideDirection;
         _rollerWallFollowTurnDirection = turnDirection;
         RememberWallFollowWall(contactDirection);
+    }
+
+    private void StartRollerWallFollow(Vector2 contactDirection, Vector2 slideDirection)
+    {
+        _rollerContactDirection = contactDirection;
+        _rollerSlideDirection = slideDirection;
+        _rollerWallFollowTurnDirection = GetWallFollowTurnDirection(contactDirection, slideDirection);
     }
 
     private void TryRollerTurnCorner(Vector2 slideDirection, Vector2 contactDirection, float amount)
@@ -474,6 +525,12 @@ internal sealed class WallFollower
         _ => Vector2.Zero,
     };
 
+    private static Vector2 GetPendingWallFollowContactDirection(WallContact contact, Vector2 fallbackDelta)
+    {
+        var contactDirection = GetDirectionFromWallContactSide(contact.Side);
+        return contactDirection != Vector2.Zero ? contactDirection : GetAxisDirection(fallbackDelta);
+    }
+
     private static WallContact CreateWallContact(int wallIndex, Vector2 contactDirection) => new(wallIndex, GetWallContactSide(contactDirection));
 
     private static WallContactSide GetWallContactSide(Vector2 contactDirection)
@@ -535,20 +592,6 @@ internal sealed class WallFollower
         return direction != Vector2.Zero && _tryMoveWithoutRoller(direction, out _);
     }
 
-    /// <summary>
-    /// 壁に吸着します。
-    /// </summary>
-    /// <param name="contactDirection"></param>
-    /// <param name="amount"></param>
-    private void SnapToWall(Vector2 contactDirection, float amount)
-    {
-        var maxDistance = (int)MathF.Ceiling(amount) + _rollerWallProbeDistance;
-        for (var distance = 0; distance < maxDistance && !HasWallNear(contactDirection, _rollerWallProbeDistance); distance++)
-        {
-            if (!_tryMoveWithoutRoller(contactDirection, out _)) return;
-        }
-    }
-
     private bool HasWallNear(Vector2 direction, int distance) => _walls.HasCollisionNear(_getPlayerBounds(), direction, distance);
 
     private void ClearActiveWallFollow()
@@ -577,6 +620,13 @@ internal sealed class WallFollower
     {
         WallFollowWallContact = WallContact.None;
         WallFollowHitContact = WallContact.None;
+        ClearPendingWallFollow();
+    }
+
+    private void ClearPendingWallFollow()
+    {
+        _pendingWallFollowContact = WallContact.None;
+        _pendingWallFollowContactDirection = Vector2.Zero;
     }
 
     private void RememberWallFollowWall(Vector2 contactDirection, WallContact? fallbackContact = null)

@@ -17,6 +17,7 @@ public class Game1 : Game
     private const float RollerSlideMultiplier = 0.82f;
     private const float RollerCornerTurnMultiplier = 0.92f;
     private const float BasicWallFollowCornerTurnMultiplier = 0.92f;
+    private const float WallFollowSpeedMultiplier = 2.0f;
     private const int RollerWallProbeDistance = 4;
     private const int WallContactProbeDistance = 28;
     private const float PlayerGhostPreviewFrames = 4f;
@@ -1705,14 +1706,14 @@ public class Game1 : Game
         var maxMoveAmount = MathF.Max(MathF.Abs(velocity.X), MathF.Abs(velocity.Y));
         if (_rollerActive && _wallFollower.IsRollerWallFollowActive())
         {
-            _wallFollower.ContinueRollerWallFollow(maxMoveAmount * RollerSlideMultiplier);
+            _wallFollower.ContinueRollerWallFollow(maxMoveAmount * RollerSlideMultiplier * WallFollowSpeedMultiplier);
             _wallFollower.UpdateGhostState(velocity, _rollerActive);
             return;
         }
 
         if (!_rollerActive && _wallFollower.IsBasicWallFollowActive())
         {
-            _wallFollower.ContinueBasicWallFollow(maxMoveAmount * BasicWallFollowCornerTurnMultiplier);
+            _wallFollower.ContinueBasicWallFollow(maxMoveAmount * BasicWallFollowCornerTurnMultiplier * WallFollowSpeedMultiplier);
             _wallFollower.UpdateGhostState(velocity, _rollerActive);
             return;
         }
@@ -1721,11 +1722,11 @@ public class Game1 : Game
         _wallFollower.Move(new Vector2(0f, velocity.Y), _rollerActive);
         if (_rollerActive)
         {
-            _wallFollower.ContinueRollerWallFollow(maxMoveAmount * RollerSlideMultiplier);
+            _wallFollower.ContinueRollerWallFollow(maxMoveAmount * RollerSlideMultiplier * WallFollowSpeedMultiplier);
         }
         else
         {
-            _wallFollower.ContinueBasicWallFollow(maxMoveAmount * BasicWallFollowCornerTurnMultiplier);
+            _wallFollower.ContinueBasicWallFollow(maxMoveAmount * BasicWallFollowCornerTurnMultiplier * WallFollowSpeedMultiplier);
         }
 
         _wallFollower.UpdateGhostState(velocity, _rollerActive);
