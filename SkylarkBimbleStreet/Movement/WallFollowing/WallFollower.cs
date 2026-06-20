@@ -254,6 +254,8 @@ internal sealed class WallFollower
 
     public bool IsWallFollowActive(bool rollerActive) => rollerActive ? IsRollerWallFollowActive() : IsBasicWallFollowActive();
 
+    public Vector2 GetWallFollowContactDirection(bool rollerActive) => rollerActive ? _rollerContactDirection : _basicWallFollowContactDirection;
+
     private void TryBasicWallFollowSlide(Vector2 blockedDelta)
     {
         var amount = MathF.Max(MathF.Abs(blockedDelta.X), MathF.Abs(blockedDelta.Y));

@@ -21,6 +21,9 @@ public class Game1 : Game
     private const int RollerWallProbeDistance = 4;
     private const int WallContactProbeDistance = 28;
     private const float PlayerGhostPreviewFrames = 4f;
+    private const int WallFollowVisualSquash = 20;
+    private const int WallFollowVisualSpread = 34;
+    private const int WallFollowVisualStick = 22;
     private const int PlayerSize = 46;
     private const int SmallPlayerSize = 30;
     private const float SmallPlayerSpeedMultiplier = 0.5f;
@@ -1812,32 +1815,90 @@ public class Game1 : Game
     {
         if (_playerInAmbulance || _playerInBus) return;
 
+        var player = GetPlayerBounds();
         if (_invincibleTimeRemaining > 0f && (int)(_invincibleTimeRemaining * 16f) % 2 == 0)
         {
-            DrawRectangle(GetPlayerBounds(), CurrentPalette.PlayerInvincible);
-            DrawRectangle(Inset(GetPlayerBounds(), 12), CurrentPalette.Player);
+            DrawPlayerBody(player, CurrentPalette.PlayerInvincible, CurrentPalette.Player);
             return;
         }
 
-        var player = GetPlayerBounds();
-        DrawRectangle(player, _cleared ? CurrentPalette.ExitOpen : CurrentPalette.Player);
-        DrawRectangle(Inset(player, Math.Max(6, GetCurrentPlayerSize() / 5)), _jetActive ? CurrentPalette.GemShine : CurrentPalette.PlayerInner);
+        var bodyColor = _cleared ? CurrentPalette.ExitOpen : CurrentPalette.Player;
+        var visualPlayer = DrawPlayerBody(player, bodyColor, _jetActive ? CurrentPalette.GemShine : CurrentPalette.PlayerInner);
         if (_smallActive)
         {
-            DrawFrame(new Rectangle(player.X - 5, player.Y - 5, player.Width + 10, player.Height + 10), CurrentPalette.PlayerInner, 3);
+            DrawFrame(new Rectangle(visualPlayer.X - 5, visualPlayer.Y - 5, visualPlayer.Width + 10, visualPlayer.Height + 10), CurrentPalette.PlayerInner, 3);
         }
         if (_rollerActive)
         {
             var angle = (float)(_currentStageElapsedSeconds * 8.0d);
-            DrawRollerBar(player, angle, CurrentPalette.GemShine);
+            DrawRollerBar(visualPlayer, angle, CurrentPalette.GemShine);
         }
         if (_jetActive)
         {
-            DrawFrame(new Rectangle(player.X - 7, player.Y - 7, player.Width + 14, player.Height + 14), CurrentPalette.StageCurrent, 4);
-            DrawLine(new Vector2(player.X - 18, player.Center.Y), new Vector2(player.X - 4, player.Center.Y), 5, CurrentPalette.GemShine);
+            DrawFrame(new Rectangle(visualPlayer.X - 7, visualPlayer.Y - 7, visualPlayer.Width + 14, visualPlayer.Height + 14), CurrentPalette.StageCurrent, 4);
+            DrawLine(new Vector2(visualPlayer.X - 18, visualPlayer.Center.Y), new Vector2(visualPlayer.X - 4, visualPlayer.Center.Y), 5, CurrentPalette.GemShine);
         }
 
-        DrawStageStartNormalPulse(player);
+        DrawStageStartNormalPulse(visualPlayer);
+    }
+
+    private Rectangle DrawPlayerBody(Rectangle player, Color bodyColor, Color innerColor)
+    {
+        var visualPlayer = GetWallFollowVisualPlayer(player, out var contactDirection);
+        if (contactDirection != Vector2.Zero)
+        {
+            var attachment = GetWallFollowAttachmentBounds(player, visualPlayer, contactDirection);
+            DrawRectangle(GetWallFollowSlimeShadowBounds(visualPlayer, contactDirection), WithAlpha(CurrentPalette.GemShine, 80));
+            DrawRectangle(attachment, WithAlpha(bodyColor, 245));
+            DrawFrame(attachment, WithAlpha(CurrentPalette.GemShine, 240), 5);
+        }
+
+        DrawRectangle(visualPlayer, bodyColor);
+        DrawRectangle(Inset(visualPlayer, Math.Max(6, GetCurrentPlayerSize() / 5)), innerColor);
+        if (contactDirection != Vector2.Zero)
+        {
+            DrawFrame(visualPlayer, WithAlpha(CurrentPalette.GemShine, 180), 4);
+        }
+
+        return visualPlayer;
+    }
+
+    private Rectangle GetWallFollowVisualPlayer(Rectangle player, out Vector2 contactDirection)
+    {
+        contactDirection = GetWallFollowVisualContactDirection();
+        if (contactDirection == Vector2.Zero) return player;
+
+        if (contactDirection.X > 0f) return new Rectangle(player.X + WallFollowVisualSquash, player.Y - WallFollowVisualSpread / 2, player.Width - WallFollowVisualSquash, player.Height + WallFollowVisualSpread);
+        if (contactDirection.X < 0f) return new Rectangle(player.X, player.Y - WallFollowVisualSpread / 2, player.Width - WallFollowVisualSquash, player.Height + WallFollowVisualSpread);
+        if (contactDirection.Y > 0f) return new Rectangle(player.X - WallFollowVisualSpread / 2, player.Y + WallFollowVisualSquash, player.Width + WallFollowVisualSpread, player.Height - WallFollowVisualSquash);
+        if (contactDirection.Y < 0f) return new Rectangle(player.X - WallFollowVisualSpread / 2, player.Y, player.Width + WallFollowVisualSpread, player.Height - WallFollowVisualSquash);
+        return player;
+    }
+
+    private Vector2 GetWallFollowVisualContactDirection()
+    {
+        var contactDirection = _wallFollower.GetWallFollowContactDirection(_rollerActive);
+        if (contactDirection != Vector2.Zero) return contactDirection;
+
+        return _wallFollower.WallFollowWallContact.IsValid(_walls.Count)
+            ? GetDirectionFromWallContactSide(_wallFollower.WallFollowWallContact.Side)
+            : Vector2.Zero;
+    }
+
+    private static Rectangle GetWallFollowAttachmentBounds(Rectangle player, Rectangle visualPlayer, Vector2 contactDirection)
+    {
+        if (contactDirection.X > 0f) return new Rectangle(player.Right - WallFollowVisualStick, visualPlayer.Y + 4, WallFollowVisualStick + 4, Math.Max(1, visualPlayer.Height - 8));
+        if (contactDirection.X < 0f) return new Rectangle(player.X - 4, visualPlayer.Y + 4, WallFollowVisualStick + 4, Math.Max(1, visualPlayer.Height - 8));
+        if (contactDirection.Y > 0f) return new Rectangle(visualPlayer.X + 4, player.Bottom - WallFollowVisualStick, Math.Max(1, visualPlayer.Width - 8), WallFollowVisualStick + 4);
+        if (contactDirection.Y < 0f) return new Rectangle(visualPlayer.X + 4, player.Y - 4, Math.Max(1, visualPlayer.Width - 8), WallFollowVisualStick + 4);
+        return Rectangle.Empty;
+    }
+
+    private static Rectangle GetWallFollowSlimeShadowBounds(Rectangle visualPlayer, Vector2 contactDirection)
+    {
+        if (contactDirection.X != 0f) return new Rectangle(visualPlayer.X - 6, visualPlayer.Y - 8, visualPlayer.Width + 12, visualPlayer.Height + 16);
+        if (contactDirection.Y != 0f) return new Rectangle(visualPlayer.X - 8, visualPlayer.Y - 6, visualPlayer.Width + 16, visualPlayer.Height + 12);
+        return Rectangle.Empty;
     }
 
     private void DrawStageStartNormalPulse(Rectangle player)
@@ -1872,6 +1933,15 @@ public class Game1 : Game
         if (direction.Y < 0f) return WallContactSide.Bottom;
         return WallContactSide.None;
     }
+
+    private static Vector2 GetDirectionFromWallContactSide(WallContactSide side) => side switch
+    {
+        WallContactSide.Left => Vector2.UnitX,
+        WallContactSide.Right => -Vector2.UnitX,
+        WallContactSide.Top => Vector2.UnitY,
+        WallContactSide.Bottom => -Vector2.UnitY,
+        _ => Vector2.Zero,
+    };
 
     private void UpdateHazards(float elapsed)
     {
