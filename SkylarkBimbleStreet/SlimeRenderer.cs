@@ -39,10 +39,10 @@ internal static class SlimeRenderer
 {
     // 壁追従中のプレイヤー表示。判定矩形は変えず、描画だけスライム状に変える。
     // 図の a, b, c, d。元プレイヤーサイズに対する倍率なので、1 より大きい値も使える。
-    private const float SlimeCapWidthRatio = 0.88f;     // a
-    private const float SlimeBaseWidthRatio = 1.32f;    // b
-    private const float SlimeCapHeightRatio = 0.62f;    // c
-    private const float SlimeBaseHeightRatio = 0.42f;   // d
+    private const float SlimeCapWidthRatio = 0.88f;     // a (帽子の横幅)
+    private const float SlimeBaseWidthRatio = 1.32f;    // b (底の横幅)
+    private const float SlimeCapHeightRatio = 0.62f;    // c (帽子の高さ)
+    private const float SlimeBaseHeightRatio = 0.42f;   // d (底の高さ)
 
     public static Rectangle Draw(
         Rectangle player,
