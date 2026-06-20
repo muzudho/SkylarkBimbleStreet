@@ -5,6 +5,14 @@ using Microsoft.Xna.Framework;
 
 internal delegate bool MoveWithoutRollerDelegate(Vector2 delta, out WallContact hitWallContact);
 
+internal enum WallFollowerStateKind
+{
+    NoReaction,
+    BeforeWall,
+    FacingWall,
+    AlongWall,
+}
+
 /// <summary>
 ///     <pre>
 /// ［片手壁伝い法］のロジック。
@@ -49,6 +57,21 @@ internal delegate bool MoveWithoutRollerDelegate(Vector2 delta, out WallContact 
 /// </summary>
 internal sealed class WallFollower
 {
+    private readonly record struct WallFollowerContext(WallFollower Owner, Vector2 Delta, float Amount, bool RollerActive, WallContact HitWallContact);
+
+    private interface IWallFollowerState
+    {
+        WallFollowerStateKind Kind { get; }
+
+        void Move(WallFollowerContext context);
+
+        void Continue(WallFollowerContext context);
+    }
+
+    private readonly NoReactionWallFollowerState _noReactionState = new();
+    private readonly BeforeWallFollowerState _beforeWallState = new();
+    private readonly FacingWallFollowerState _facingWallState = new();
+    private readonly AlongWallFollowerState _alongWallState = new();
     private readonly Walls _walls;
     private readonly MoveWithoutRollerDelegate _tryMoveWithoutRoller;
     private readonly Func<Rectangle> _getPlayerBounds;
@@ -98,6 +121,100 @@ internal sealed class WallFollower
 
     public Vector2 PlayerGhostVelocity { get; private set; }
 
+    public WallFollowerStateKind StateKind { get; private set; } = WallFollowerStateKind.NoReaction;
+
+    public WallFollowerStateKind GetStateKind() => StateKind;
+
+    private void SetState(IWallFollowerState state) => StateKind = state.Kind;
+
+    private sealed class NoReactionWallFollowerState : IWallFollowerState
+    {
+        public WallFollowerStateKind Kind => WallFollowerStateKind.NoReaction;
+
+        public void Move(WallFollowerContext context)
+        {
+            var owner = context.Owner;
+            if (!owner._tryMoveWithoutRoller(context.Delta, out var hitWallContact))
+            {
+                owner.SetState(owner._beforeWallState);
+                owner._beforeWallState.Move(context with { HitWallContact = hitWallContact });
+                return;
+            }
+
+            owner.SetState(this);
+            owner.RememberWallParallelMove(context.Delta);
+        }
+
+        public void Continue(WallFollowerContext context) => context.Owner.SetState(this);
+    }
+
+    private sealed class BeforeWallFollowerState : IWallFollowerState
+    {
+        public WallFollowerStateKind Kind => WallFollowerStateKind.BeforeWall;
+
+        public void Move(WallFollowerContext context)
+        {
+            var owner = context.Owner;
+            owner.SetState(this);
+            owner._facingWallState.Move(context);
+        }
+
+        public void Continue(WallFollowerContext context) => context.Owner.SetState(this);
+    }
+
+    private sealed class FacingWallFollowerState : IWallFollowerState
+    {
+        public WallFollowerStateKind Kind => WallFollowerStateKind.FacingWall;
+
+        public void Move(WallFollowerContext context)
+        {
+            var owner = context.Owner;
+            owner.SetState(this);
+            owner.InputContactWallIndex = context.HitWallContact.WallIndex;
+            owner.WallFollowWallContact = context.HitWallContact;
+            owner.WallFollowHitContact = WallContact.None;
+
+            if (context.RollerActive)
+            {
+                owner.TryRollerSlide(context.Delta);
+            }
+            else
+            {
+                owner.TryBasicWallFollowSlide(context.Delta);
+            }
+
+            if (owner.IsWallFollowActive(context.RollerActive))
+            {
+                owner.SetState(owner._alongWallState);
+            }
+        }
+
+        public void Continue(WallFollowerContext context) => context.Owner.SetState(this);
+    }
+
+    private sealed class AlongWallFollowerState : IWallFollowerState
+    {
+        public WallFollowerStateKind Kind => WallFollowerStateKind.AlongWall;
+
+        public void Move(WallFollowerContext context) => context.Owner.SetState(this);
+
+        public void Continue(WallFollowerContext context)
+        {
+            var owner = context.Owner;
+            owner.SetState(this);
+            if (context.RollerActive)
+            {
+                owner.ContinueRollerWallFollowCore(context.Amount);
+            }
+            else
+            {
+                owner.ContinueBasicWallFollowCore(context.Amount);
+            }
+
+            owner.SetState(owner.IsWallFollowActive(context.RollerActive) ? this : owner._noReactionState);
+        }
+    }
+
     public void BeginMove()
     {
         _wallFollowMovedThisFrame = false;
@@ -110,31 +227,26 @@ internal sealed class WallFollower
         InputContactWallIndex = -1;
         WallFollowHitContact = WallContact.None;
         ClearActiveWallFollow();
+        SetState(_noReactionState);
     }
 
     public void Move(Vector2 delta, bool rollerActive)
     {
-        if (!_tryMoveWithoutRoller(delta, out var hitWallContact))
-        {
-            InputContactWallIndex = hitWallContact.WallIndex;
-            WallFollowWallContact = hitWallContact;
-            WallFollowHitContact = WallContact.None;
-            if (rollerActive)
-            {
-                TryRollerSlide(delta);
-            }
-            else
-            {
-                TryBasicWallFollowSlide(delta);
-            }
-
-            return;
-        }
-
-        RememberWallParallelMove(delta);
+        _noReactionState.Move(new WallFollowerContext(this, delta, 0f, rollerActive, WallContact.None));
     }
 
     public void ContinueBasicWallFollow(float amount)
+    {
+        if (!IsBasicWallFollowActive())
+        {
+            _noReactionState.Continue(new WallFollowerContext(this, Vector2.Zero, amount, false, WallContact.None));
+            return;
+        }
+
+        _alongWallState.Continue(new WallFollowerContext(this, Vector2.Zero, amount, false, WallContact.None));
+    }
+
+    private void ContinueBasicWallFollowCore(float amount)
     {
         if (amount <= 0f || _basicWallFollowContactDirection == Vector2.Zero || _basicWallFollowSlideDirection == Vector2.Zero) return;
 
@@ -160,6 +272,17 @@ internal sealed class WallFollower
     }
 
     public void ContinueRollerWallFollow(float amount)
+    {
+        if (!IsRollerWallFollowActive())
+        {
+            _noReactionState.Continue(new WallFollowerContext(this, Vector2.Zero, amount, true, WallContact.None));
+            return;
+        }
+
+        _alongWallState.Continue(new WallFollowerContext(this, Vector2.Zero, amount, true, WallContact.None));
+    }
+
+    private void ContinueRollerWallFollowCore(float amount)
     {
         if (amount <= 0f || _rollerContactDirection == Vector2.Zero || _rollerSlideDirection == Vector2.Zero) return;
 

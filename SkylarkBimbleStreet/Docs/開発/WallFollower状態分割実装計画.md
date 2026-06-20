@@ -156,3 +156,14 @@ WallFollowSettings
 
 最初から完全な状態クラス化はしない。
 まず `WallFollowerStateKind` と状態判定を入れ、既存挙動を保ったまま、あとから処理を4状態へ移していく。
+
+## 実施状況
+
+- Phase 1: `WallFollowerStateKind` を追加済み。
+- Phase 2: `StateKind` と `GetStateKind()` を追加済み。
+- Phase 3: `WallFollowerContext` を追加済み。
+- Phase 4: `IWallFollowerState` を追加済み。
+- Phase 5: 4状態の入れ子クラスを追加済み。
+- Phase 6: `Move`、通常壁追従継続、ローラー壁追従継続を状態クラス経由に変更済み。
+
+次は、状態クラスを別ファイルへ切り出せるように、`WallFollowerContext` へ既存 private 処理の境界を少しずつ移す。
