@@ -1857,6 +1857,9 @@ public class Game1 : Game
         DrawRectangle(Inset(visualPlayer, Math.Max(6, GetCurrentPlayerSize() / 5)), innerColor);
         if (contactDirection != Vector2.Zero)
         {
+            var cap = GetWallFollowSquareCapBounds(player, contactDirection);
+            DrawRectangle(cap, bodyColor);
+            DrawRectangle(Inset(cap, Math.Max(4, GetCurrentPlayerSize() / 7)), innerColor);
             DrawFrame(visualPlayer, WithAlpha(CurrentPalette.GemShine, 180), 4);
         }
 
@@ -1898,6 +1901,15 @@ public class Game1 : Game
     {
         if (contactDirection.X != 0f) return new Rectangle(visualPlayer.X - 6, visualPlayer.Y - 8, visualPlayer.Width + 12, visualPlayer.Height + 16);
         if (contactDirection.Y != 0f) return new Rectangle(visualPlayer.X - 8, visualPlayer.Y - 6, visualPlayer.Width + 16, visualPlayer.Height + 12);
+        return Rectangle.Empty;
+    }
+
+    private static Rectangle GetWallFollowSquareCapBounds(Rectangle player, Vector2 contactDirection)
+    {
+        if (contactDirection.X > 0f) return new Rectangle(player.X, player.Y, Math.Max(1, player.Width / 2), player.Height);
+        if (contactDirection.X < 0f) return new Rectangle(player.Center.X, player.Y, Math.Max(1, player.Width / 2), player.Height);
+        if (contactDirection.Y > 0f) return new Rectangle(player.X, player.Y, player.Width, Math.Max(1, player.Height / 2));
+        if (contactDirection.Y < 0f) return new Rectangle(player.X, player.Center.Y, player.Width, Math.Max(1, player.Height / 2));
         return Rectangle.Empty;
     }
 
