@@ -10,7 +10,7 @@ internal sealed class BeforeWallFollowerState : IWallFollowerState
     public void Move(WallFollowerContext context)
     {
         context.SetState(this);
-        context.MoveFacingWallState();
+        context.EnterFacingWall();
     }
 
     public void Continue(WallFollowerContext context) => context.SetState(this);

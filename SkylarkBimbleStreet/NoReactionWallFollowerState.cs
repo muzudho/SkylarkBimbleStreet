@@ -9,9 +9,9 @@ internal sealed class NoReactionWallFollowerState : IWallFollowerState
 
     public void Move(WallFollowerContext context)
     {
-        if (!context.TryMove(out var hitWallContact))
+        if (!context.TryMoveInputDirection(out var hitWallContact))
         {
-            context.MoveBeforeWall(hitWallContact);
+            context.EnterBeforeWall(hitWallContact);
             return;
         }
 

@@ -110,21 +110,21 @@ internal sealed class WallFollower
 
     internal IWallFollowerState AlongWallState => _alongWallState;
 
-    internal bool TryMoveForState(Vector2 delta, out WallContact hitWallContact) => _tryMoveWithoutRoller(delta, out hitWallContact);
+    internal bool TryMoveInputDirection(Vector2 delta, out WallContact hitWallContact) => _tryMoveWithoutRoller(delta, out hitWallContact);
 
     internal void SetState(IWallFollowerState state) => StateKind = state.Kind;
 
     internal void RememberWallParallelMoveForState(Vector2 delta) => RememberWallParallelMove(delta);
 
-    internal void MoveBeforeWallForState(WallFollowerContext context, WallContact hitWallContact)
+    internal void EnterBeforeWall(WallFollowerContext context, WallContact hitWallContact)
     {
         SetState(_beforeWallState);
         _beforeWallState.Move(context with { HitWallContact = hitWallContact });
     }
 
-    internal void MoveFacingWallStateForState(WallFollowerContext context) => _facingWallState.Move(context);
+    internal void EnterFacingWall(WallFollowerContext context) => _facingWallState.Move(context);
 
-    internal void MoveFacingWallForState(WallFollowerContext context)
+    internal void StartWallFollow(WallFollowerContext context)
     {
         InputContactWallIndex = context.HitWallContact.WallIndex;
         WallFollowWallContact = context.HitWallContact;

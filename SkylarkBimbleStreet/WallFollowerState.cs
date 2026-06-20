@@ -21,23 +21,23 @@ internal interface IWallFollowerState
 
 internal readonly record struct WallFollowerContext(WallFollower Owner, Vector2 Delta, float Amount, bool RollerActive, WallContact HitWallContact)
 {
-    public bool TryMove(out WallContact hitWallContact) => Owner.TryMoveForState(Delta, out hitWallContact);
+    public bool TryMoveInputDirection(out WallContact hitWallContact) => Owner.TryMoveInputDirection(Delta, out hitWallContact);
 
     public void SetState(IWallFollowerState state) => Owner.SetState(state);
 
     public void RememberWallParallelMove() => Owner.RememberWallParallelMoveForState(Delta);
 
-    public void MoveBeforeWall(WallContact hitWallContact) => Owner.MoveBeforeWallForState(this, hitWallContact);
+    public void EnterBeforeWall(WallContact hitWallContact) => Owner.EnterBeforeWall(this, hitWallContact);
 
-    public void MoveFacingWallState() => Owner.MoveFacingWallStateForState(this);
+    public void EnterFacingWall() => Owner.EnterFacingWall(this);
 
-    public void MoveFacingWall() => Owner.MoveFacingWallForState(this);
+    public void StartWallFollow() => Owner.StartWallFollow(this);
 
     public void ContinueAlongWall() => Owner.ContinueAlongWallForState(this);
 
     public bool IsWallFollowActive() => Owner.IsWallFollowActive(RollerActive);
 
-    public IWallFollowerState NoReactionState => Owner.NoReactionState;
+    public void SetNoReactionState() => Owner.SetState(Owner.NoReactionState);
 
-    public IWallFollowerState AlongWallState => Owner.AlongWallState;
+    public void SetAlongWallState() => Owner.SetState(Owner.AlongWallState);
 }

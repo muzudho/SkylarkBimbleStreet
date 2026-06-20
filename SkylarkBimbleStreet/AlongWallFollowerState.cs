@@ -14,6 +14,13 @@ internal sealed class AlongWallFollowerState : IWallFollowerState
         context.SetState(this);
         context.ContinueAlongWall();
 
-        context.SetState(context.IsWallFollowActive() ? this : context.NoReactionState);
+        if (context.IsWallFollowActive())
+        {
+            context.SetState(this);
+        }
+        else
+        {
+            context.SetNoReactionState();
+        }
     }
 }
