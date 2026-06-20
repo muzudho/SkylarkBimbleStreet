@@ -1794,20 +1794,22 @@ public class Game1 : Game
     {
         if (_playerInAmbulance || _playerInBus) return;
 
-        DrawPlayerGhost(_wallFollower.InputDirectionGhostVelocity, new Color(80, 255, 120), 10, 2);
-        DrawPlayerGhost(_wallFollower.MoveDirectionGhostVelocity, new Color(118, 218, 255), 5, 3);
-        DrawPlayerGhost(_wallFollower.OuterCornerGhostVelocity, new Color(255, 220, 72), 0, 4);
+        DrawPlayerGhost(_wallFollower.InputDirectionGhostVelocity, Ghosts.InputDirection);
+        DrawPlayerGhost(_wallFollower.MoveDirectionGhostVelocity, Ghosts.MoveDirection);
+        DrawPlayerGhost(_wallFollower.OuterCornerGhostVelocity, Ghosts.OuterCorner);
     }
 
-    private void DrawPlayerGhost(Vector2 velocity, Color frameColor, int spread, int thickness)
+    private void DrawPlayerGhost(Vector2 velocity, GhostStyle style)
     {
         if (velocity == Vector2.Zero) return;
 
         var ghost = GetPlayerGhostBounds(velocity);
-        var frame = new Rectangle(ghost.X - spread, ghost.Y - spread, ghost.Width + spread * 2, ghost.Height + spread * 2);
-        DrawRectangle(frame, WithAlpha(frameColor, 28));
-        DrawFrame(frame, WithAlpha(frameColor, 230), thickness);
-        DrawFrame(new Rectangle(frame.X - 4, frame.Y - 4, frame.Width + 8, frame.Height + 8), WithAlpha(frameColor, 130), 2);
+        var frame = Ghosts.GetFrameBounds(ghost, style);
+        var halo = Ghosts.GetHaloBounds(frame, ghost, style);
+        var thickness = Ghosts.GetFrameThickness(ghost, style);
+        DrawRectangle(frame, WithAlpha(style.FrameColor, 28));
+        DrawFrame(frame, WithAlpha(style.FrameColor, 230), thickness);
+        DrawFrame(halo, WithAlpha(style.FrameColor, 130), 2);
     }
 
     private Rectangle GetPlayerGhostBounds(Vector2 velocity)
