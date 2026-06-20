@@ -167,5 +167,6 @@ WallFollowSettings
 - Phase 6: `Move`、通常壁追従継続、ローラー壁追従継続を状態クラス経由に変更済み。
 - 追加整理: 状態クラスが `WallFollower` の private 実装へ直接触る箇所を減らすため、`WallFollowerContext` に委譲メソッドを追加済み。
 - 追加整理: `WallFollowerStateKind`、`IWallFollowerState`、`WallFollowerContext` を `WallFollowerState.cs` へ切り出し済み。
+- 追加整理: 4状態クラス本体を個別ファイルへ切り出し済み。
 
 次は、状態クラスを別ファイルへ切り出せるように、`WallFollowerContext` へ既存 private 処理の境界を少しずつ移す。
