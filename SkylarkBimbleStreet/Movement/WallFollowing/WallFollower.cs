@@ -535,6 +535,20 @@ internal sealed class WallFollower
         return direction != Vector2.Zero && _tryMoveWithoutRoller(direction, out _);
     }
 
+    /// <summary>
+    /// 壁に吸着します。
+    /// </summary>
+    /// <param name="contactDirection"></param>
+    /// <param name="amount"></param>
+    private void SnapToWall(Vector2 contactDirection, float amount)
+    {
+        var maxDistance = (int)MathF.Ceiling(amount) + _rollerWallProbeDistance;
+        for (var distance = 0; distance < maxDistance && !HasWallNear(contactDirection, _rollerWallProbeDistance); distance++)
+        {
+            if (!_tryMoveWithoutRoller(contactDirection, out _)) return;
+        }
+    }
+
     private bool HasWallNear(Vector2 direction, int distance) => _walls.HasCollisionNear(_getPlayerBounds(), direction, distance);
 
     private void ClearActiveWallFollow()
